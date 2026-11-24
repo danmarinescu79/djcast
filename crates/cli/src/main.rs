@@ -220,7 +220,7 @@ fn rekordbox_cmd(cmd: RekordboxCmd) -> Result<()> {
             for ev in rx {
                 if let Event::Track(t) = ev {
                     let deck = t.deck.map(|d| format!("[deck {d}] ")).unwrap_or_default();
-                    println!("now playing: {deck}{}", t.display());
+                    println!("{} now playing: {deck}{}", clock(), t.display());
                 }
             }
         }
@@ -234,6 +234,27 @@ enum Event {
 }
 
 /// Poll the configured source on a background thread; send a `Track` event on changes.
+/// Remove `[...]` parts (elapsed times) so a snapshot compares equal while clocks run.
+fn strip_brackets(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut depth = 0;
+    for c in s.chars() {
+        match c {
+            '[' => depth += 1,
+            ']' => depth -= 1,
+            _ if depth == 0 => out.push(c),
+            _ => {}
+        }
+    }
+    out
+}
+
+/// Local-ish wall clock "HH:MM:SS" (UTC offset not applied; for relative timing).
+fn clock() -> String {
+    let s = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    format!("{:02}:{:02}:{:02}", s / 3600 % 24, s / 60 % 60, s % 60)
+}
+
 fn spawn_nowplaying(cfg: &NowPlayingConfig, tx: mpsc::Sender<Event>, verbose: bool) -> Result<bool> {
     let Some(mut source) = djcast_nowplaying::create_source(cfg)? else {
         return Ok(false);
@@ -243,10 +264,16 @@ fn spawn_nowplaying(cfg: &NowPlayingConfig, tx: mpsc::Sender<Event>, verbose: bo
     std::thread::Builder::new().name("nowplaying".into()).spawn(move || {
         let mut last: Option<Track> = None;
         let mut failing = false;
+        let mut last_snapshot = String::new();
         loop {
             let result = source.poll();
+            // Print the state only when something other than running clocks changed.
             if verbose && let Some(s) = source.debug_snapshot() {
-                eprintln!("{s}");
+                let key = strip_brackets(&s);
+                if key != last_snapshot {
+                    eprintln!("--- {}\n{s}", clock());
+                    last_snapshot = key;
+                }
             }
             match result {
                 Ok(Some(t)) if Some(&t) != last.as_ref() => {
