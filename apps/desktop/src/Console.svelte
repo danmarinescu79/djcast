@@ -1,5 +1,6 @@
 <script>
   import { clock, bytes, meterFraction, lufs, db } from './lib/format.js';
+  import BandMeters from './lib/BandMeters.svelte';
 
   let { status, busy, actionError, onToggleLive, onSendTitle } = $props();
 
@@ -157,14 +158,7 @@
       {#if status.loudness.bands_db}
         <div class="mb">
           <span class="muted">Band reduction</span>
-          <div class="mb-bars" aria-label="Multiband gain reduction: bass, low mids, high mids, highs">
-            {#each status.loudness.bands_db as gr, i (i)}
-              <div class="mb-col" title="{['Bass', 'Low mids', 'High mids', 'Highs'][i]}: {gr.toFixed(1)} dB of compression (bar fills downward, 12 dB max)">
-                <div class="mb-track"><div style:height="{Math.min(100, (-gr / 12) * 100)}%"></div></div>
-                <span class="mb-label">{['B', 'LM', 'HM', 'H'][i]}</span>
-              </div>
-            {/each}
-          </div>
+          <BandMeters bands={status.loudness.bands_db} />
         </div>
       {/if}
       <div><span class="muted">MIDI mixer</span><span>{status.decks?.midi ? 'Connected' : '—'}</span></div>
@@ -251,10 +245,5 @@
   .rows > div { display: flex; justify-content: space-between; }
   .blue-text { color: var(--info); }
   .mb { align-items: center; }
-  .mb-bars { display: flex; gap: 6px; }
-  .mb-col { width: 16px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .mb-track { width: 10px; height: 34px; background: var(--line); border-radius: 2px; position: relative; overflow: hidden; }
-  .mb-label { font-size: 9px; color: var(--muted); line-height: 1; }
-  .mb-track > div { position: absolute; top: 0; left: 0; right: 0; background: var(--warn); transition: height 60ms linear; }
   .warn-text { color: var(--warn); }
 </style>

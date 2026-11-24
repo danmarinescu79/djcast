@@ -1,5 +1,6 @@
 <script>
-  import { lufs, db } from './lib/format.js';
+  import { lufs, db, meterFraction } from './lib/format.js';
+  import BandMeters from './lib/BandMeters.svelte';
   import { deckSlots, sourceLabel } from './lib/decks.js';
 
   let { status } = $props();
@@ -59,10 +60,18 @@
     </div>
 
     <div class="panel card rows">
-      <span class="label">Processing · {status.loudness.preset}</span>
-      <div><span class="muted">Loudness</span><span class="mono">{lufs(status.loudness.out_lufs)} LUFS</span></div>
+      <span class="label">Output · {status.loudness.preset}</span>
+      <div class="hmeter"><span class="muted">L</span><div class="htrack"><div style:width="{meterFraction(status.level_l) * 100}%"></div></div></div>
+      <div class="hmeter"><span class="muted">R</span><div class="htrack"><div style:width="{meterFraction(status.level_r) * 100}%"></div></div></div>
+      <div class="loud">
+        <span class="big mono">{lufs(status.loudness.out_lufs)}</span>
+        <span class="muted small">LUFS{status.loudness.target_lufs != null ? ` · target ${status.loudness.target_lufs}` : ''}</span>
+      </div>
       <div><span class="muted">AGC</span><span class="mono blue">{db(status.loudness.agc_gain_db)} dB</span></div>
       <div><span class="muted">Limiter</span><span class="mono warn">{db(status.loudness.limiter_db, false)} dB</span></div>
+      {#if status.loudness.bands_db}
+        <div class="bands"><span class="muted">Band reduction</span><BandMeters bands={status.loudness.bands_db} /></div>
+      {/if}
     </div>
   </aside>
 </main>
@@ -90,7 +99,7 @@
   .hot { background: #ff6b6b !important; }
   .pct { width: 36px; text-align: right; }
 
-  aside { width: 250px; display: flex; flex-direction: column; gap: 12px; }
+  aside { width: 250px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
   .card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
   .sent { font-size: 16px; font-weight: 700; line-height: 1.3; user-select: text; }
   .faders { display: flex; justify-content: space-between; height: 110px; }
@@ -101,6 +110,13 @@
   .xtrack { flex-grow: 1; height: 6px; background: var(--line); border-radius: 3px; position: relative; }
   .knob { position: absolute; top: -5px; width: 10px; height: 16px; background: var(--text-2); border-radius: 2px; transition: left 80ms linear; }
   .rows { font-size: 13px; }
+  .hmeter { display: flex; align-items: center; gap: 8px; }
+  .hmeter span { width: 10px; font-size: 11px; }
+  .htrack { flex-grow: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .htrack > div { height: 8px; background: var(--ok); border-radius: 4px; transition: width 50ms linear; }
+  .loud { display: flex; align-items: baseline; gap: 8px; }
+  .big { font-size: 24px; font-weight: 700; }
+  .bands { align-items: center; }
   .rows > div { display: flex; justify-content: space-between; }
   .muted { color: var(--muted); }
   .small { font-size: 12px; }
