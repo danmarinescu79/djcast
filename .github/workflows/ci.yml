@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# A new push to the same pull request cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: windows-latest
