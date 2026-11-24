@@ -58,6 +58,8 @@ impl Default for AppPrefs {
 pub struct ServerProfile {
     pub name: String,
     pub server: djcast_core::config::ServerConfig,
+    /// Stream format: MP3, AAC or Opus.
+    pub codec: djcast_core::config::Codec,
     pub bitrate: u32,
     /// Stream to this server when going live (several profiles can be live at once).
     pub live: bool,
@@ -65,7 +67,7 @@ pub struct ServerProfile {
 
 impl Default for ServerProfile {
     fn default() -> Self {
-        Self { name: "Default".into(), server: Default::default(), bitrate: 192, live: false }
+        Self { name: "Default".into(), server: Default::default(), codec: Default::default(), bitrate: 192, live: false }
     }
 }
 
@@ -111,6 +113,7 @@ impl AppConfig {
             self.profiles.push(ServerProfile {
                 name: "Default".into(),
                 server: self.stream.server.clone(),
+                codec: self.stream.encoder.codec,
                 bitrate: self.stream.encoder.bitrate,
                 live: true,
             });
@@ -120,6 +123,7 @@ impl AppConfig {
         }
         let p = self.profiles.iter().find(|p| p.name == self.active_profile).unwrap();
         self.stream.server = p.server.clone();
+        self.stream.encoder.codec = p.codec;
         self.stream.encoder.bitrate = p.bitrate;
     }
 
@@ -132,7 +136,12 @@ impl AppConfig {
         }
         live.sort_by_key(|p| p.name != self.active_profile);
         live.into_iter()
-            .map(|p| djcast_core::Output { name: p.name.clone(), server: p.server.clone(), bitrate: p.bitrate })
+            .map(|p| djcast_core::Output {
+                name: p.name.clone(),
+                server: p.server.clone(),
+                codec: p.codec,
+                bitrate: p.bitrate,
+            })
             .collect()
     }
 

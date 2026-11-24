@@ -117,7 +117,9 @@ pub struct CueTrack {
 pub fn cue_sheet(recording: &Path, session_title: &str, tracks: &[CueTrack]) -> String {
     let esc = |s: &str| s.replace('"', "'");
     let file = recording.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
-    let mut out = format!("TITLE \"{}\"\nFILE \"{}\" MP3\n", esc(session_title), esc(&file));
+    // CUE knows MP3 by name; players accept WAVE for any other audio file.
+    let kind = if file.to_lowercase().ends_with(".mp3") { "MP3" } else { "WAVE" };
+    let mut out = format!("TITLE \"{}\"\nFILE \"{}\" {kind}\n", esc(session_title), esc(&file));
     for (i, t) in tracks.iter().enumerate() {
         out.push_str(&format!("  TRACK {:02} AUDIO\n", i + 1));
         out.push_str(&format!("    TITLE \"{}\"\n", esc(&t.title)));

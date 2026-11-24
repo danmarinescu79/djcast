@@ -28,6 +28,26 @@ export function db(v, signed = true) {
   return signed && v > 0 ? `+${s}` : s;
 }
 
+export const CODECS = { mp3: 'MP3', aac: 'AAC', opus: 'Opus' };
+
+/** Bitrates offered per codec (kbps). The Windows AAC encoder takes 96–192 only. */
+export const BITRATES = {
+  mp3: [128, 160, 192, 256, 320],
+  aac: [96, 128, 160, 192],
+  opus: [64, 96, 128, 160, 192, 256],
+};
+
+/** The offered bitrate of `codec` closest to `kbps`. */
+export function nearestBitrate(codec, kbps) {
+  const list = BITRATES[codec] ?? BITRATES.mp3;
+  return list.reduce((best, b) => (Math.abs(b - kbps) < Math.abs(best - kbps) ? b : best), list[0]);
+}
+
+/** "MP3 192 kbps" */
+export function formatLabel(codec, kbps) {
+  return `${CODECS[codec] ?? 'MP3'} ${kbps} kbps`;
+}
+
 /** "Loud", "Radio + multiband", "Off" … from the loudness status. */
 export function presetLabel(loudness) {
   const name = t(`preset.${loudness?.preset || 'off'}`);

@@ -12,7 +12,7 @@ docs/          research, architecture, roadmap
 
 ```
 cpal (audio thread)                  "encoder" thread               "network" thread
-capture f32 → stereo + gain  ──200──> AGC + limiter → LAME MP3       ──┬──64──> SourceConnection (PUT/SOURCE)
+capture f32 → stereo + gain  ──200──> AGC + limiter → encoder(s)     ──┬──64──> SourceConnection (PUT/SOURCE)
      │                               + silence on gaps │        automatic reconnect
      └─> Levels (atomics, VU meter)                    └──────> recording file (optional)
 
@@ -23,6 +23,16 @@ Principles:
 - **The audio thread never blocks** (`try_send`). If the encoder falls behind, buffers are dropped instead of causing glitches in rekordbox.
 - **Live means no accumulated delay.** If the network is slow or down, encoded data is dropped, not queued.
 - **Silence on capture gaps.** WASAPI loopback delivers nothing while the output is silent, and Icecast drops a source after ~10 s without data. The encoder inserts silence once no audio has arrived for 200 ms. It only reacts to real gaps, so clock drift never inserts silence mid-audio.
+- **One encoder per format.** Servers with the same codec and bitrate share an encoder.
+  MP3 (LAME) and AAC (the OS encoder: Media Foundation on Windows, ADTS frames) get their
+  titles through the server's admin API. Opus is sent in Ogg at 48 kHz (resampled with
+  `rubato` when the device runs at another rate); a title change ends the current Ogg
+  logical stream and starts a new one whose `OpusTags` carry the title (chained Ogg), which
+  is how Icecast and players learn titles for Ogg. Servers differ: Icecast 2.5 reads
+  `OpusTags` into its status page; Icecast-KH (2.4.0-kh15) passes them to listeners but
+  does not read them, and has no admin title update for Ogg mounts. A server that connects mid-stream gets
+  nothing until the next logical stream begins (the network thread asks the encoder for one),
+  because Ogg listeners need the header pages first.
 - **No HTTP dependency.** The Icecast source protocol is implemented directly on `TcpStream`, with a fallback to the legacy `SOURCE` method for old servers.
 
 ## Loudness processing

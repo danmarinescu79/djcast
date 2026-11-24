@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'Zum Testen Stream stoppen',
 
   'processing.intro':
-    'Macht den Stream so laut und klar wie andere Sender in Playern, die die Lautstärke nicht anpassen (Second Life, Webplayer). Eine langsame automatische Verstärkung (AGC) bringt den Mix auf die Ziel-Lautheit; ein Limiter hält die Spitzen unter der Obergrenze.',
+    'Macht den Stream so laut und klar wie andere Sender in Playern, die die Lautstärke nicht anpassen (manche Spiele, Webplayer). Eine langsame automatische Verstärkung (AGC) bringt den Mix auf die Ziel-Lautheit; ein Limiter hält die Spitzen unter der Obergrenze.',
   'processing.preset.off': 'Aus — Mix unverändert senden',
   'processing.preset.gentle': 'Sanft — -16 LUFS, sehr transparent',
   'processing.preset.radio': 'Radio — -13 LUFS, typisches Internetradio',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'Testnachricht gesendet — schau im Kanal nach.',
   'share.cueNote': 'Wenn die Aufnahme aktiv ist, wird neben der MP3 eine .cue-Datei geschrieben, damit Player jeden Track des Sets anzeigen.',
   'tracklist.save': 'Speichern…',
+
+  'server.bitrate': 'Bitrate',
+  'format.aacHint': 'AAC klingt bei gleicher Bitrate besser als MP3. Nutzt den in Windows eingebauten Encoder. Manche Spiele und ältere Player brauchen MP3.',
+  'format.opusHint': 'Opus bietet den besten Klang pro kbps und überträgt Titel im Stream selbst. Nur Icecast; manche Spiele und ältere Player brauchen MP3.',
+  'format.opusShoutcast': 'Shoutcast-Server nehmen kein Opus an – wähle MP3 oder AAC oder einen Icecast-Server.',
+  'format.opusTitles': 'Titel werden im Stream übertragen: Player zeigen sie an, die Statusseite des Servers aber erst ab Icecast 2.5 (nicht bei Icecast-KH).',
 };

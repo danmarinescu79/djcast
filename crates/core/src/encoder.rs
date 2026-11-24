@@ -7,15 +7,35 @@ use mp3lame_encoder::{Bitrate, Builder, FlushNoGap, InterleavedPcm, Quality};
 pub trait AudioEncoder: Send {
     /// MIME type sent to the server (`Content-Type`).
     fn content_type(&self) -> &'static str;
+    /// File extension for recordings.
+    fn extension(&self) -> &'static str;
     /// Encode a chunk of interleaved stereo samples; returns encoded bytes (may be empty).
     fn encode(&mut self, pcm: &[f32]) -> Result<Vec<u8>>;
     /// Flush buffered frames at end of stream.
     fn flush(&mut self) -> Result<Vec<u8>>;
+
+    /// Titles travel inside the stream (Ogg) instead of through the server's admin API.
+    /// Such streams must start with header pages, so a new listener connection waits for
+    /// a fresh logical stream (see [`restart`](Self::restart)).
+    fn in_band_metadata(&self) -> bool {
+        false
+    }
+    /// In-band title change. Returns the bytes that end the current logical stream; the
+    /// next [`encode`](Self::encode) output starts a new one.
+    fn set_title(&mut self, _title: &str) -> Result<Vec<u8>> {
+        Ok(Vec::new())
+    }
+    /// Start a new logical stream (for a server that just connected). Same return as `set_title`.
+    fn restart(&mut self) -> Result<Vec<u8>> {
+        Ok(Vec::new())
+    }
 }
 
 pub fn create(cfg: &EncoderConfig, sample_rate: u32) -> Result<Box<dyn AudioEncoder>> {
     match cfg.codec {
         Codec::Mp3 => Ok(Box::new(Mp3Encoder::new(cfg.bitrate, sample_rate)?)),
+        Codec::Opus => Ok(Box::new(crate::ogg_opus::OggOpusEncoder::new(cfg.bitrate, sample_rate)?)),
+        Codec::Aac => crate::aac::create(cfg.bitrate, sample_rate),
     }
 }
 
@@ -38,6 +58,10 @@ impl Mp3Encoder {
 impl AudioEncoder for Mp3Encoder {
     fn content_type(&self) -> &'static str {
         "audio/mpeg"
+    }
+
+    fn extension(&self) -> &'static str {
+        "mp3"
     }
 
     fn encode(&mut self, pcm: &[f32]) -> Result<Vec<u8>> {

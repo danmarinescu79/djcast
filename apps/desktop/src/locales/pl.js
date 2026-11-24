@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'Zatrzymaj stream, aby przetestować',
 
   'processing.intro':
-    'Sprawia, że stream brzmi tak głośno i wyraźnie jak inne stacje w odtwarzaczach, które nie regulują głośności (Second Life, odtwarzacze w przeglądarce). Powolna automatyczna regulacja wzmocnienia (AGC) doprowadza mix do docelowej głośności, a limiter utrzymuje szczyty poniżej progu.',
+    'Sprawia, że stream brzmi tak głośno i wyraźnie jak inne stacje w odtwarzaczach, które nie regulują głośności (niektóre gry, odtwarzacze w przeglądarce). Powolna automatyczna regulacja wzmocnienia (AGC) doprowadza mix do docelowej głośności, a limiter utrzymuje szczyty poniżej progu.',
   'processing.preset.off': 'Wyłączony — wysyłaj mix bez zmian',
   'processing.preset.gentle': 'Łagodny — -16 LUFS, bardzo przezroczysty',
   'processing.preset.radio': 'Radio — -13 LUFS, typowe radio internetowe',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'Wiadomość testowa wysłana — sprawdź kanał.',
   'share.cueNote': 'Gdy nagrywanie jest włączone, obok pliku MP3 zapisywany jest plik .cue, dzięki czemu odtwarzacze pokazują każdy utwór z seta.',
   'tracklist.save': 'Zapisz…',
+
+  'server.bitrate': 'Bitrate',
+  'format.aacHint': 'AAC brzmi lepiej niż MP3 przy tym samym bitrate. Używa kodera wbudowanego w Windows. Niektóre gry i starsze odtwarzacze wymagają MP3.',
+  'format.opusHint': 'Opus daje najlepszy dźwięk na kbps i przesyła tytuły wewnątrz strumienia. Tylko Icecast; niektóre gry i starsze odtwarzacze wymagają MP3.',
+  'format.opusShoutcast': 'Serwery Shoutcast nie przyjmują Opus — wybierz MP3 lub AAC albo serwer Icecast.',
+  'format.opusTitles': 'Tytuły są przesyłane wewnątrz strumienia: odtwarzacze je pokazują, ale strona statusu serwera dopiero od Icecast 2.5 (nie na Icecast-KH).',
 };

@@ -137,6 +137,8 @@ impl SourceConnection {
              icy-url:{url}\r\n\
              icy-pub:{public}\r\n\
              icy-br:{br}\r\n\r\n",
+            // Shoutcast's name for AAC streams.
+            content_type = if content_type == "audio/aac" { "audio/aacp" } else { content_type },
             name = header_safe(&cfg.name),
             genre = header_safe(&cfg.genre),
             url = header_safe(&cfg.url),

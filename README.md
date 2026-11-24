@@ -8,7 +8,8 @@ Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
 
 ## Features
 - Capture what your DJ software plays (WASAPI loopback, no virtual cable needed) or any input device
-- MP3 encoding (32–320 kbps)
+- MP3, AAC and Opus, chosen per server: MP3 (LAME, 32–320 kbps) for every player,
+  AAC-LC (Windows' own encoder, 96–192 kbps) and Opus in Ogg (Icecast, titles inside the stream)
 - Icecast 2 streaming (HTTP PUT with fallback to the legacy SOURCE method)
 - Now-playing metadata, re-sent automatically after reconnects
 - Automatic reconnect, silence padding so the server never drops you
@@ -94,6 +95,8 @@ at your option.
 If you build on djcast, a link back to the project is appreciated (see `NOTICE`).
 
 The MP3 encoder links [LAME](https://lame.sourceforge.io/) (LGPL-2.0) via the `mp3lame-encoder` crate.
+Opus uses [libopus](https://opus-codec.org/) (BSD-3-Clause). AAC uses the encoder that comes with the
+operating system (Media Foundation on Windows); djcast ships no AAC code.
 
 ### Contribution
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this work,

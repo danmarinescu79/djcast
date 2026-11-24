@@ -6,6 +6,7 @@
   import { getVersion } from '@tauri-apps/api/app';
   import { isEnabled as autostartIsEnabled, enable as autostartEnable, disable as autostartDisable } from '@tauri-apps/plugin-autostart';
   import { checkForUpdate, installUpdate } from './lib/updates.js';
+  import { BITRATES, nearestBitrate } from './lib/format.js';
 
   /** Folder picker; returns the chosen absolute path or null. */
   async function pickFolder(current, title) {
@@ -79,6 +80,7 @@
     const p = draft.profiles.find((x) => x.name === current);
     if (p) {
       p.server = structuredClone($state.snapshot(draft.server));
+      p.codec = draft.encoder.codec;
       p.bitrate = Number(draft.encoder.bitrate);
     }
   }
@@ -87,6 +89,7 @@
     if (!p) return;
     current = name;
     draft.server = structuredClone($state.snapshot(p.server));
+    draft.encoder.codec = p.codec || 'mp3';
     draft.encoder.bitrate = p.bitrate;
     showPass = false;
   }
@@ -104,7 +107,7 @@
     storeCurrent();
     const name = uniqueName(t('server.newName'));
     const server = { ...structuredClone($state.snapshot(draft.server)), host: '', password: '', mount: '/live' };
-    draft.profiles.push({ name, server, bitrate: Number(draft.encoder.bitrate), live: false });
+    draft.profiles.push({ name, server, codec: draft.encoder.codec, bitrate: Number(draft.encoder.bitrate), live: false });
     loadProfile(name);
     startRename();
   }
@@ -170,6 +173,16 @@
   const midiOptions = $derived([...new Set(midiPorts)]);
   const midiSpecial = ['auto', 'none', ''];
   const liveCount = $derived(draft.profiles.filter((p) => p.live).length);
+
+  function setCodec(codec) {
+    draft.encoder.codec = codec;
+    draft.encoder.bitrate = nearestBitrate(codec, Number(draft.encoder.bitrate));
+  }
+  // Opus needs Icecast; AAC and Opus are not for every player.
+  const opusOnShoutcast = $derived(draft.encoder.codec === 'opus' && draft.server.protocol !== 'icecast');
+  const formatHint = $derived(
+    opusOnShoutcast ? t('format.opusShoutcast') : draft.encoder.codec === 'mp3' ? '' : t(`format.${draft.encoder.codec}Hint`)
+  );
   const baseDir = $derived(configPath.replace(/[\\/][^\\/]*$/, ''));
 
   async function save() {
@@ -315,10 +328,19 @@
           </select>
         </div>
         <div class="field">
-          <label for="br">{t('server.format')}</label>
-          <select id="br" bind:value={draft.encoder.bitrate}>
-            {#each [128, 160, 192, 256, 320] as b (b)}<option value={b}>MP3 · {b} kbps</option>{/each}
-          </select>
+          <label for="codec">{t('server.format')}</label>
+          <div class="pair">
+            <select id="codec" value={draft.encoder.codec || 'mp3'} onchange={(e) => setCodec(e.currentTarget.value)}>
+              <option value="mp3">MP3</option>
+              <option value="aac">AAC</option>
+              <option value="opus" disabled={draft.server.protocol !== 'icecast'}>Opus</option>
+            </select>
+            <select id="br" aria-label={t('server.bitrate')} bind:value={draft.encoder.bitrate}>
+              {#each BITRATES[draft.encoder.codec] ?? BITRATES.mp3 as b (b)}<option value={b}>{b} kbps</option>{/each}
+            </select>
+          </div>
+          {#if formatHint}<span class="hint" class:warn={opusOnShoutcast}>{formatHint}</span>{/if}
+          {#if draft.encoder.codec === 'opus' && !opusOnShoutcast}<span class="hint">{t('format.opusTitles')}</span>{/if}
         </div>
         <div class="field"><label for="host">{t('server.address')}</label><input id="host" bind:value={draft.server.host} /></div>
         <div class="pair">
@@ -620,6 +642,7 @@
   .folder input { flex: 1 1 auto; min-width: 0; }
   .folder .btn { flex-shrink: 0; }
   .hint { font-size: 12px; color: var(--muted); user-select: text; overflow-wrap: anywhere; }
+  .hint.warn { color: var(--on-air-text); }
   .note { margin: 0; font-size: 13px; color: var(--muted); max-width: 640px; }
   footer { display: flex; align-items: center; gap: 12px; }
   .msg { font-size: 13px; color: var(--ok); user-select: text; }

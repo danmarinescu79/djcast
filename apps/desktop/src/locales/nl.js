@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'Stop de stream om te testen',
 
   'processing.intro':
-    'Maakt de stream net zo luid en helder als andere zenders in spelers die het volume niet aanpassen (Second Life, webspelers). Een trage automatische versterking (AGC) brengt de mix naar de doelluidheid; een limiter houdt pieken onder het plafond.',
+    'Maakt de stream net zo luid en helder als andere zenders in spelers die het volume niet aanpassen (sommige games, webspelers). Een trage automatische versterking (AGC) brengt de mix naar de doelluidheid; een limiter houdt pieken onder het plafond.',
   'processing.preset.off': 'Uit — de mix ongewijzigd versturen',
   'processing.preset.gentle': 'Zacht — -16 LUFS, zeer transparant',
   'processing.preset.radio': 'Radio — -13 LUFS, typische internetradio',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'Testbericht verstuurd — kijk in het kanaal.',
   'share.cueNote': 'Als opnemen aan staat, wordt naast de MP3 een .cue-bestand geschreven, zodat spelers elke track van de set tonen.',
   'tracklist.save': 'Opslaan…',
+
+  'server.bitrate': 'Bitrate',
+  'format.aacHint': 'AAC klinkt beter dan MP3 bij dezelfde bitrate. Gebruikt de encoder die in Windows zit. Sommige games en oudere spelers hebben MP3 nodig.',
+  'format.opusHint': 'Opus geeft het beste geluid per kbps en stuurt titels mee in de stream. Alleen Icecast; sommige games en oudere spelers hebben MP3 nodig.',
+  'format.opusShoutcast': 'Shoutcast-servers accepteren geen Opus — kies MP3 of AAC, of een Icecast-server.',
+  'format.opusTitles': 'Titels gaan mee in de stream: spelers tonen ze, maar de statuspagina van de server pas vanaf Icecast 2.5 (niet op Icecast-KH).',
 };

@@ -9,6 +9,7 @@ fn main() -> anyhow::Result<()> {
     let out = |name: &str, port: u16, bitrate: u32| Output {
         name: name.into(),
         server: ServerConfig { host: "127.0.0.1".into(), port, reconnect_delay_secs: 1, ..Default::default() },
+        codec: Default::default(),
         bitrate,
     };
     let mut cfg = Config::default();

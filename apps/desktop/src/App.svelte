@@ -8,7 +8,7 @@
   import Decks from './Decks.svelte';
   import Mini from './Mini.svelte';
   import Settings from './Settings.svelte';
-  import { clock } from './lib/format.js';
+  import { clock, formatLabel } from './lib/format.js';
   import { t, setLanguage } from './lib/i18n.svelte.js';
   import { getVersion } from '@tauri-apps/api/app';
   import { checkForUpdate, takeWhatsNew } from './lib/updates.js';
@@ -116,7 +116,7 @@
     return `${s.host}:${s.port}${where}`;
   });
   const format = $derived(
-    config ? `${config.active_profile} · ${PROTOCOLS[config.server.protocol] ?? config.server.protocol} · MP3 ${config.encoder.bitrate} kbps` : ''
+    config ? `${config.active_profile} · ${PROTOCOLS[config.server.protocol] ?? config.server.protocol} · ${formatLabel(config.encoder.codec, config.encoder.bitrate)}` : ''
   );
 </script>
 

@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'Test için yayını durdurun',
 
   'processing.intro':
-    "Sesi kendisi ayarlamayan oynatıcılarda (Second Life, web oynatıcılar) yayının diğer istasyonlar kadar yüksek ve net duyulmasını sağlar. Yavaş çalışan otomatik kazanç (AGC) mix'i hedef ses yüksekliğine getirir; limiter ise tepeleri tavanın altında tutar.",
+    "Sesi kendisi ayarlamayan oynatıcılarda (bazı oyunlar, web oynatıcılar) yayının diğer istasyonlar kadar yüksek ve net duyulmasını sağlar. Yavaş çalışan otomatik kazanç (AGC) mix'i hedef ses yüksekliğine getirir; limiter ise tepeleri tavanın altında tutar.",
   'processing.preset.off': 'Kapalı — mix olduğu gibi gönderilir',
   'processing.preset.gentle': 'Yumuşak — -16 LUFS, çok şeffaf',
   'processing.preset.radio': 'Radyo — -13 LUFS, tipik internet radyosu',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'Test mesajı gönderildi — kanalı kontrol edin.',
   'share.cueNote': 'Kayıt açıkken MP3 dosyasının yanına bir .cue dosyası yazılır; böylece oynatıcılar setteki her parçayı gösterir.',
   'tracklist.save': 'Kaydet…',
+
+  'server.bitrate': 'Bit hızı',
+  'format.aacHint': 'AAC aynı bit hızında MP3\'ten daha iyi ses verir. Windows\'un yerleşik kodlayıcısını kullanır. Bazı oyunlar ve eski oynatıcılar MP3 ister.',
+  'format.opusHint': 'Opus kbps başına en iyi sesi verir ve parça adlarını yayının içinde taşır. Yalnızca Icecast; bazı oyunlar ve eski oynatıcılar MP3 ister.',
+  'format.opusShoutcast': 'Shoutcast sunucuları Opus kabul etmez — MP3 veya AAC ya da bir Icecast sunucusu seçin.',
+  'format.opusTitles': 'Parça adları yayının içinde gider: oynatıcılar gösterir, ancak sunucunun durum sayfası yalnızca Icecast 2.5 ve sonrasında gösterir (Icecast-KH’de değil).',
 };

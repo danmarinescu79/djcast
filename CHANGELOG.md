@@ -4,6 +4,9 @@
 - Sharing tab: Discord webhook messages when you go live, on every track and when you stop
   (with the tracklist); editable templates; test message; webhook kept in the credential store
 - Tracklist: Save… as a text file; a .cue sheet next to each recording
+- Formats per server profile: MP3, AAC (96–192 kbps, the encoder built into Windows) and
+  Opus (Icecast only; titles travel inside the stream). Servers with the same format share
+  one encoder; recordings use the main server's format (.mp3, .aac or .opus)
 
 ## 0.2.0
 - Settings: General first, with start-up options (start with the computer, stay in the tray,

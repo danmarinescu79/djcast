@@ -35,9 +35,9 @@ const server = { protocol: 'icecast', host: 'my.powerstream.live', port: 8828, m
 const config = {
   audio: { device: 'Realtek Digital Output', mode: 'loopback', gain: 1 },
   processing: { preset: 'loud', target_lufs: -14, ceiling_db: -1, max_gain_db: 15, multiband: true },
-  encoder: { codec: 'mp3', bitrate: 192 }, server, record: { enabled: false, dir: 'recordings' },
+  encoder: { codec: params.get('codec') || 'mp3', bitrate: 192 }, server, record: { enabled: false, dir: 'recordings' },
   nowplaying: { source: 'auto', poll_interval_secs: 1, rekordbox_key: '', rekordbox_db: '', midi_input: 'auto', confirm_secs: 4, crossfader_assign: ['thru', 'thru', 'thru', 'thru'], output_dir: 'nowplaying' },
-  active_profile: 'Default', profiles: [{ name: 'Default', server, bitrate: 192, live: true }], language: params.get('lang') || 'auto',
+  active_profile: 'Default', profiles: [{ name: 'Default', server, codec: params.get('codec') || 'mp3', bitrate: 192, live: true }], language: params.get('lang') || 'auto',
 };
 Object.assign(props, { config, live: false, systemLocale: 'ro-RO', onSaved() {}, onClose() {} });
 const C = { mini: Mini, console: Console, decks: Decks, settings: Settings }[view];

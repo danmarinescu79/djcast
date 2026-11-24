@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'Arrêtez la diffusion pour tester',
 
   'processing.intro':
-    'Rend le stream aussi fort et clair que les autres stations dans les lecteurs qui n’ajustent pas le volume (Second Life, lecteurs web). Un contrôle automatique de gain lent amène le mix au niveau cible ; un limiter maintient les crêtes sous le plafond.',
+    'Rend le stream aussi fort et clair que les autres stations dans les lecteurs qui n’ajustent pas le volume (certains jeux, lecteurs web). Un contrôle automatique de gain lent amène le mix au niveau cible ; un limiter maintient les crêtes sous le plafond.',
   'processing.preset.off': 'Désactivé — envoie le mix tel quel',
   'processing.preset.gentle': 'Doux — -16 LUFS, très transparent',
   'processing.preset.radio': 'Radio — -13 LUFS, typique des radios internet',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'Message de test envoyé — vérifiez le salon.',
   'share.cueNote': 'Quand l’enregistrement est activé, un fichier .cue est écrit à côté du MP3, pour que les lecteurs affichent chaque morceau du set.',
   'tracklist.save': 'Enregistrer…',
+
+  'server.bitrate': 'Débit',
+  'format.aacHint': 'L\'AAC sonne mieux que le MP3 au même débit. Utilise l\'encodeur intégré à Windows. Certains jeux et anciens lecteurs exigent du MP3.',
+  'format.opusHint': 'Opus offre le meilleur son par kbps et transporte les titres dans le flux. Icecast uniquement ; certains jeux et anciens lecteurs exigent du MP3.',
+  'format.opusShoutcast': 'Les serveurs Shoutcast n\'acceptent pas Opus — choisissez MP3 ou AAC, ou un serveur Icecast.',
+  'format.opusTitles': 'Les titres voyagent dans le flux : les lecteurs les affichent, mais la page d\'état du serveur seulement à partir d\'Icecast 2.5 (pas sur Icecast-KH).',
 };

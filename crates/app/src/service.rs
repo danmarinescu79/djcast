@@ -40,6 +40,7 @@ pub struct StationStatus {
 pub struct OutputView {
     pub name: String,
     pub host: String,
+    pub codec: djcast_core::config::Codec,
     pub bitrate: u32,
     pub connected: bool,
     pub connected_secs: u64,
@@ -314,6 +315,7 @@ impl Station {
                 .map(|o| OutputView {
                     name: o.name.clone(),
                     host: o.host.clone(),
+                    codec: o.codec,
                     bitrate: o.bitrate,
                     connected: o.connected,
                     connected_secs: o.connected_since.map(|t| t.elapsed().as_secs()).unwrap_or(0),

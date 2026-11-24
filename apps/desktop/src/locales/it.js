@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'Ferma lo streaming per provare',
 
   'processing.intro':
-    'Rende lo stream forte e chiaro quanto le altre stazioni nei player che non regolano il volume (Second Life, player web). Un controllo automatico del guadagno lento porta il mix al loudness obiettivo; un limiter tiene i picchi sotto il tetto.',
+    'Rende lo stream forte e chiaro quanto le altre stazioni nei player che non regolano il volume (alcuni giochi, player web). Un controllo automatico del guadagno lento porta il mix al loudness obiettivo; un limiter tiene i picchi sotto il tetto.',
   'processing.preset.off': 'Disattivato — invia il mix così com’è',
   'processing.preset.gentle': 'Delicato — -16 LUFS, molto trasparente',
   'processing.preset.radio': 'Radio — -13 LUFS, tipico delle web radio',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'Messaggio di prova inviato — controlla il canale.',
   'share.cueNote': 'Con la registrazione attiva, accanto all’MP3 viene scritto un file .cue, così i player mostrano ogni traccia del set.',
   'tracklist.save': 'Salva…',
+
+  'server.bitrate': 'Bitrate',
+  'format.aacHint': 'AAC suona meglio di MP3 allo stesso bitrate. Usa l\'encoder integrato in Windows. Alcuni giochi e lettori più vecchi richiedono MP3.',
+  'format.opusHint': 'Opus offre il suono migliore per kbps e trasporta i titoli dentro lo stream. Solo Icecast; alcuni giochi e lettori più vecchi richiedono MP3.',
+  'format.opusShoutcast': 'I server Shoutcast non accettano Opus: scegli MP3 o AAC, oppure un server Icecast.',
+  'format.opusTitles': 'I titoli viaggiano dentro lo stream: i player li mostrano, ma la pagina di stato del server solo da Icecast 2.5 in poi (non su Icecast-KH).',
 };

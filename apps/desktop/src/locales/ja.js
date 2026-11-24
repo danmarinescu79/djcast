@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'テストするには配信を停止してください',
 
   'processing.intro':
-    '音量を自動調整しないプレーヤー（Second Life、Web プレーヤー）でも、他の局と同じくらい大きくクリアに聞こえるようにします。ゆっくり動く自動ゲイン（AGC）がミックスをターゲットのラウドネスに合わせ、リミッターがピークを上限以下に抑えます。',
+    '音量を自動調整しないプレーヤー（一部のゲーム、Web プレーヤー）でも、他の局と同じくらい大きくクリアに聞こえるようにします。ゆっくり動く自動ゲイン（AGC）がミックスをターゲットのラウドネスに合わせ、リミッターがピークを上限以下に抑えます。',
   'processing.preset.off': 'オフ — ミックスをそのまま送信',
   'processing.preset.gentle': 'ソフト — -16 LUFS、非常に自然',
   'processing.preset.radio': 'ラジオ — -13 LUFS、一般的なネットラジオ',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'テストメッセージを送信しました — チャンネルを確認してください。',
   'share.cueNote': '録音がオンのときは MP3 の横に .cue ファイルが書き込まれ、プレーヤーでセットの各トラックが表示されます。',
   'tracklist.save': '保存…',
+
+  'server.bitrate': 'ビットレート',
+  'format.aacHint': 'AAC は同じビットレートの MP3 より高音質です。Windows 内蔵のエンコーダーを使います。一部のゲームや古いプレーヤーには MP3 が必要です。',
+  'format.opusHint': 'Opus は kbps あたり最高の音質で、曲名をストリーム内で送ります。Icecast のみ。一部のゲームや古いプレーヤーには MP3 が必要です。',
+  'format.opusShoutcast': 'Shoutcast サーバーは Opus に対応していません。MP3 か AAC、または Icecast サーバーを選んでください。',
+  'format.opusTitles': '曲名はストリーム内で送られます。プレーヤーには表示されますが、サーバーのステータスページに表示されるのは Icecast 2.5 以降のみです（Icecast-KH では表示されません）。',
 };

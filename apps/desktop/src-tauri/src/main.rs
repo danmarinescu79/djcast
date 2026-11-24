@@ -93,6 +93,12 @@ fn validate_server(s: &djcast_core::config::ServerConfig) -> CmdResult<()> {
 fn validate_outputs(config: &AppConfig) -> CmdResult<()> {
     for o in config.live_outputs() {
         validate_server(&o.server).map_err(|e| format!("Profile \"{}\": {e}", o.name))?;
+        if o.server.protocol != djcast_core::config::Protocol::Icecast && !o.codec.works_with_shoutcast() {
+            return Err(format!(
+                "Profile \"{}\": Shoutcast servers do not take Opus; choose MP3 or AAC, or an Icecast server.",
+                o.name
+            ));
+        }
     }
     Ok(())
 }
@@ -151,10 +157,10 @@ async fn test_connection(config: AppConfig) -> CmdResult<String> {
     use djcast_core::icecast::{AudioInfo, SourceConnection};
     let s = config.stream.server.clone();
     validate_server(&s)?;
-    let bitrate = config.stream.encoder.bitrate;
+    let (codec, bitrate) = (config.stream.encoder.codec, config.stream.encoder.bitrate);
     blocking(move || {
         let info = AudioInfo { sample_rate: 44_100, bitrate, channels: 2 };
-        SourceConnection::connect(&s, "audio/mpeg", info).map_err(err)?;
+        SourceConnection::connect(&s, codec.content_type(), info).map_err(err)?;
         let where_ = match s.protocol {
             Protocol::Icecast => s.mount.clone(),
             Protocol::Shoutcast2 => format!(" (stream {})", s.stream_id),

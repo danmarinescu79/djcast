@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': '停止推流后才能测试',
 
   'processing.intro':
-    '在不自动调节音量的播放器（Second Life、网页播放器）中，让直播流与其他电台一样响亮、清晰。缓慢的自动增益控制（AGC）将混音调整到目标响度；限幅器将峰值保持在上限以下。',
+    '在不自动调节音量的播放器（部分游戏、网页播放器）中，让直播流与其他电台一样响亮、清晰。缓慢的自动增益控制（AGC）将混音调整到目标响度；限幅器将峰值保持在上限以下。',
   'processing.preset.off': '关 — 按原样发送混音',
   'processing.preset.gentle': '柔和 — -16 LUFS，非常透明',
   'processing.preset.radio': '电台 — -13 LUFS，典型的网络电台',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': '测试消息已发送——请查看频道。',
   'share.cueNote': '开启录音时，会在 MP3 旁写入一个 .cue 文件，让播放器显示该 set 中的每首曲目。',
   'tracklist.save': '保存…',
+
+  'server.bitrate': '码率',
+  'format.aacHint': '同样码率下 AAC 比 MP3 音质更好。使用 Windows 自带的编码器。部分游戏和旧播放器需要 MP3。',
+  'format.opusHint': 'Opus 每 kbps 音质最佳，并在流内传送曲名。仅限 Icecast；部分游戏和旧播放器需要 MP3。',
+  'format.opusShoutcast': 'Shoutcast 服务器不支持 Opus——请选择 MP3 或 AAC，或改用 Icecast 服务器。',
+  'format.opusTitles': '曲名在流内传送：播放器会显示，但服务器状态页仅在 Icecast 2.5 及更新版本中显示（Icecast-KH 不显示）。',
 };

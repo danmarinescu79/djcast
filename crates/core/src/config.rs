@@ -41,7 +41,7 @@ pub enum CaptureMode {
 #[serde(default)]
 pub struct EncoderConfig {
     pub codec: Codec,
-    /// Bitrate in kbps (MP3: 32..=320).
+    /// Bitrate in kbps (MP3: 32..=320, AAC: 96..=192, Opus: 6..=510).
     pub bitrate: u32,
 }
 
@@ -51,10 +51,31 @@ impl Default for EncoderConfig {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Codec {
+    #[default]
     Mp3,
+    /// AAC-LC in ADTS, from the operating system's encoder.
+    Aac,
+    /// Opus in Ogg.
+    Opus,
+}
+
+impl Codec {
+    /// MIME type of the stream.
+    pub fn content_type(self) -> &'static str {
+        match self {
+            Codec::Mp3 => "audio/mpeg",
+            Codec::Aac => "audio/aac",
+            Codec::Opus => "audio/ogg",
+        }
+    }
+
+    /// Shoutcast servers take MP3 and AAC only.
+    pub fn works_with_shoutcast(self) -> bool {
+        !matches!(self, Codec::Opus)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

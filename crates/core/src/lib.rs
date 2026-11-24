@@ -6,6 +6,7 @@
 //!                                                                  └─> local recording (optional)
 //! ```
 
+mod aac;
 pub mod audio;
 pub mod config;
 pub mod dsp;
@@ -13,6 +14,7 @@ pub mod encoder;
 pub mod engine;
 pub mod icecast;
 pub mod multiband;
+mod ogg_opus;
 
 pub use config::Config;
 pub use crossbeam_channel;

@@ -152,7 +152,7 @@ export default {
   'server.stopToTest': 'Oprește transmisia ca să testezi',
 
   'processing.intro':
-    'Face stream-ul la fel de tare și de clar ca alte stații în playerele care nu ajustează volumul (Second Life, playere web). Un AGC lent aduce mixul la loudness-ul țintă, iar un limiter ține vârfurile sub plafon.',
+    'Face stream-ul la fel de tare și de clar ca alte stații în playerele care nu ajustează volumul (unele jocuri, playere web). Un AGC lent aduce mixul la loudness-ul țintă, iar un limiter ține vârfurile sub plafon.',
   'processing.preset.off': 'Oprit — trimite mixul așa cum e',
   'processing.preset.gentle': 'Blând — -16 LUFS, foarte transparent',
   'processing.preset.radio': 'Radio — -13 LUFS, tipic pentru radio pe internet',
@@ -238,4 +238,10 @@ export default {
   'share.testSent': 'Mesajul de test a fost trimis — verifică pe canal.',
   'share.cueNote': 'Când înregistrarea e pornită, lângă MP3 se scrie un fișier .cue, ca playerele să arate fiecare piesă din set.',
   'tracklist.save': 'Salvează…',
+
+  'server.bitrate': 'Bitrate',
+  'format.aacHint': 'AAC sună mai bine decât MP3 la același bitrate. Folosește encoderul inclus în Windows. Unele jocuri și playere mai vechi au nevoie de MP3.',
+  'format.opusHint': 'Opus are cel mai bun sunet per kbps și trimite titlurile în interiorul stream-ului. Doar Icecast; unele jocuri și playere mai vechi au nevoie de MP3.',
+  'format.opusShoutcast': 'Serverele Shoutcast nu acceptă Opus — alege MP3 sau AAC, ori un server Icecast.',
+  'format.opusTitles': 'Titlurile merg în interiorul stream-ului: playerele le afișează, dar pagina de status a serverului doar pe Icecast 2.5 sau mai nou (nu pe Icecast-KH).',
 };

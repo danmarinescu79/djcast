@@ -75,9 +75,11 @@
 ## Stage 5: extensions
 - [x] Shoutcast v1 and v2 (legacy source protocol on port + 1, stream ID)
 - [ ] TLS (HTTPS Icecast)
-- [x] Stream to several servers at once: tick profiles as live; one encoder per bitrate,
+- [x] Stream to several servers at once: tick profiles as live; one encoder per format,
       independent connections, reconnects, titles and stats per server
-- [ ] Opus/Ogg (in-stream metadata), AAC
+- [x] Formats per server: MP3, AAC-LC (Windows Media Foundation, ADTS) and Opus in Ogg
+      (resampled to 48 kHz; titles as chained Ogg streams; Icecast only); one encoder per format
+- [ ] AAC on macOS (AudioToolbox)
 - [ ] Pro DJ Link (CDJs) — low priority: needs CDJ hardware to test
 - [ ] macOS (loopback, builds, code signing)
 - [x] Tracklist: copy / save as text, CUE sheet next to recordings; Discord webhook posts (go live, each track, stop with tracklist), editable templates
