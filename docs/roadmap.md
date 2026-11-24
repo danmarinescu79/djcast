@@ -36,8 +36,11 @@
 - [x] Slow AGC towards a LUFS target (gated, so pauses are not pumped up)
 - [x] Look-ahead stereo-linked peak limiter (5 ms, ceiling -1 dBFS) to protect the MP3 encoder
 - [x] Presets off / gentle (-16) / radio (-13) / loud (-10) / custom
-- [ ] Optional multiband compression for an even denser "radio" sound
-- [ ] Listening test in Second Life against other streams
+- [x] Listening test against other streams: sounds good with `radio`
+- [ ] Multiband processing for a denser, more consistent "radio" sound:
+      4-band Linkwitz-Riley crossover (phase-coherent), per-band compressor/AGC, band mix,
+      then the existing look-ahead limiter; presets with sensible defaults, optional
+      bass/presence EQ; CPU budget well below 5% of one core
 
 ## Capture sources (ongoing)
 - [x] WASAPI loopback of any output device (verified: DDJ-1000 with rekordbox on WASAPI)
