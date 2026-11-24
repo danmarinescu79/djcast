@@ -23,6 +23,15 @@
 - [ ] "On-air deck" logic (faders + crossfader, hysteresis, confirmation delay)
 - [ ] MIDI from the DDJ-1000 (if the port can be shared)
 
+## Capture sources (ongoing)
+- [x] WASAPI loopback of any output device (verified: DDJ-1000 with rekordbox on WASAPI)
+- [x] Input devices (line-in, virtual cables)
+- [ ] Guide + test: controller on ASIO, rekordbox "PC master out" to a spare output, loopback that
+- [ ] Process loopback: capture only rekordbox's audio (Windows 10 2004+ process loopback,
+      macOS 14.2+ Core Audio taps). On Windows this only works when rekordbox uses WASAPI.
+- [ ] Research: djcast virtual ASIO driver that forwards to the real device and taps the
+      master (like ASIO Link Pro). Big effort; check Steinberg ASIO SDK licensing first.
+
 ## Stage 4: GUI (Tauri)
 - [ ] Settings, server profiles, VU meter, Go Live button, status, track history
 - [ ] Tray icon, autostart
