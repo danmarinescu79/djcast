@@ -40,7 +40,7 @@
 - [x] Multiband processing: 4 bands (LR4 crossovers at 120 Hz / 600 Hz / 4 kHz with all-pass
       phase compensation, flat within 0.1 dB when idle), per-band stereo-linked compressors,
       between the AGC and the limiter; `multiband = true`, `meter --multiband`, band meters in the UI
-- [ ] Listening test of multiband on a real stream; tune band settings
+- [x] Listening test of multiband on a real stream (sounds good with the defaults)
 - [ ] Optional bass/presence EQ
 
 ## Capture sources (ongoing)
@@ -70,7 +70,7 @@
       plain-text passwords migrated automatically, removed with their profile
 - [x] Windows installers: `npx tauri build` → .msi (WiX) and setup .exe (NSIS)
 - [ ] Code signing to avoid the SmartScreen warning (e.g. SignPath Foundation for open source)
-- [ ] First public release v0.1.0 on GitHub with the installers attached
+- [x] First public release: v0.2.0 on GitHub with installers, updater signature and latest.json
 
 ## Stage 5: extensions
 - [x] Shoutcast v1 and v2 (legacy source protocol on port + 1, stream ID)
@@ -81,4 +81,5 @@
 - [ ] Pro DJ Link (CDJs) — low priority: needs CDJ hardware to test
 - [ ] macOS (loopback, builds, code signing)
 - [ ] Tracklist export (Mixcloud/SoundCloud), webhooks (Discord)
-- [ ] CI (GitHub Actions: build + test on Windows and macOS), release binaries
+- [x] CI (GitHub Actions, Windows) and automatic signed releases on `v*` tags, protected `release` environment
+- [ ] CI and release builds for macOS
