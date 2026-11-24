@@ -12,6 +12,7 @@ pub mod dsp;
 pub mod encoder;
 pub mod engine;
 pub mod icecast;
+pub mod multiband;
 
 pub use config::Config;
 pub use crossbeam_channel;

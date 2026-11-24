@@ -36,6 +36,9 @@ enum Cmd {
         /// Also run loudness processing and show the result: off, gentle, radio, loud.
         #[arg(short, long, default_value = "off")]
         preset: String,
+        /// Add 4-band compression (with a preset other than off).
+        #[arg(long)]
+        multiband: bool,
     },
     /// Write a default config file.
     Init {
@@ -104,7 +107,7 @@ fn main() -> Result<()> {
         .init();
     match Cli::parse().cmd {
         Cmd::Devices => devices(),
-        Cmd::Meter { device, input, seconds, preset } => meter_cmd(device, input, seconds, &preset),
+        Cmd::Meter { device, input, seconds, preset, multiband } => meter_cmd(device, input, seconds, &preset, multiband),
         Cmd::Init { path } => init(&path),
         Cmd::Stream { config, title } => stream(&config, title),
         Cmd::Meta { config, title } => icecast::update_metadata(&load(&config)?.stream.server, &title),
@@ -126,7 +129,7 @@ fn devices() -> Result<()> {
     Ok(())
 }
 
-fn meter_cmd(device: String, input: bool, seconds: Option<f64>, preset: &str) -> Result<()> {
+fn meter_cmd(device: String, input: bool, seconds: Option<f64>, preset: &str, multiband: bool) -> Result<()> {
     use djcast_core::config::{AudioConfig, CaptureMode};
     use djcast_core::dsp::{DspStats, ProcessingConfig, Processor};
     let cfg = AudioConfig {
@@ -138,6 +141,7 @@ fn meter_cmd(device: String, input: bool, seconds: Option<f64>, preset: &str) ->
         preset: toml::Value::String(preset.to_string())
             .try_into()
             .map_err(|_| anyhow::anyhow!("unknown preset '{preset}' (off, gentle, radio, loud)"))?,
+        multiband,
         ..Default::default()
     };
     let (tx, rx) = crossbeam_channel::bounded::<Vec<f32>>(200);
@@ -384,8 +388,12 @@ fn is_quit(line: &str) -> bool {
 /// "out -13.1 LUFS (in -21.4) AGC +7.7 LIM -1.2"
 fn loudness(p: &djcast_core::dsp::DspSnapshot) -> String {
     let lufs = |v: f32| if v.is_finite() { format!("{v:.1}") } else { "  -inf".into() };
+    let bands = p
+        .bands_db
+        .map(|b| format!(" MB {:.0}/{:.0}/{:.0}/{:.0}", b[0], b[1], b[2], b[3]))
+        .unwrap_or_default();
     format!(
-        "out {} LUFS (in {}) AGC {:+.1} LIM {:.1}",
+        "out {} LUFS (in {}) AGC {:+.1} LIM {:.1}{bands}",
         lufs(p.out_lufs),
         lufs(p.in_lufs),
         p.agc_gain_db,

@@ -35,11 +35,13 @@ pub struct ProcessingConfig {
     pub ceiling_db: f64,
     /// Maximum boost the AGC may apply, in dB.
     pub max_gain_db: f64,
+    /// 4-band compression between the AGC and the limiter (denser, more even sound).
+    pub multiband: bool,
 }
 
 impl Default for ProcessingConfig {
     fn default() -> Self {
-        Self { preset: Preset::Off, target_lufs: -14.0, ceiling_db: -1.0, max_gain_db: 15.0 }
+        Self { preset: Preset::Off, target_lufs: -14.0, ceiling_db: -1.0, max_gain_db: 15.0, multiband: false }
     }
 }
 
@@ -62,6 +64,8 @@ pub struct DspStats {
     out_lufs: AtomicU32,
     agc_gain_db: AtomicU32,
     limiter_db: AtomicU32,
+    band_db: [AtomicU32; 4],
+    multiband_on: std::sync::atomic::AtomicBool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -73,6 +77,8 @@ pub struct DspSnapshot {
     pub agc_gain_db: f32,
     /// Deepest limiter gain reduction in the last block (≤ 0 dB).
     pub limiter_db: f32,
+    /// Multiband gain reduction per band (low → high), dB ≤ 0; `None` when off.
+    pub bands_db: Option<[f32; 4]>,
 }
 
 impl DspStats {
@@ -83,6 +89,10 @@ impl DspStats {
             out_lufs: g(&self.out_lufs),
             agc_gain_db: g(&self.agc_gain_db),
             limiter_db: g(&self.limiter_db),
+            bands_db: self
+                .multiband_on
+                .load(Ordering::Relaxed)
+                .then(|| [0, 1, 2, 3].map(|i| g(&self.band_db[i]))),
         }
     }
     fn set(a: &AtomicU32, v: f32) {
@@ -92,6 +102,7 @@ impl DspStats {
 
 pub struct Processor {
     agc: Option<Agc>,
+    multiband: Option<crate::multiband::Multiband>,
     limiter: Option<Limiter>,
     in_meter: EbuR128,
     out_meter: EbuR128,
@@ -105,11 +116,16 @@ impl Processor {
         let target = cfg.target();
         Self {
             agc: target.map(|t| Agc::new(t, cfg.max_gain_db, sample_rate)),
+            multiband: (target.is_some() && cfg.multiband)
+                .then(|| crate::multiband::Multiband::new(sample_rate, crate::multiband::DEFAULT_BANDS)),
             limiter: target.map(|_| Limiter::new(ceiling, sample_rate)),
             in_meter: EbuR128::new(2, sample_rate, Mode::S).expect("valid meter params"),
             out_meter: EbuR128::new(2, sample_rate, Mode::S).expect("valid meter params"),
             ceiling,
-            stats,
+            stats: {
+                stats.multiband_on.store(target.is_some() && cfg.multiband, Ordering::Relaxed);
+                stats
+            },
         }
     }
 
@@ -120,6 +136,12 @@ impl Processor {
 
         if let Some(agc) = &mut self.agc {
             agc.process(buf, in_st);
+        }
+        if let Some(mb) = &mut self.multiband {
+            let gr = mb.process(buf);
+            for (a, v) in self.stats.band_db.iter().zip(gr) {
+                DspStats::set(a, v);
+            }
         }
         let mut lim_db = 0.0;
         if let Some(lim) = &mut self.limiter {
@@ -329,6 +351,20 @@ mod tests {
         audio.extend(vec![0.0; RATE as usize * 2]);
         let (_, snap) = run(&cfg, audio);
         assert_eq!(snap.agc_gain_db, 0.0);
+    }
+
+    #[test]
+    fn multiband_stays_under_the_ceiling_and_reports_bands() {
+        let cfg = ProcessingConfig { preset: Preset::Loud, multiband: true, ..Default::default() };
+        let mut audio = sine(0.1, 6.0);
+        let start = audio.len() / 2;
+        for s in &mut audio[start..start + 4800] {
+            *s *= 10.0;
+        }
+        let (out, snap) = run(&cfg, audio);
+        let peak = out.iter().fold(0f32, |m, s| m.max(s.abs()));
+        assert!(peak <= db_to_lin(-1.0) as f32 + 1e-6, "peak {peak}");
+        assert!(snap.bands_db.is_some());
     }
 
     #[test]

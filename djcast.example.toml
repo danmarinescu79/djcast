@@ -18,6 +18,8 @@ target_lufs = -14.0
 ceiling_db = -1.0
 # Maximum boost the AGC may apply
 max_gain_db = 15.0
+# 4-band compression between the AGC and the limiter: denser, more even sound
+multiband = false
 
 [encoder]
 codec = "mp3"

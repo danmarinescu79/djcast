@@ -55,6 +55,8 @@ pub struct LoudnessStatus {
     pub out_lufs: Option<f32>,
     pub agc_gain_db: f32,
     pub limiter_db: f32,
+    /// Multiband gain reduction per band (low → high), when multiband is on.
+    pub bands_db: Option<[f32; 4]>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -240,6 +242,7 @@ impl Station {
                 out_lufs: finite(dsp.out_lufs),
                 agc_gain_db: dsp.agc_gain_db,
                 limiter_db: dsp.limiter_db,
+                bands_db: dsp.bands_db,
             },
             track: np.track.as_ref().map(|t| TrackStatus {
                 artist: t.artist.clone(),

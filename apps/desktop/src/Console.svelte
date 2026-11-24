@@ -154,6 +154,18 @@
       <div><span class="muted">Mix in</span><span class="mono">{lufs(status.loudness.in_lufs)} LUFS</span></div>
       <div><span class="muted">AGC</span><span class="mono blue-text">{db(status.loudness.agc_gain_db)} dB</span></div>
       <div><span class="muted">Limiter</span><span class="mono warn-text">{db(status.loudness.limiter_db, false)} dB</span></div>
+      {#if status.loudness.bands_db}
+        <div class="mb">
+          <span class="muted">Bands</span>
+          <div class="mb-bars" aria-label="Multiband gain reduction: bass, low mids, high mids, highs">
+            {#each status.loudness.bands_db as gr, i (i)}
+              <div class="mb-col" title="{['Bass', 'Low mids', 'High mids', 'Highs'][i]}: {gr.toFixed(1)} dB">
+                <div class="mb-track"><div style:height="{Math.min(100, (-gr / 12) * 100)}%"></div></div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
       <div><span class="muted">MIDI mixer</span><span>{status.decks?.midi ? 'Connected' : '—'}</span></div>
     </div>
   </section>
@@ -237,5 +249,10 @@
   .rows { display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
   .rows > div { display: flex; justify-content: space-between; }
   .blue-text { color: var(--info); }
+  .mb { align-items: center; }
+  .mb-bars { display: flex; gap: 4px; height: 34px; }
+  .mb-col { width: 10px; display: flex; }
+  .mb-track { width: 10px; background: var(--line); border-radius: 2px; position: relative; overflow: hidden; }
+  .mb-track > div { position: absolute; top: 0; left: 0; right: 0; background: var(--warn); transition: height 60ms linear; }
   .warn-text { color: var(--warn); }
 </style>

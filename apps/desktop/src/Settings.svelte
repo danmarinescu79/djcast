@@ -333,6 +333,14 @@
           <label class="radio"><input type="radio" name="preset" value={id} bind:group={draft.processing.preset} /> {label}</label>
         {/each}
       </div>
+      <label class="check sep-top">
+        <input type="checkbox" bind:checked={draft.processing.multiband} disabled={draft.processing.preset === 'off'} />
+        Multiband compression — 4 bands (bass, low mids, high mids, highs) compressed separately
+      </label>
+      <p class="note">
+        Denser and more even, like FM and big internet stations: a heavy kick no longer pushes down the
+        vocals and hi-hats. Applies when a preset other than Off is chosen.
+      </p>
       {#if draft.processing.preset === 'custom'}
         <div class="grid">
           <div class="field">
@@ -447,6 +455,7 @@
     background: transparent; border: none; border-radius: 6px; color: var(--muted);
   }
   .eye:hover { color: var(--text); background: #22252c; }
+  .sep-top { border-top: 1px solid var(--line); padding-top: 18px; }
   .folder { display: flex; gap: 8px; }
   .folder input { flex: 1 1 auto; min-width: 0; }
   .folder .btn { flex-shrink: 0; }
