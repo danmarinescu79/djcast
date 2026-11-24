@@ -22,6 +22,18 @@ struct Cli {
 enum Cmd {
     /// List audio devices.
     Devices,
+    /// Show live input levels for a device without streaming (Ctrl+C to stop).
+    Meter {
+        /// Device name (substring). Empty = default for the mode.
+        #[arg(short, long, default_value = "")]
+        device: String,
+        /// Capture an input device instead of loopback of an output device.
+        #[arg(long)]
+        input: bool,
+        /// Stop after this many seconds and print the peak level.
+        #[arg(long)]
+        seconds: Option<f64>,
+    },
     /// Write a default config file.
     Init {
         #[arg(default_value = "djcast.toml")]
@@ -79,6 +91,7 @@ fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     match Cli::parse().cmd {
         Cmd::Devices => devices(),
+        Cmd::Meter { device, input, seconds } => meter_cmd(device, input, seconds),
         Cmd::Init { path } => init(&path),
         Cmd::Stream { config, title } => stream(&config, title),
         Cmd::Meta { config, title } => icecast::update_metadata(&load(&config)?.stream.server, &title),
@@ -97,6 +110,49 @@ fn devices() -> Result<()> {
         println!("{:<6} {:<6} {}", flag(d.is_input, d.is_default_input), flag(d.is_output, d.is_default_output), d.name);
     }
     println!("\n* = default. OUT devices can be captured with mode = \"loopback\", IN devices with mode = \"input\".");
+    Ok(())
+}
+
+fn meter_cmd(device: String, input: bool, seconds: Option<f64>) -> Result<()> {
+    use djcast_core::config::{AudioConfig, CaptureMode};
+    let cfg = AudioConfig {
+        device,
+        mode: if input { CaptureMode::Input } else { CaptureMode::Loopback },
+        gain: 1.0,
+    };
+    let (tx, rx) = crossbeam_channel::bounded(200);
+    let levels = Arc::new(audio::Levels::default());
+    let cap = audio::start_capture(&cfg, tx, levels.clone())?;
+    eprintln!("metering '{}' ({} Hz), Ctrl+C to stop", cap.device_name, cap.sample_rate);
+    // Drain audio so the capture never stalls; count buffers to detect "no data at all".
+    let buffers = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    {
+        let b = buffers.clone();
+        std::thread::spawn(move || {
+            for _ in rx {
+                b.fetch_add(1, Ordering::Relaxed);
+            }
+        });
+    }
+    let start = std::time::Instant::now();
+    let mut max_peak = 0f32;
+    loop {
+        std::thread::sleep(Duration::from_millis(100));
+        let (l, r) = levels.get();
+        max_peak = max_peak.max(l).max(r);
+        eprint!("\rL {} R {}  buffers {}\x1b[K", meter(l), meter(r), buffers.load(Ordering::Relaxed));
+        if seconds.is_some_and(|s| start.elapsed().as_secs_f64() >= s) {
+            break;
+        }
+    }
+    let db = 20.0 * max_peak.max(1e-6).log10();
+    eprintln!();
+    println!(
+        "peak {:.1} dBFS, {} buffers received{}",
+        db,
+        buffers.load(Ordering::Relaxed),
+        if max_peak < 1e-4 { " — SILENCE" } else { "" }
+    );
     Ok(())
 }
 

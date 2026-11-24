@@ -29,3 +29,13 @@ Principles:
 - `mode = "loopback"`: any output device (Windows/WASAPI). Captures exactly what rekordbox plays, no virtual cable needed.
 - `mode = "input"`: line-in, USB input from a mixer, a virtual cable.
 - macOS: loopback requires BlackHole or ScreenCaptureKit (not implemented yet).
+- Use `djcast meter -d <device> [--input]` to check levels before going live.
+
+### DJ controllers and ASIO (Windows)
+When rekordbox drives a controller's sound card through **ASIO**, the device is held
+exclusively: WASAPI loopback and the controller's inputs fail with
+`AUDCLNT_E_DEVICE_IN_USE`. No other app (BUTT included) can capture it. Options:
+1. Switch rekordbox's audio driver for the controller from ASIO to the WASAPI device
+   (e.g. "Line (PIONEER DJ DDJ-1000)") and loopback that device. Verified with a DDJ-1000.
+2. Send rekordbox's "PC master out" to an unused output (e.g. S/PDIF) and loopback it.
+3. Cable the controller's booth/master out into a line input (captures the hardware mic too).
