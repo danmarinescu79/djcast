@@ -20,7 +20,8 @@
 
   let { config, live, onSaved, onClose } = $props();
 
-  // Edit a deep copy; nothing changes until Save.
+  // Edit a deep copy taken when the screen opens; nothing changes until Save.
+  // svelte-ignore state_referenced_locally
   let draft = $state(structuredClone($state.snapshot(config)));
   let tab = $state('server');
   let devices = $state([]);
