@@ -92,10 +92,15 @@
     }
     renaming = false;
   }
+  let confirmingDelete = $state(false);
+
   function deleteProfile() {
     if (draft.profiles.length < 2) return;
-    draft.profiles = draft.profiles.filter((p) => p.name !== current);
+    const removed = current;
+    draft.profiles = draft.profiles.filter((p) => p.name !== removed);
     loadProfile(draft.profiles[0].name);
+    confirmingDelete = false;
+    message = { text: `Profile "${removed}" removed. Save to keep the change, or Close to undo.`, ok: true };
   }
 
   onMount(async () => {
@@ -211,7 +216,11 @@
       <div class="profile-bar">
         <h1>Server</h1>
         <span class="grow"></span>
-        {#if renaming}
+        {#if confirmingDelete}
+          <span class="confirm" role="alert">Delete profile "{current}"?</span>
+          <button type="button" class="btn big danger" onclick={deleteProfile}>Delete</button>
+          <button type="button" class="btn big" onclick={() => (confirmingDelete = false)}>Cancel</button>
+        {:else if renaming}
           <form class="rename" onsubmit={finishRename}>
             <label for="pname" class="sr">Profile name</label>
             <input id="pname" bind:value={renameValue} />
@@ -226,7 +235,12 @@
           </select>
           <button type="button" class="btn big" onclick={newProfile}>New</button>
           <button type="button" class="btn big" onclick={startRename}>Rename</button>
-          <button type="button" class="btn big" disabled={draft.profiles.length < 2} onclick={deleteProfile}>Delete</button>
+          <button
+            type="button"
+            class="btn big"
+            disabled={draft.profiles.length < 2}
+            title={draft.profiles.length < 2 ? 'The last profile cannot be deleted' : ''}
+            onclick={() => (confirmingDelete = true)}>Delete</button>
         {/if}
       </div>
       <div class="grid">
@@ -395,6 +409,9 @@
   .radios { display: flex; flex-direction: column; gap: 12px; }
   input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-color: var(--info); }
   .profile-bar { display: flex; align-items: center; gap: 10px; }
+  .confirm { font-size: 14px; color: var(--on-air-text); }
+  .danger { border-color: var(--on-air) !important; color: var(--on-air-text) !important; }
+  .danger:hover { background: var(--on-air-soft); }
   .profile-select { width: 220px !important; }
   .rename { display: flex; gap: 8px; align-items: center; }
   .rename input { width: 220px; }
