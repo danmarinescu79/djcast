@@ -293,10 +293,10 @@ fn stream(config: &Path, title: Option<String>) -> Result<()> {
         }
     };
 
-    eprintln!("streaming — type a title + Enter to update now playing, `q` + Enter (or Ctrl+C) to stop");
+    eprintln!("streaming — type a title + Enter to update now playing, `q` or `quit` + Enter (or Ctrl+C) to stop");
     while running.load(Ordering::SeqCst) {
         match rx.recv_timeout(Duration::from_millis(250)) {
-            Ok(Event::Line(line)) if line.trim().eq_ignore_ascii_case("q") => break,
+            Ok(Event::Line(line)) if is_quit(&line) => break,
             Ok(Event::Line(line)) if !line.trim().is_empty() => {
                 set_track(&Track { artist: String::new(), title: line.trim().into(), album: None, deck: None });
             }
@@ -311,6 +311,12 @@ fn stream(config: &Path, title: Option<String>) -> Result<()> {
         eprintln!("tracklist: {}", f.tracklist_path().display());
     }
     Ok(())
+}
+
+/// `q`, `qq`, `quit`, `exit` (any case) stop the stream instead of becoming a title.
+fn is_quit(line: &str) -> bool {
+    let l = line.trim().to_ascii_lowercase();
+    matches!(l.as_str(), "quit" | "exit") || (!l.is_empty() && l.chars().all(|c| c == 'q'))
 }
 
 fn print_status(engine: &Engine) {
