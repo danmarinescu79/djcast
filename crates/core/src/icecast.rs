@@ -16,6 +16,15 @@ use std::time::Duration;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
 const IO_TIMEOUT: Duration = Duration::from_secs(10);
+/// After "100 Continue", how long to wait for a final status before assuming success.
+const FINAL_STATUS_WAIT: Duration = Duration::from_secs(3);
+
+fn is_timeout(e: &anyhow::Error) -> bool {
+    e.chain().any(|c| {
+        c.downcast_ref::<std::io::Error>()
+            .is_some_and(|io| matches!(io.kind(), std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock))
+    })
+}
 pub const USER_AGENT: &str = concat!("djcast/", env!("CARGO_PKG_VERSION"));
 
 /// Audio parameters advertised in `ice-audio-info`.
@@ -83,9 +92,21 @@ impl SourceConnection {
         req.push_str("\r\n");
         stream.write_all(req.as_bytes()).context("sending source request")?;
 
-        let (code, reason) = read_status(&mut stream)?;
+        let (mut code, mut reason) = read_status(&mut stream)?;
+        if code == 100 {
+            // "100 Continue" only means "send the body". Some servers (e.g. Icecast 2.4.0-kh)
+            // send it before checking the password and then the real answer: 200 or 401.
+            // Others send nothing more on success, so a quiet wait counts as accepted.
+            stream.set_read_timeout(Some(FINAL_STATUS_WAIT))?;
+            match read_status(&mut stream) {
+                Ok((c, r)) => (code, reason) = (c, r),
+                Err(e) if is_timeout(&e) => code = 200,
+                Err(e) => return Err(e),
+            }
+            stream.set_read_timeout(Some(IO_TIMEOUT))?;
+        }
         match code {
-            100 | 200 => {
+            200 => {
                 log::info!("connected to {}:{}{} ({verb})", cfg.host, cfg.port, mount);
                 Ok(Self { stream })
             }
@@ -317,7 +338,8 @@ mod tests {
             let (sock, _) = listener.accept().unwrap();
             let mut reader = BufReader::new(sock.try_clone().unwrap());
             let head = read_head(&mut reader);
-            (&sock).write_all(b"HTTP/1.1 100 Continue\r\n\r\n").unwrap();
+            // Same answers as Icecast 2.4.0-kh15 with a correct password.
+            (&sock).write_all(b"HTTP/1.1 100 Continue\r\n\r\nHTTP/1.0 200 OK\r\n\r\n").unwrap();
             let mut data = [0u8; 4];
             reader.read_exact(&mut data).unwrap();
             (head, data)
@@ -330,6 +352,45 @@ mod tests {
         assert!(head.iter().any(|h| h == "Authorization: Basic c291cmNlOmhhY2ttZQ=="));
         assert!(head.iter().any(|h| h == "Content-Type: audio/mpeg"));
         assert_eq!(&data, b"abcd");
+    }
+
+    /// Icecast 2.4.0-kh15 with a wrong password: "100 Continue" first, then 401.
+    #[test]
+    fn continue_then_401_is_a_failed_login() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        thread::spawn(move || {
+            let (s, _) = listener.accept().unwrap();
+            let _ = read_head(&mut BufReader::new(s.try_clone().unwrap()));
+            (&s).write_all(
+                b"HTTP/1.1 100 Continue\r\n\r\nHTTP/1.0 401 Authentication Required\r\n\
+                  WWW-Authenticate: Basic realm=\"Icecast\"\r\n\r\nYou need to authenticate\r\n",
+            )
+            .unwrap();
+        });
+        let info = AudioInfo { sample_rate: 44_100, bitrate: 128, channels: 2 };
+        let err = SourceConnection::connect(&server_cfg(port), "audio/mpeg", info).err().expect("must fail");
+        assert!(err.to_string().contains("401"), "{err}");
+    }
+
+    /// A server that sends only "100 Continue" and then waits for audio is accepted.
+    #[test]
+    fn continue_without_final_status_is_accepted() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let srv = thread::spawn(move || {
+            let (s, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(s.try_clone().unwrap());
+            let _ = read_head(&mut reader);
+            (&s).write_all(b"HTTP/1.1 100 Continue\r\n\r\n").unwrap();
+            let mut data = [0u8; 2];
+            reader.read_exact(&mut data).unwrap();
+            data
+        });
+        let info = AudioInfo { sample_rate: 44_100, bitrate: 128, channels: 2 };
+        let mut conn = SourceConnection::connect(&server_cfg(port), "audio/mpeg", info).unwrap();
+        conn.send(b"ok").unwrap();
+        assert_eq!(&srv.join().unwrap(), b"ok");
     }
 
     #[test]
