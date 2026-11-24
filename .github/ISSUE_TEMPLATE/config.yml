@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and help
+    url: https://github.com/danmarinescu79/djcast/discussions
+    about: Setting up, which controller or server works, sharing your station — ask here.

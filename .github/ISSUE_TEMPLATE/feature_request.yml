@@ -1,0 +1,21 @@
+name: Feature request
+description: An idea for djcast
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: The situation and what is missing or awkward today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could djcast help?
+      description: Your idea of how it could work. Screenshots or examples from other apps are welcome.
+  - type: input
+    id: setup
+    attributes:
+      label: DJ setup (if it matters)
+      placeholder: Traktor, Numark Mixtrack, Shoutcast v2 …

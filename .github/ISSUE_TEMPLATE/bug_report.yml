@@ -1,0 +1,81 @@
+name: Bug report
+description: Something doesn't work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time! The more of this you fill in, the faster it can be fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Settings → Server: Icecast, AAC 128 kbps
+        2. Go live
+        3. …
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Streaming / server connection
+        - Now playing / rekordbox
+        - Controller / MIDI
+        - Sound processing
+        - Recording / tracklist
+        - Sharing (Discord)
+        - Interface
+        - Install / update
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: djcast version
+      description: Settings → About
+      placeholder: "0.3.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: DJ setup
+      description: DJ software and version, controller, audio driver (ASIO / WASAPI).
+      placeholder: rekordbox 7.2, DDJ-1000 on ASIO, PC MASTER OUT → Realtek
+  - type: dropdown
+    id: server
+    attributes:
+      label: Server
+      options:
+        - Icecast
+        - Shoutcast v2
+        - Shoutcast v1
+        - Not related to the server
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        Settings → About → Logs folder → `djcast.log`. Paste the lines from around the problem,
+        or drag the file here. The log contains no passwords, but check it for anything you
+        would rather not share (server addresses, track names).
+      render: text
