@@ -1,5 +1,6 @@
 //! Shared application layer used by the CLI and the desktop app.
 
+pub mod secrets;
 pub mod service;
 
 use anyhow::{Context, Result};
@@ -18,6 +19,9 @@ pub struct AppConfig {
     /// Name of the profile copied into `[server]` / `[encoder]` when going live.
     pub active_profile: String,
     pub profiles: Vec<ServerProfile>,
+    /// The file this was loaded from still contains passwords in plain text.
+    #[serde(skip)]
+    pub plaintext_passwords_on_disk: bool,
 }
 
 /// A saved server destination.
@@ -40,8 +44,27 @@ impl AppConfig {
         let text = std::fs::read_to_string(path)
             .with_context(|| format!("reading {} (create one with `djcast init`)", path.display()))?;
         let mut cfg: Self = toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+        cfg.plaintext_passwords_on_disk = !cfg.stream.server.password.is_empty()
+            || cfg.profiles.iter().any(|p| !p.server.password.is_empty());
+        // Passwords not in the file come from the OS credential store.
+        for p in &mut cfg.profiles {
+            if p.server.password.is_empty()
+                && let Some(pw) = secrets::get(&p.name)
+            {
+                p.server.password = pw;
+            }
+        }
         cfg.normalize();
         Ok(cfg)
+    }
+
+    /// Remove stored passwords of profiles that no longer exist (deleted or renamed).
+    pub fn forget_removed_profiles(old: &AppConfig, new: &AppConfig) {
+        for p in &old.profiles {
+            if !new.profiles.iter().any(|n| n.name == p.name) {
+                secrets::delete(&p.name);
+            }
+        }
     }
 
     /// Make sure there is at least one profile and the active one exists, then copy the
@@ -74,11 +97,33 @@ impl AppConfig {
         }
     }
 
+    /// Write the config. Where available, passwords go to the OS credential store and
+    /// are left out of the file; if storing one fails it stays in the file (with a warning).
     pub fn save(&self, path: &Path) -> Result<()> {
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)?;
         }
-        std::fs::write(path, toml::to_string_pretty(self)?).with_context(|| format!("writing {}", path.display()))
+        let mut out = self.clone();
+        if secrets::available() {
+            for p in &mut out.profiles {
+                if p.server.password.is_empty() {
+                    secrets::delete(&p.name);
+                    continue;
+                }
+                match secrets::set(&p.name, &p.server.password) {
+                    Ok(()) => p.server.password.clear(),
+                    Err(e) => log::warn!(
+                        "could not store the password of \"{}\" in the credential store ({e}); keeping it in the config file",
+                        p.name
+                    ),
+                }
+            }
+            // `[server]` mirrors the active profile.
+            if let Some(active) = out.profiles.iter().find(|p| p.name == out.active_profile) {
+                out.stream.server.password = active.server.password.clone();
+            }
+        }
+        std::fs::write(path, toml::to_string_pretty(&out)?).with_context(|| format!("writing {}", path.display()))
     }
 }
 

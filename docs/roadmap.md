@@ -59,7 +59,8 @@
       Browse… / Open
 - [ ] Decks view (mock-up B) and switching between views
 - [ ] Mini window (mock-up C), tray icon, autostart
-- [ ] Password in the OS credential store (Windows Credential Manager / macOS Keychain)
+- [x] Passwords in the OS credential store (Windows Credential Manager / macOS Keychain),
+      plain-text passwords migrated automatically, removed with their profile
 - [ ] Installer (.msi / NSIS), app signing
 
 ## Stage 5: extensions

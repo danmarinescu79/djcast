@@ -55,7 +55,9 @@ async fn save_config(app: State<'_, AppState>, mut config: AppConfig) -> CmdResu
     validate_server(&config.stream.server).map_err(|e| format!("Profile \"{}\": {e}", config.active_profile))?;
     let (station, path) = (app.station.clone(), app.config_path.clone());
     blocking(move || {
+        let old = station.config();
         config.save(&path).map_err(err)?;
+        AppConfig::forget_removed_profiles(&old, &config);
         station.set_config(config.clone());
         Ok(config)
     })
@@ -164,6 +166,13 @@ fn main() {
         AppConfig::default()
     });
     log::info!("config: {}", config_path.display());
+    // Move plain-text passwords from the file into the OS credential store.
+    if config.plaintext_passwords_on_disk && djcast_app::secrets::available() {
+        match config.save(&config_path) {
+            Ok(()) => log::info!("server passwords moved to the system credential store"),
+            Err(e) => log::warn!("could not move passwords to the credential store: {e:#}"),
+        }
+    }
     // Relative paths in the config (OBS files, recordings) live next to the config file.
     if let Some(dir) = config_path.parent() {
         let _ = std::fs::create_dir_all(dir);

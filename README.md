@@ -13,6 +13,8 @@ Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
 - Now-playing metadata, re-sent automatically after reconnects
 - Automatic reconnect, silence padding so the server never drops you
 - Optional local recording of your set
+- Desktop app (Tauri): console and decks views, mini window, tray icon, server profiles
+  (Icecast, Shoutcast v1/v2), passwords kept in Windows Credential Manager / macOS Keychain
 - Now playing from the rekordbox 6/7 play history (read-only, decrypted in memory)
 - `nowplaying.txt` / `artist.txt` / `title.txt` for OBS, plus a timestamped tracklist per session
 
