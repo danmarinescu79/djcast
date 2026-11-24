@@ -937,7 +937,7 @@ dependencies = [
 
 [[package]]
 name = "djcast"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -953,7 +953,7 @@ dependencies = [
 
 [[package]]
 name = "djcast-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "dirs",
@@ -967,7 +967,7 @@ dependencies = [
 
 [[package]]
 name = "djcast-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -982,7 +982,7 @@ dependencies = [
 
 [[package]]
 name = "djcast-desktop"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "djcast-app",
@@ -998,7 +998,7 @@ dependencies = [
 
 [[package]]
 name = "djcast-nowplaying"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aes",
  "anyhow",
