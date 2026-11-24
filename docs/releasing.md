@@ -11,9 +11,29 @@ key and checked against the public key in `apps/desktop/src-tauri/tauri.conf.jso
   lost, already-installed apps can no longer verify updates and users must reinstall by hand.
 - It was generated with `npx tauri signer generate --ci -w %USERPROFILE%\.tauri\djcast-updater.key`
   (no password).
-- For CI, store its content as the repository secret `TAURI_SIGNING_PRIVATE_KEY`.
+- For CI it is stored as the secret `TAURI_SIGNING_PRIVATE_KEY` of the protected **`release`
+  environment** (not a repository secret): only jobs started by a `v*` tag can request it, and
+  each such job waits for the owner's approval.
 
-## Building a release (Windows)
+## Automatic release (recommended)
+
+1. Bump the version in `Cargo.toml` (`[workspace.package]`), `apps/desktop/src-tauri/tauri.conf.json`
+   and `apps/desktop/package.json`; add a `## <version>` section to `CHANGELOG.md`.
+2. Commit, then tag and push: `git tag -s v<version> -m "djcast <version>"` and `git push origin v<version>`.
+3. GitHub Actions → *Release* → the job waits for approval of the `release` environment:
+   **Review deployments → Approve**.
+4. The workflow checks that the tag matches the app version, builds the signed installers, writes
+   `notes.md` and `latest.json` from the CHANGELOG section (`.github/scripts/release_files.py`) and
+   publishes the release. Installed apps see the update on their next check.
+
+## Repository protections
+- `CODEOWNERS`: changes to `.github/`, `tauri.conf.json` and the capabilities need the owner's review.
+- Ruleset *Protect main*: changes through pull requests with code-owner approval; no force pushes
+  or deletion (repository admins can bypass).
+- Ruleset *Protect release tags*: only admins create, move or delete `v*` tags.
+- Pull requests from forks never receive secrets; the CI workflow uses none.
+
+## Manual release (Windows)
 
 1. Bump the version in `Cargo.toml` (`[workspace.package]`), `apps/desktop/src-tauri/tauri.conf.json`
    and `apps/desktop/package.json`; describe the changes in `CHANGELOG.md`.

@@ -1,0 +1,4 @@
+# Changes to workflows, release scripts and the updater configuration need the owner's review.
+/.github/                                 @danmarinescu79
+/apps/desktop/src-tauri/tauri.conf.json   @danmarinescu79
+/apps/desktop/src-tauri/capabilities/     @danmarinescu79
