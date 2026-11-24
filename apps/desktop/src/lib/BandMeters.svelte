@@ -2,21 +2,22 @@
   // Multiband gain reduction: bars fill downward (like broadcast processors), 12 dB full scale.
   // `part`: 'both' (bars with labels under them), or 'bars' / 'labels' alone so a parent
   // grid can line the bars up with its meters and the labels with its text row.
+  import { t } from './i18n.svelte.js';
   let { bands, part = 'both' } = $props();
-  const NAMES = ['Bass', 'Low mids', 'High mids', 'Highs'];
-  const SHORT = ['B', 'LM', 'HM', 'H'];
+  const NAMES = ['band.bass', 'band.lowMids', 'band.highMids', 'band.highs'];
+  const SHORT = ['band.bassShort', 'band.lowMidsShort', 'band.highMidsShort', 'band.highsShort'];
 </script>
 
 {#if part === 'labels'}
   <div class="row labels" aria-hidden="true">
-    {#each SHORT as s (s)}<span class="mb-label">{s}</span>{/each}
+    {#each SHORT as s (s)}<span class="mb-label">{t(s)}</span>{/each}
   </div>
 {:else}
-  <div class="row" class:stretch={part === 'bars'} aria-label="Multiband gain reduction: bass, low mids, high mids, highs">
+  <div class="row" class:stretch={part === 'bars'} aria-label={t('band.aria')}>
     {#each bands as gr, i (i)}
-      <div class="mb-col" title="{NAMES[i]}: {gr.toFixed(1)} dB of compression (bar fills downward, 12 dB max)">
+      <div class="mb-col" title={t('band.tooltip', { band: t(NAMES[i]), db: gr.toFixed(1) })}>
         <div class="mb-track"><div style:height="{Math.min(100, (-gr / 12) * 100)}%"></div></div>
-        {#if part === 'both'}<span class="mb-label">{SHORT[i]}</span>{/if}
+        {#if part === 'both'}<span class="mb-label">{t(SHORT[i])}</span>{/if}
       </div>
     {/each}
   </div>

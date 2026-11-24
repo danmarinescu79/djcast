@@ -1,3 +1,5 @@
+import { t } from './i18n.svelte.js';
+
 /** "mm:ss" or "-mm:ss" → seconds (null if absent). */
 function secs(t) {
   const m = /^-?(\d{1,3}):(\d{2})$/.exec((t || '').trim());
@@ -23,7 +25,8 @@ export function deckSlots(status) {
       title: d?.title || '',
       artist: d?.artist || '',
       elapsed: d?.elapsed || '--:--',
-      state: d ? (d.on_air ? 'ON AIR' : d.playing ? 'PLAYING' : 'STOPPED') : 'EMPTY',
+      // 'onair' / 'playing' / 'stopped' / 'empty', shown with the deck.* translation keys
+      stateKey: d ? (d.on_air ? 'onair' : d.playing ? 'playing' : 'stopped') : 'empty',
       onAir: !!d?.on_air,
       playing: !!d?.playing,
       hidden: d ? !d.visible : false,
@@ -34,8 +37,8 @@ export function deckSlots(status) {
 }
 
 export function sourceLabel(status) {
-  if (status.nowplaying_source === 'none') return 'manual titles';
-  if (status.decks?.using_fallback) return 'rekordbox history';
-  if (status.decks) return 'live detection';
+  if (status.nowplaying_source === 'none') return t('source.manual');
+  if (status.decks?.using_fallback) return t('source.history');
+  if (status.decks) return t('source.live');
   return status.nowplaying_source;
 }

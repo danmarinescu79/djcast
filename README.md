@@ -54,6 +54,15 @@ While streaming:
 
 Example configuration: [djcast.example.toml](djcast.example.toml).
 
+## Translations
+The desktop app is available in English and Romanian; the language follows the system or can be
+chosen in Settings → General. To add a language:
+1. copy `apps/desktop/src/locales/en.js` to `<code>.js` (e.g. `de.js`) and translate the values,
+   keeping the `{placeholders}`;
+2. register it in `apps/desktop/src/lib/i18n.svelte.js` (`LANGUAGES` and `DICTS`);
+3. add the tray menu texts in `apps/desktop/src-tauri/src/tray.rs`;
+4. run `npm run check-i18n` in `apps/desktop` — it reports missing keys and placeholder mismatches.
+
 ## Documentation
 - [Now-playing research](docs/research-now-playing.md)
 - [rekordbox database key](docs/rekordbox-key.md)

@@ -1,6 +1,7 @@
 <script>
   import { clock, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
+  import { t } from './lib/i18n.svelte.js';
 
   let { status, busy, onToggleLive, onExpand } = $props();
 </script>
@@ -9,18 +10,18 @@
   <div class="top">
     <button type="button" class="live" class:on={status.live} disabled={busy} onclick={onToggleLive}>
       <span class="dot"></span>
-      <span>{status.live ? (status.connected ? `LIVE ${clock(status.connected_secs)}` : 'CONNECTING') : 'GO LIVE'}</span>
+      <span>{status.live ? (status.connected ? t('live.liveTime', { time: clock(status.connected_secs) }) : t('live.connecting')) : t('live.goLive')}</span>
     </button>
     <span class="muted small">{presetLabel(status.loudness)}</span>
     <span class="grow"></span>
-    <button type="button" class="icon" aria-label="Open full window" title="Full window" onclick={onExpand}>
+    <button type="button" class="icon" aria-label={t('mini.expand')} title={t('mini.expand')} onclick={onExpand}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
     </button>
   </div>
 
   <div class="now">
-    <span class="deck">{status.track?.deck ? `DECK ${status.track.deck} · ON AIR` : 'NOW PLAYING'}</span>
-    <span class="title">{status.track?.title || 'Waiting for a track…'}</span>
+    <span class="deck">{status.track?.deck ? t('mini.deckOnAir', { n: status.track.deck }) : t('now.title')}</span>
+    <span class="title">{status.track?.title || t('now.waiting')}</span>
     <span class="artist">{status.track?.artist || ''}</span>
   </div>
 

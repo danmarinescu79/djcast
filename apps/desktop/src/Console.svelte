@@ -1,7 +1,8 @@
 <script>
   import { clock, bytes, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
-  import { deckSlots } from './lib/decks.js';
+  import { deckSlots, sourceLabel as srcLabel } from './lib/decks.js';
+  import { t } from './lib/i18n.svelte.js';
 
   let { status, busy, actionError, onToggleLive, onSendTitle } = $props();
 
@@ -10,20 +11,12 @@
 
   // Always show four deck slots, filled from the live source when it knows them.
   const decks = $derived(
-    deckSlots(status).map((d) => ({ ...d, title: d.title || '—', state: d.state.toLowerCase().replace('on air', 'ON AIR') }))
+    deckSlots(status).map((d) => ({ ...d, title: d.title || '—' }))
   );
 
-  const sourceLabel = $derived(
-    status.nowplaying_source === 'none'
-      ? 'manual titles'
-      : status.decks?.using_fallback
-        ? 'rekordbox history'
-        : status.decks
-          ? 'live detection'
-          : status.nowplaying_source
-  );
+  const sourceLabel = $derived(srcLabel(status));
 
-  const liveLabel = $derived(!status.live ? 'GO LIVE' : status.connected ? 'ON AIR' : 'CONNECTING');
+  const liveLabel = $derived(!status.live ? t('live.goLive') : status.connected ? t('live.onAir') : t('live.connecting'));
 
   async function copyTracklist() {
     const text = status.tracklist.map((t) => `${t.time} ${t.title}`).join('\n');
@@ -51,53 +44,53 @@
     >
       <span class="live-label">{liveLabel}</span>
       <span class="live-time mono">{status.live ? clock(status.connected_secs) : '00:00:00'}</span>
-      <span class="live-hint">{status.live ? 'Click to stop' : 'Click to start streaming'}</span>
+      <span class="live-hint">{status.live ? t('live.clickStop') : t('live.clickStart')}</span>
     </button>
     {#if actionError}<p class="error" role="alert">{actionError}</p>{/if}
     {#if status.error}<p class="error" role="status">{status.error}</p>{/if}
 
     <div class="panel stats">
-      <div><div class="k">Sent</div><div class="v">{bytes(status.bytes_sent)}</div></div>
-      <div><div class="k">Status</div><div class="v" class:ok={status.connected}>{status.connected ? 'Connected' : status.live ? 'Retrying' : 'Offline'}</div></div>
-      <div><div class="k">Recording</div><div class="v" class:ok={status.recording}>{status.recording ? 'On' : 'Off'}</div></div>
-      <div><div class="k">Preset</div><div class="v preset">{presetLabel(status.loudness)}</div></div>
+      <div><div class="k">{t('stats.sent')}</div><div class="v">{bytes(status.bytes_sent)}</div></div>
+      <div><div class="k">{t('stats.status')}</div><div class="v" class:ok={status.connected}>{status.connected ? t('stats.connected') : status.live ? t('stats.retrying') : t('stats.offline')}</div></div>
+      <div><div class="k">{t('stats.recording')}</div><div class="v" class:ok={status.recording}>{status.recording ? t('common.on') : t('common.off')}</div></div>
+      <div><div class="k">{t('stats.preset')}</div><div class="v preset">{presetLabel(status.loudness)}</div></div>
     </div>
 
     {#if status.outputs.length > 0}
       <div class="panel servers">
-        <div class="k">Servers</div>
+        <div class="k">{t('stats.servers')}</div>
         {#each status.outputs as o (o.name)}
           <div class="srv" title={o.error || o.host}>
             <span class="led" class:up={o.connected} class:down={!o.connected && o.error}></span>
             <span class="srv-name">{o.name}</span>
-            <span class="mono muted small">{o.connected ? bytes(o.bytes_sent) : o.error ? 'retrying' : 'connecting'}</span>
+            <span class="mono muted small">{o.connected ? bytes(o.bytes_sent) : o.error ? t('stats.retryingShort') : t('stats.connectingShort')}</span>
           </div>
         {/each}
       </div>
     {/if}
 
     <div class="panel input">
-      <div class="k">Input</div>
-      <div>{status.device || 'System default'}</div>
-      <div class="k">Loopback capture</div>
+      <div class="k">{t('stats.input')}</div>
+      <div>{status.device || t('common.systemDefault')}</div>
+      <div class="k">{t('stats.loopback')}</div>
     </div>
   </section>
 
   <section class="col center">
     <div class="panel now">
       <div class="badges">
-        <span class="label">Now playing</span>
-        {#if status.track?.deck}<span class="badge red">Deck {status.track.deck} · on air</span>{/if}
+        <span class="label">{t('now.title')}</span>
+        {#if status.track?.deck}<span class="badge red">{t('now.deckOnAir', { n: status.track.deck })}</span>{/if}
         <span class="badge blue">{sourceLabel}</span>
       </div>
-      <div class="title">{status.track?.title || 'Waiting for a track…'}</div>
+      <div class="title">{status.track?.title || t('now.waiting')}</div>
       <div class="artist">{status.track?.artist || ''}</div>
       {#if status.nowplaying_error && !status.decks?.using_fallback}
         <div class="hint">{status.nowplaying_error}</div>
       {/if}
       <form class="manual" onsubmit={submitTitle}>
-        <label for="manual-title" class="sr">Send a title manually</label>
-        <input id="manual-title" placeholder="Type a title and press Enter to send it now" bind:value={manualTitle} />
+        <label for="manual-title" class="sr">{t('now.manualLabel')}</label>
+        <input id="manual-title" placeholder={t('now.manualPlaceholder')} bind:value={manualTitle} />
       </form>
     </div>
 
@@ -105,8 +98,8 @@
       {#each decks as d (d.n)}
         <div class="panel deck" class:onair={d.onAir}>
           <div class="deck-head">
-            <span>DECK {d.n}</span>
-            <span class:red-text={d.onAir} class:ok={!d.onAir && d.playing}>{d.state}</span>
+            <span>{t('deck.n', { n: d.n }).toUpperCase()}</span>
+            <span class:red-text={d.onAir} class:ok={!d.onAir && d.playing}>{t(`deck.${d.stateKey}`)}</span>
           </div>
           <div class="deck-title">{d.title}</div>
           <div class="fader"><div style:width="{d.fader}%" class:hot={d.onAir}></div></div>
@@ -121,42 +114,42 @@
 
     <div class="panel tracklist">
       <div class="tl-head">
-        <span class="label">Tracklist · this session</span>
+        <span class="label">{t('tracklist.title')}</span>
         <button type="button" class="link" disabled={!status.tracklist.length} onclick={copyTracklist}>
-          {copied ? 'Copied' : 'Copy for Mixcloud'}
+          {copied ? t('tracklist.copied') : t('tracklist.copy')}
         </button>
       </div>
       <div class="tl-rows">
         {#each status.tracklist as t, i (i)}
           <div class="tl-row"><span class="mono muted">{t.time}</span><span class="ellipsis">{t.title}</span></div>
         {:else}
-          <div class="muted small">Tracks appear here once you are live.</div>
+          <div class="muted small">{t('tracklist.empty')}</div>
         {/each}
       </div>
     </div>
   </section>
 
   <section class="panel col out">
-    <span class="label">Output</span>
+    <span class="label">{t('out.title')}</span>
     <div class="meters">
       <div class="meter"><div class="track"><div class="fill" style:height="{meterFraction(status.level_l) * 100}%"></div></div><span>L</span></div>
       <div class="meter"><div class="track"><div class="fill" style:height="{meterFraction(status.level_r) * 100}%"></div></div><span>R</span></div>
       <div class="lufs">
         <span class="big mono">{lufs(status.loudness.out_lufs)}</span>
-        <span class="muted small">LUFS{status.loudness.target_lufs != null ? ` · target ${status.loudness.target_lufs}` : ''}</span>
+        <span class="muted small">LUFS{status.loudness.target_lufs != null ? ` · ${t('out.target', { v: status.loudness.target_lufs })}` : ''}</span>
       </div>
     </div>
     <div class="rows">
-      <div><span class="muted">Mix in</span><span class="mono">{lufs(status.loudness.in_lufs)} LUFS</span></div>
+      <div><span class="muted">{t('out.mixIn')}</span><span class="mono">{lufs(status.loudness.in_lufs)} LUFS</span></div>
       <div><span class="muted">AGC</span><span class="mono blue-text">{db(status.loudness.agc_gain_db)} dB</span></div>
-      <div><span class="muted">Limiter</span><span class="mono warn-text">{db(status.loudness.limiter_db, false)} dB</span></div>
+      <div><span class="muted">{t('out.limiter')}</span><span class="mono warn-text">{db(status.loudness.limiter_db, false)} dB</span></div>
       {#if status.loudness.bands_db}
         <div class="mb">
-          <span class="muted">Band reduction</span>
+          <span class="muted">{t('out.bands')}</span>
           <BandMeters bands={status.loudness.bands_db} />
         </div>
       {/if}
-      <div><span class="muted">MIDI mixer</span><span>{status.decks?.midi ? 'Connected' : '—'}</span></div>
+      <div><span class="muted">{t('out.midi')}</span><span>{status.decks?.midi ? t('stats.connected') : '—'}</span></div>
     </div>
   </section>
 </main>

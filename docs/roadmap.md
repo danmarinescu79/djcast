@@ -60,6 +60,8 @@
       Browse… / Open
 - [x] Decks view (mock-up B) and switching between views
 - [x] Mini window (mock-up C), tray icon (Go Live/Stop, tooltip), hide to tray while live
+- [x] Internationalization: English + Romanian UI and tray, language follows the system or
+      Settings → General; `npm run check-i18n` validates keys and placeholders
 - [ ] Start with Windows (optional, from settings)
 - [x] Passwords in the OS credential store (Windows Credential Manager / macOS Keychain),
       plain-text passwords migrated automatically, removed with their profile

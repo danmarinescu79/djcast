@@ -141,6 +141,12 @@ fn open_folder(path: String) -> CmdResult<()> {
     Ok(())
 }
 
+/// The operating system's language, e.g. "ro-RO" (for the "Automatic" language setting).
+#[tauri::command]
+fn system_locale() -> String {
+    sys_locale::get_locale().unwrap_or_else(|| "en".into())
+}
+
 #[tauri::command]
 async fn list_midi_inputs() -> CmdResult<Vec<String>> {
     blocking(|| Ok(djcast_nowplaying::live::midi_inputs())).await
@@ -215,7 +221,7 @@ fn main() {
                 loop {
                     let status = station.status();
                     if tick.is_multiple_of(STATUS_HZ) {
-                        tray.update(&status);
+                        tray.update(&status, &station.config().language);
                     }
                     let _ = handle.emit("status", status);
                     tick += 1;
@@ -234,6 +240,7 @@ fn main() {
             status,
             list_devices,
             list_midi_inputs,
+            system_locale,
             open_folder,
             test_connection
         ])

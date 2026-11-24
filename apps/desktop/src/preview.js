@@ -2,9 +2,11 @@
 // Open /preview.html?view=mini (or console / decks) on the Vite dev server.
 import { mount } from 'svelte';
 import './app.css';
+import { setLanguage } from './lib/i18n.svelte.js';
 import Mini from './Mini.svelte';
 import Console from './Console.svelte';
 import Decks from './Decks.svelte';
+import Settings from './Settings.svelte';
 
 const deck = (deck, title, artist, elapsed, remaining, playing, on_air, gain) => ({
   deck, title, artist, elapsed, remaining, playing, visible: true, gain, on_air,
@@ -25,7 +27,18 @@ const status = {
   outputs: [{ name: 'Default', host: 'my.powerstream.live:8828', bitrate: 192, connected: true, connected_secs: 221, bytes_sent: 5_400_000, error: null }],
   nowplaying_source: 'auto', nowplaying_error: null, error: null,
 };
-const view = new URLSearchParams(location.search).get('view') || 'mini';
+const params = new URLSearchParams(location.search);
+const view = params.get('view') || 'mini';
+setLanguage(params.get('lang') || 'en');
 const props = { status, busy: false, actionError: '', onToggleLive() {}, onExpand() {}, onSendTitle() {} };
-const C = { mini: Mini, console: Console, decks: Decks }[view];
+const server = { protocol: 'icecast', host: 'my.powerstream.live', port: 8828, mount: '/live', user: 'source', password: 'example', stream_id: 1, name: 'My DJ Stream', description: '', genre: 'Electronic', url: '', public: false, reconnect_delay_secs: 3 };
+const config = {
+  audio: { device: 'Realtek Digital Output', mode: 'loopback', gain: 1 },
+  processing: { preset: 'loud', target_lufs: -14, ceiling_db: -1, max_gain_db: 15, multiband: true },
+  encoder: { codec: 'mp3', bitrate: 192 }, server, record: { enabled: false, dir: 'recordings' },
+  nowplaying: { source: 'auto', poll_interval_secs: 1, rekordbox_key: '', rekordbox_db: '', midi_input: 'auto', confirm_secs: 4, crossfader_assign: ['thru', 'thru', 'thru', 'thru'], output_dir: 'nowplaying' },
+  active_profile: 'Default', profiles: [{ name: 'Default', server, bitrate: 192, live: true }], language: params.get('lang') || 'auto',
+};
+Object.assign(props, { config, live: false, systemLocale: 'ro-RO', onSaved() {}, onClose() {} });
+const C = { mini: Mini, console: Console, decks: Decks, settings: Settings }[view];
 mount(C, { target: document.getElementById('app'), props });

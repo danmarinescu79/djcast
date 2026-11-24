@@ -2,6 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';
   import { onMount } from 'svelte';
+  import { t, LANGUAGES } from './lib/i18n.svelte.js';
 
   /** Folder picker; returns the chosen absolute path or null. */
   async function pickFolder(current, title) {
@@ -18,25 +19,20 @@
     }
   }
 
-  let { config, live, onSaved, onClose } = $props();
+  let { config, live, systemLocale = 'en', onSaved, onClose } = $props();
 
   // Edit a deep copy taken when the screen opens; nothing changes until Save.
   // svelte-ignore state_referenced_locally
-  let draft = $state(structuredClone($state.snapshot(config)));
-  let tab = $state('server');
+  let draft = $state({ language: 'auto', ...structuredClone($state.snapshot(config)) });
+  if (!draft.language) draft.language = 'auto';
+  let tab = $state(new URLSearchParams(globalThis.location?.search || '').get('tab') || 'server');
   let devices = $state([]);
   let saving = $state(false);
   let message = $state({ text: '', ok: true });
   let testing = $state(false);
   let configPath = $state('');
 
-  const tabs = [
-    ['audio', 'Audio input'],
-    ['server', 'Server'],
-    ['processing', 'Sound processing'],
-    ['nowplaying', 'Now playing'],
-    ['recording', 'Recording'],
-  ];
+  const tabs = ['audio', 'server', 'processing', 'nowplaying', 'recording', 'general'];
 
   let midiPorts = $state([]);
 
@@ -73,7 +69,7 @@
   }
   function newProfile() {
     storeCurrent();
-    const name = uniqueName('New server');
+    const name = uniqueName(t('server.newName'));
     const server = { ...structuredClone($state.snapshot(draft.server)), host: '', password: '', mount: '/live' };
     draft.profiles.push({ name, server, bitrate: Number(draft.encoder.bitrate), live: false });
     loadProfile(name);
@@ -101,7 +97,7 @@
     draft.profiles = draft.profiles.filter((p) => p.name !== removed);
     loadProfile(draft.profiles[0].name);
     confirmingDelete = false;
-    message = { text: `Profile "${removed}" removed. Save to keep the change, or Close to undo.`, ok: true };
+    message = { text: t('server.removed', { name: removed }), ok: true };
   }
 
   onMount(async () => {
@@ -133,9 +129,7 @@
       draft.active_profile = current;
       const saved = await invoke('save_config', { config: draft });
       message = {
-        text: live
-          ? 'Saved. Server and audio changes apply the next time you go live.'
-          : `Saved. Going live streams to: ${liveNames(saved)}.`,
+        text: live ? t('settings.savedLive') : t('settings.saved', { servers: liveNames(saved) }),
         ok: true,
       };
       onSaved(saved);
@@ -153,7 +147,7 @@
 
   async function test() {
     testing = true;
-    message = { text: 'Connecting…', ok: true };
+    message = { text: t('settings.connecting'), ok: true };
     try {
       draft.server.port = Number(draft.server.port);
       message = { text: await invoke('test_connection', { config: draft }), ok: true };
@@ -164,26 +158,15 @@
     }
   }
 
-  const presets = [
-    ['off', 'Off — send the mix as it is'],
-    ['gentle', 'Gentle — -16 LUFS, very transparent'],
-    ['radio', 'Radio — -13 LUFS, typical internet radio'],
-    ['loud', 'Loud — -10 LUFS, like heavily processed stations'],
-    ['custom', 'Custom target'],
-  ];
-  const sources = [
-    ['auto', 'Automatic — instant, falls back to the history'],
-    ['rekordbox-live', 'rekordbox, instant (window + controller MIDI)'],
-    ['rekordbox-db', 'rekordbox history (about 1 minute late)'],
-    ['none', 'Off — type titles by hand'],
-  ];
+  const presets = ['off', 'gentle', 'radio', 'loud', 'custom'];
+  const sources = ['auto', 'rekordbox-live', 'rekordbox-db', 'none'];
 </script>
 
 <div class="settings">
-  <nav aria-label="Settings sections">
-    <div class="nav-title">Settings</div>
-    {#each tabs as [id, label] (id)}
-      <button type="button" class="tab" class:active={tab === id} onclick={() => (tab = id)}>{label}</button>
+  <nav aria-label={t('settings.sections')}>
+    <div class="nav-title">{t('app.settings')}</div>
+    {#each tabs as id (id)}
+      <button type="button" class="tab" class:active={tab === id} onclick={() => (tab = id)}>{t(`tab.${id}`)}</button>
     {/each}
     <div class="grow"></div>
     <div class="path" title={configPath}>{configPath}</div>
@@ -191,19 +174,19 @@
 
   <section class="body">
     {#if tab === 'audio'}
-      <h1>Audio input</h1>
+      <h1>{t('tab.audio')}</h1>
       <div class="grid">
         <div class="field">
-          <label for="mode">Capture</label>
+          <label for="mode">{t('audio.capture')}</label>
           <select id="mode" bind:value={draft.audio.mode}>
-            <option value="loopback">What an output plays (loopback)</option>
-            <option value="input">An input (line-in, mixer USB, virtual cable)</option>
+            <option value="loopback">{t('audio.loopback')}</option>
+            <option value="input">{t('audio.input')}</option>
           </select>
         </div>
         <div class="field">
-          <label for="device">Device</label>
+          <label for="device">{t('audio.device')}</label>
           <select id="device" bind:value={draft.audio.device}>
-            <option value="">System default</option>
+            <option value="">{t('common.systemDefault')}</option>
             {#each deviceOptions as name (name)}<option value={name}>{name}</option>{/each}
             {#if draft.audio.device && !deviceOptions.includes(draft.audio.device)}
               <option value={draft.audio.device}>{draft.audio.device}</option>
@@ -211,43 +194,40 @@
           </select>
         </div>
         <div class="field">
-          <label for="gain">Input gain ({draft.audio.gain.toFixed(2)}×)</label>
+          <label for="gain">{t('audio.gain', { v: Number(draft.audio.gain).toFixed(2) })}</label>
           <input id="gain" type="range" min="0.25" max="4" step="0.05" bind:value={draft.audio.gain} />
         </div>
       </div>
-      <p class="note">
-        With rekordbox on ASIO, turn on PC MASTER OUT in rekordbox's audio preferences, send it to a spare
-        output (for example Realtek Digital Output) and capture that output here.
-      </p>
+      <p class="note">{t('audio.asioNote')}</p>
     {:else if tab === 'server'}
       <div class="profile-bar">
-        <h1>Server</h1>
+        <h1>{t('tab.server')}</h1>
         <span class="grow"></span>
         {#if confirmingDelete}
-          <span class="confirm" role="alert">Delete profile "{current}"?</span>
-          <button type="button" class="btn big danger" onclick={deleteProfile}>Delete</button>
-          <button type="button" class="btn big" onclick={() => (confirmingDelete = false)}>Cancel</button>
+          <span class="confirm" role="alert">{t('server.confirmDelete', { name: current })}</span>
+          <button type="button" class="btn big danger" onclick={deleteProfile}>{t('common.delete')}</button>
+          <button type="button" class="btn big" onclick={() => (confirmingDelete = false)}>{t('common.cancel')}</button>
         {:else if renaming}
           <form class="rename" onsubmit={finishRename}>
-            <label for="pname" class="sr">Profile name</label>
+            <label for="pname" class="sr">{t('server.profileName')}</label>
             <input id="pname" bind:value={renameValue} />
             <button type="submit" class="btn big">OK</button>
           </form>
         {:else}
-          <label for="profile">Profile</label>
+          <label for="profile">{t('server.profile')}</label>
           <select id="profile" class="profile-select" value={current} onchange={(e) => selectProfile(e.currentTarget.value)}>
             {#each draft.profiles as p (p.name)}
-              <option value={p.name}>{p.name}{p.live ? ' · live' : ''}</option>
+              <option value={p.name}>{p.name}{p.live ? ` · ${t('server.liveTag')}` : ''}</option>
             {/each}
           </select>
-          <button type="button" class="btn big" onclick={newProfile}>New</button>
-          <button type="button" class="btn big" onclick={startRename}>Rename</button>
+          <button type="button" class="btn big" onclick={newProfile}>{t('common.new')}</button>
+          <button type="button" class="btn big" onclick={startRename}>{t('common.rename')}</button>
           <button
             type="button"
             class="btn big"
             disabled={draft.profiles.length < 2}
-            title={draft.profiles.length < 2 ? 'The last profile cannot be deleted' : ''}
-            onclick={() => (confirmingDelete = true)}>Delete</button>
+            title={draft.profiles.length < 2 ? t('server.lastProfile') : ''}
+            onclick={() => (confirmingDelete = true)}>{t('common.delete')}</button>
         {/if}
       </div>
       <label class="check live-check">
@@ -259,14 +239,14 @@
             if (p) p.live = e.currentTarget.checked;
           }}
         />
-        Stream to this server when I go live
+        {t('server.streamHere')}
         <span class="hint">
-          {liveCount > 1 ? `${liveCount} servers will be live at once.` : liveCount === 0 ? 'No server is ticked: the selected profile is used.' : ''}
+          {liveCount > 1 ? t('server.liveCount', { n: liveCount }) : liveCount === 0 ? t('server.noneTicked') : ''}
         </span>
       </label>
       <div class="grid">
         <div class="field">
-          <label for="proto">Server type</label>
+          <label for="proto">{t('server.type')}</label>
           <select id="proto" bind:value={draft.server.protocol}>
             <option value="icecast">Icecast 2</option>
             <option value="shoutcast2">Shoutcast v2 (DNAS 2)</option>
@@ -274,35 +254,37 @@
           </select>
         </div>
         <div class="field">
-          <label for="br">Format</label>
+          <label for="br">{t('server.format')}</label>
           <select id="br" bind:value={draft.encoder.bitrate}>
             {#each [128, 160, 192, 256, 320] as b (b)}<option value={b}>MP3 · {b} kbps</option>{/each}
           </select>
         </div>
-        <div class="field"><label for="host">Address</label><input id="host" bind:value={draft.server.host} /></div>
+        <div class="field"><label for="host">{t('server.address')}</label><input id="host" bind:value={draft.server.host} /></div>
         <div class="pair">
-          <div class="field"><label for="port">Port</label><input id="port" type="number" bind:value={draft.server.port} /></div>
+          <div class="field"><label for="port">{t('server.port')}</label><input id="port" type="number" bind:value={draft.server.port} /></div>
           {#if draft.server.protocol === 'icecast'}
-            <div class="field"><label for="mount">Mount point</label><input id="mount" bind:value={draft.server.mount} /></div>
+            <div class="field"><label for="mount">{t('server.mount')}</label><input id="mount" bind:value={draft.server.mount} /></div>
           {:else if draft.server.protocol === 'shoutcast2'}
-            <div class="field"><label for="sid">Stream ID</label><input id="sid" type="number" min="1" bind:value={draft.server.stream_id} /></div>
+            <div class="field"><label for="sid">{t('server.streamId')}</label><input id="sid" type="number" min="1" bind:value={draft.server.stream_id} /></div>
           {/if}
         </div>
         {#if draft.server.protocol === 'icecast'}
-          <div class="field"><label for="user">User</label><input id="user" bind:value={draft.server.user} /></div>
+          <div class="field"><label for="user">{t('server.user')}</label><input id="user" bind:value={draft.server.user} /></div>
         {:else}
           <p class="note login-note">
-            Shoutcast sends audio to port {Number(draft.server.port) + 1} and logs in with the password only{draft.server.protocol === 'shoutcast2' ? `, as password:#${draft.server.stream_id || 1}` : ''}.
+            {draft.server.protocol === 'shoutcast2'
+              ? t('server.shoutcast2Note', { port: Number(draft.server.port) + 1, sid: draft.server.stream_id || 1 })
+              : t('server.shoutcast1Note', { port: Number(draft.server.port) + 1 })}
           </p>
         {/if}
         <div class="field">
-          <label for="pass">Password</label>
+          <label for="pass">{t('server.password')}</label>
           <div class="pass">
             <input id="pass" type={showPass ? 'text' : 'password'} bind:value={draft.server.password} autocomplete="off" spellcheck="false" />
             <button
               type="button"
               class="eye"
-              aria-label={showPass ? 'Hide password' : 'Show password'}
+              aria-label={showPass ? t('server.hidePassword') : t('server.showPassword')}
               aria-pressed={showPass}
               onclick={() => (showPass = !showPass)}
             >
@@ -316,89 +298,94 @@
         </div>
       </div>
       <div class="grid sep">
-        <div class="field"><label for="sname">Station name</label><input id="sname" bind:value={draft.server.name} /></div>
-        <div class="field"><label for="genre">Genre</label><input id="genre" bind:value={draft.server.genre} /></div>
-        <div class="field"><label for="desc">Description</label><input id="desc" bind:value={draft.server.description} /></div>
-        <div class="field"><label for="surl">Website</label><input id="surl" bind:value={draft.server.url} /></div>
-        <label class="check"><input type="checkbox" bind:checked={draft.server.public} /> List in the public directory</label>
+        <div class="field"><label for="sname">{t('server.stationName')}</label><input id="sname" bind:value={draft.server.name} /></div>
+        <div class="field"><label for="genre">{t('server.genre')}</label><input id="genre" bind:value={draft.server.genre} /></div>
+        <div class="field"><label for="desc">{t('server.description')}</label><input id="desc" bind:value={draft.server.description} /></div>
+        <div class="field"><label for="surl">{t('server.website')}</label><input id="surl" bind:value={draft.server.url} /></div>
+        <label class="check"><input type="checkbox" bind:checked={draft.server.public} /> {t('server.public')}</label>
       </div>
     {:else if tab === 'processing'}
-      <h1>Sound processing</h1>
-      <p class="note">
-        Makes the stream as loud and clear as other stations in players that don't adjust volume
-        (Second Life, web players). A slow automatic gain brings the mix to the target loudness;
-        a limiter keeps peaks below the ceiling.
-      </p>
-      <div class="radios" role="radiogroup" aria-label="Preset">
-        {#each presets as [id, label] (id)}
-          <label class="radio"><input type="radio" name="preset" value={id} bind:group={draft.processing.preset} /> {label}</label>
+      <h1>{t('tab.processing')}</h1>
+      <p class="note">{t('processing.intro')}</p>
+      <div class="radios" role="radiogroup" aria-label={t('stats.preset')}>
+        {#each presets as id (id)}
+          <label class="radio"><input type="radio" name="preset" value={id} bind:group={draft.processing.preset} /> {t(`processing.preset.${id}`)}</label>
         {/each}
       </div>
       <label class="check sep-top">
         <input type="checkbox" bind:checked={draft.processing.multiband} disabled={draft.processing.preset === 'off'} />
-        Multiband compression — 4 bands (bass, low mids, high mids, highs) compressed separately
+        {t('processing.multiband')}
       </label>
-      <p class="note">
-        Denser and more even, like FM and big internet stations: a heavy kick no longer pushes down the
-        vocals and hi-hats. Applies when a preset other than Off is chosen.
-      </p>
+      <p class="note">{t('processing.multibandNote')}</p>
       {#if draft.processing.preset === 'custom'}
         <div class="grid">
           <div class="field">
-            <label for="target">Target loudness ({draft.processing.target_lufs} LUFS)</label>
+            <label for="target">{t('processing.target', { v: draft.processing.target_lufs })}</label>
             <input id="target" type="range" min="-23" max="-8" step="0.5" bind:value={draft.processing.target_lufs} />
           </div>
         </div>
       {/if}
     {:else if tab === 'nowplaying'}
-      <h1>Now playing</h1>
-      <div class="radios" role="radiogroup" aria-label="Source">
-        {#each sources as [id, label] (id)}
-          <label class="radio"><input type="radio" name="source" value={id} bind:group={draft.nowplaying.source} /> {label}</label>
+      <h1>{t('tab.nowplaying')}</h1>
+      <div class="radios" role="radiogroup" aria-label={t('np.source')}>
+        {#each sources as id (id)}
+          <label class="radio"><input type="radio" name="source" value={id} bind:group={draft.nowplaying.source} /> {t(`np.source.${id}`)}</label>
         {/each}
       </div>
       <div class="grid sep">
         <div class="field">
-          <label for="confirm">Switch the title after ({draft.nowplaying.confirm_secs} s)</label>
+          <label for="confirm">{t('np.confirm', { v: draft.nowplaying.confirm_secs })}</label>
           <input id="confirm" type="range" min="0" max="15" step="0.5" bind:value={draft.nowplaying.confirm_secs} />
         </div>
         <div class="field">
-          <label for="midi">Controller MIDI input (faders and crossfader)</label>
+          <label for="midi">{t('np.midi')}</label>
           <select id="midi" bind:value={draft.nowplaying.midi_input}>
-            <option value="auto">Automatic (first Pioneer DDJ found)</option>
-            <option value="none">Off — use deck play state only</option>
+            <option value="auto">{t('np.midiAuto')}</option>
+            <option value="none">{t('np.midiOff')}</option>
             {#each midiOptions as name (name)}<option value={name}>{name}</option>{/each}
             {#if !midiSpecial.includes(draft.nowplaying.midi_input) && !midiOptions.includes(draft.nowplaying.midi_input)}
-              <option value={draft.nowplaying.midi_input}>{draft.nowplaying.midi_input} (not connected)</option>
+              <option value={draft.nowplaying.midi_input}>{draft.nowplaying.midi_input} ({t('np.notConnected')})</option>
             {/if}
           </select>
         </div>
         <div class="field">
-          <label for="out">Folder for OBS text files and tracklists</label>
+          <label for="out">{t('np.folder')}</label>
           <div class="folder">
-            <input id="out" bind:value={draft.nowplaying.output_dir} placeholder="empty = off" />
+            <input id="out" bind:value={draft.nowplaying.output_dir} placeholder={t('np.folderOff')} />
             <button type="button" class="btn big" onclick={async () => {
-              const p = await pickFolder(draft.nowplaying.output_dir, 'Folder for OBS text files and tracklists');
+              const p = await pickFolder(draft.nowplaying.output_dir, t('np.folder'));
               if (p) draft.nowplaying.output_dir = p;
-            }}>Browse…</button>
-            <button type="button" class="btn big" disabled={!draft.nowplaying.output_dir} onclick={() => openFolder(draft.nowplaying.output_dir)}>Open</button>
+            }}>{t('common.browse')}</button>
+            <button type="button" class="btn big" disabled={!draft.nowplaying.output_dir} onclick={() => openFolder(draft.nowplaying.output_dir)}>{t('common.open')}</button>
           </div>
-          <span class="hint">A name without a drive letter is created next to the settings file: {baseDir}</span>
+          <span class="hint">{t('common.relativeHint', { dir: baseDir })}</span>
         </div>
       </div>
     {:else if tab === 'recording'}
-      <h1>Recording</h1>
-      <label class="check"><input type="checkbox" bind:checked={draft.record.enabled} /> Record every session to an MP3 file</label>
+      <h1>{t('tab.recording')}</h1>
+      <label class="check"><input type="checkbox" bind:checked={draft.record.enabled} /> {t('rec.enable')}</label>
       <div class="grid">
-        <div class="field"><label for="rdir">Folder</label><div class="folder">
+        <div class="field"><label for="rdir">{t('rec.folder')}</label><div class="folder">
             <input id="rdir" bind:value={draft.record.dir} placeholder="recordings" />
             <button type="button" class="btn big" onclick={async () => {
-              const p = await pickFolder(draft.record.dir, 'Folder for recordings');
+              const p = await pickFolder(draft.record.dir, t('rec.pickTitle'));
               if (p) draft.record.dir = p;
-            }}>Browse…</button>
-            <button type="button" class="btn big" onclick={() => openFolder(draft.record.dir || 'recordings')}>Open</button>
-          </div><span class="hint">A name without a drive letter is created in {baseDir}</span></div>
+            }}>{t('common.browse')}</button>
+            <button type="button" class="btn big" onclick={() => openFolder(draft.record.dir || 'recordings')}>{t('common.open')}</button>
+          </div><span class="hint">{t('common.relativeHint', { dir: baseDir })}</span></div>
       </div>
+    {:else if tab === 'general'}
+      <h1>{t('tab.general')}</h1>
+      <div class="grid">
+        <div class="field">
+          <label for="lang">{t('general.language')}</label>
+          <select id="lang" bind:value={draft.language}>
+            <option value="auto">{t('general.languageAuto', { lang: systemLocale })}</option>
+            {#each LANGUAGES as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
+          </select>
+        </div>
+      </div>
+      <p class="note">{t('general.languageNote')}</p>
     {/if}
 
     <div class="grow"></div>
@@ -406,10 +393,10 @@
       <span class="msg" class:bad={!message.ok} role="status">{message.text}</span>
       <span class="grow"></span>
       {#if tab === 'server'}
-        <button type="button" class="btn big" disabled={testing || live} title={live ? 'Stop streaming to test' : ''} onclick={test}>Test connection</button>
+        <button type="button" class="btn big" disabled={testing || live} title={live ? t('server.stopToTest') : ''} onclick={test}>{t('server.test')}</button>
       {/if}
-      <button type="button" class="btn big" onclick={onClose}>Close</button>
-      <button type="button" class="primary" disabled={saving} onclick={save}>Save</button>
+      <button type="button" class="btn big" onclick={onClose}>{t('common.close')}</button>
+      <button type="button" class="primary" disabled={saving} onclick={save}>{t('common.save')}</button>
     </footer>
   </section>
 </div>

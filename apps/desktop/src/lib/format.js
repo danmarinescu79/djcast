@@ -1,3 +1,5 @@
+import { t } from './i18n.svelte.js';
+
 export function clock(secs) {
   const s = Math.max(0, Math.floor(secs || 0));
   const pad = (n) => String(n).padStart(2, '0');
@@ -28,7 +30,6 @@ export function db(v, signed = true) {
 
 /** "Loud", "Radio + multiband", "Off" … from the loudness status. */
 export function presetLabel(loudness) {
-  const p = loudness?.preset || 'off';
-  const name = p.charAt(0).toUpperCase() + p.slice(1);
-  return loudness?.bands_db ? `${name} + multiband` : name;
+  const name = t(`preset.${loudness?.preset || 'off'}`);
+  return loudness?.bands_db ? t('preset.withMultiband', { name }) : name;
 }

@@ -9,15 +9,56 @@ use tauri::{App, AppHandle, Manager, Wry};
 pub struct Tray {
     icon: TrayIcon<Wry>,
     live_item: MenuItem<Wry>,
+    show_item: MenuItem<Wry>,
+    quit_item: MenuItem<Wry>,
+}
+
+/// Tray texts per language (the web UI has its own translations in `src/locales`).
+struct Texts {
+    go_live: &'static str,
+    stop: &'static str,
+    show: &'static str,
+    quit: &'static str,
+    offline: &'static str,
+    connecting: &'static str,
+}
+
+const EN: Texts = Texts {
+    go_live: "Go Live",
+    stop: "Stop streaming",
+    show: "Show djcast",
+    quit: "Quit djcast",
+    offline: "offline",
+    connecting: "connecting…",
+};
+const RO: Texts = Texts {
+    go_live: "Pornește transmisia",
+    stop: "Oprește transmisia",
+    show: "Arată djcast",
+    quit: "Închide djcast",
+    offline: "offline",
+    connecting: "se conectează…",
+};
+
+/// "auto"/"" follows the system language.
+fn texts(language: &str) -> &'static Texts {
+    let lang = match language.trim() {
+        "" | "auto" => sys_locale::get_locale().unwrap_or_default(),
+        l => l.to_string(),
+    };
+    if lang.to_lowercase().starts_with("ro") { &RO } else { &EN }
 }
 
 impl Tray {
-    /// Refresh the menu label and tooltip (called about once per second).
-    pub fn update(&self, st: &StationStatus) {
-        let _ = self.live_item.set_text(if st.live { "Stop streaming" } else { "Go Live" });
+    /// Refresh the menu labels and tooltip (called about once per second).
+    pub fn update(&self, st: &StationStatus, language: &str) {
+        let tx = texts(language);
+        let _ = self.live_item.set_text(if st.live { tx.stop } else { tx.go_live });
+        let _ = self.show_item.set_text(tx.show);
+        let _ = self.quit_item.set_text(tx.quit);
         let state = match (st.live, st.connected) {
-            (false, _) => "offline".to_string(),
-            (true, false) => "connecting…".to_string(),
+            (false, _) => tx.offline.to_string(),
+            (true, false) => tx.connecting.to_string(),
             (true, true) => format!("LIVE {}", clock(st.connected_secs)),
         };
         let track = st.track.as_ref().map(|t| format!("\n{}", t.display)).unwrap_or_default();
@@ -33,6 +74,7 @@ pub fn build(app: &App, station: Arc<Station>) -> tauri::Result<Tray> {
     let quit = MenuItem::with_id(app, "quit", "Quit djcast", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
     let menu = Menu::with_items(app, &[&live_item, &show, &sep, &quit])?;
+    let (show_item, quit_item) = (show.clone(), quit.clone());
 
     let mut builder = TrayIconBuilder::with_id("main").tooltip("djcast").menu(&menu).show_menu_on_left_click(false);
     if let Some(icon) = app.default_window_icon() {
@@ -61,7 +103,7 @@ pub fn build(app: &App, station: Arc<Station>) -> tauri::Result<Tray> {
             }
         })
         .build(app)?;
-    Ok(Tray { icon, live_item })
+    Ok(Tray { icon, live_item, show_item, quit_item })
 }
 
 fn show_main(app: &AppHandle) {

@@ -19,6 +19,8 @@ pub struct AppConfig {
     /// Name of the profile copied into `[server]` / `[encoder]` when going live.
     pub active_profile: String,
     pub profiles: Vec<ServerProfile>,
+    /// UI language: "auto" (follow the system), or a language code such as "en", "ro".
+    pub language: String,
     /// The file this was loaded from still contains passwords in plain text.
     #[serde(skip)]
     pub plaintext_passwords_on_disk: bool,

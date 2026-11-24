@@ -9,6 +9,7 @@
   import Mini from './Mini.svelte';
   import Settings from './Settings.svelte';
   import { clock } from './lib/format.js';
+  import { t, setLanguage } from './lib/i18n.svelte.js';
 
   const stored = (k, d) => {
     try {
@@ -33,9 +34,14 @@
   let config = $state(null);
   let busy = $state(false);
   let actionError = $state('');
+  let systemLocale = $state('en');
 
   onMount(() => {
-    invoke('get_config').then((c) => (config = c));
+    Promise.all([invoke('get_config'), invoke('system_locale').catch(() => 'en')]).then(([c, sys]) => {
+      systemLocale = sys;
+      setLanguage(c.language, sys);
+      config = c;
+    });
     invoke('status').then((s) => (status = s));
     const unlisten = listen('status', (e) => (status = e.payload));
     return () => unlisten.then((f) => f());
@@ -101,36 +107,36 @@
       <div class="grow"></div>
 
       {#if !showSettings}
-        <div class="seg" role="group" aria-label="Layout">
-          <button type="button" class:active={layout === 'console'} aria-pressed={layout === 'console'} onclick={() => setLayout('console')}>Console</button>
-          <button type="button" class:active={layout === 'decks'} aria-pressed={layout === 'decks'} onclick={() => setLayout('decks')}>Decks</button>
+        <div class="seg" role="group" aria-label={t('app.layout')}>
+          <button type="button" class:active={layout === 'console'} aria-pressed={layout === 'console'} onclick={() => setLayout('console')}>{t('app.console')}</button>
+          <button type="button" class:active={layout === 'decks'} aria-pressed={layout === 'decks'} onclick={() => setLayout('decks')}>{t('app.decks')}</button>
         </div>
       {/if}
 
       {#if layout === 'decks' && !showSettings && status}
         <button type="button" class="live-pill" class:on={status.live} disabled={busy} onclick={toggleLive}>
           <span class="dot"></span>
-          {status.live ? (status.connected ? `LIVE ${clock(status.connected_secs)}` : 'CONNECTING') : 'GO LIVE'}
+          {status.live ? (status.connected ? t('live.liveTime', { time: clock(status.connected_secs) }) : t('live.connecting')) : t('live.goLive')}
         </button>
       {:else if status?.live}
-        <span class="live-tag">LIVE</span>
+        <span class="live-tag">{t('live.live')}</span>
       {/if}
 
-      <button class="btn" type="button" aria-label="Mini window" title="Mini window (always on top)" onclick={() => setMini(true)}>Mini</button>
+      <button class="btn" type="button" aria-label={t('app.miniTitle')} title={t('app.miniTitle')} onclick={() => setMini(true)}>{t('app.mini')}</button>
       <button class="btn" type="button" onclick={() => (showSettings = !showSettings)}>
-        {showSettings ? 'Back' : 'Settings'}
+        {showSettings ? t('app.back') : t('app.settings')}
       </button>
     </header>
 
     {#if status && config && showSettings}
-      <Settings {config} live={status.live} onSaved={(c) => (config = c)} onClose={() => (showSettings = false)} />
+      <Settings {config} live={status.live} {systemLocale} onSaved={(c) => { config = c; setLanguage(c.language, systemLocale); }} onClose={() => (showSettings = false)} />
     {:else if status && config && layout === 'decks'}
       {#if actionError}<p class="banner" role="alert">{actionError}</p>{/if}
       <Decks {status} />
     {:else if status && config}
       <Console {status} {busy} {actionError} onToggleLive={toggleLive} onSendTitle={sendTitle} />
     {:else}
-      <div class="loading">Starting…</div>
+      <div class="loading">{t('app.starting')}</div>
     {/if}
   </div>
 {/if}

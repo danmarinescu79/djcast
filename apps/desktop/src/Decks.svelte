@@ -2,6 +2,7 @@
   import { lufs, db, meterFraction, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
   import { deckSlots, sourceLabel } from './lib/decks.js';
+  import { t } from './lib/i18n.svelte.js';
 
   let { status } = $props();
 
@@ -16,23 +17,23 @@
         <div class="head">
           <span class="num">{d.n}</span>
           {#if d.playing}<span class="pulse" class:red-dot={d.onAir} aria-hidden="true"></span>{/if}
-          <span class="state" class:red={d.onAir} class:ok={!d.onAir && d.playing}>{d.state}</span>
-          {#if d.hidden}<span class="hidden">not on screen</span>{/if}
+          <span class="state" class:red={d.onAir} class:ok={!d.onAir && d.playing}>{t(`deck.${d.stateKey}`)}</span>
+          {#if d.hidden}<span class="hidden">{t('deck.hidden')}</span>{/if}
         </div>
-        <div class="title">{d.loaded ? d.title : 'No track loaded'}</div>
+        <div class="title">{d.loaded ? d.title : t('deck.noTrack')}</div>
         <div class="artist">{d.artist}</div>
         <div class="grow"></div>
         {#if d.loaded}
           <div class="pos-row">
             <span class="mono muted">{d.elapsed}</span>
-            <div class="pos" role="progressbar" aria-label="Deck {d.n} track position" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(d.progress * 100)}>
+            <div class="pos" role="progressbar" aria-label={t('deck.position', { n: d.n })} aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(d.progress * 100)}>
               <div style:width="{d.progress * 100}%" class:ending={d.ending}></div>
             </div>
             <span class="mono rem" class:ending-text={d.ending}>{d.remaining}</span>
           </div>
         {/if}
         <div class="fader-row">
-          <span class="muted">Fader</span>
+          <span class="muted">{t('deck.fader')}</span>
           <div class="fader"><div style:width="{d.fader}%" class:hot={d.onAir}></div></div>
           <span class="mono muted pct">{d.fader}%</span>
         </div>
@@ -42,13 +43,13 @@
 
   <aside>
     <div class="panel card">
-      <span class="label">Sent to listeners</span>
-      <span class="sent">{status.track?.display || 'Waiting for a track…'}</span>
-      <span class="muted small">{sourceLabel(status)}{status.track?.deck ? ` · deck ${status.track.deck}` : ''}</span>
+      <span class="label">{t('decks.sent')}</span>
+      <span class="sent">{status.track?.display || t('now.waiting')}</span>
+      <span class="muted small">{sourceLabel(status)}{status.track?.deck ? ` · ${t('deck.n', { n: status.track.deck })}` : ''}</span>
     </div>
 
     <div class="panel card">
-      <span class="label">Mixer{status.decks?.midi ? ' · MIDI' : ''}</span>
+      <span class="label">{t('decks.mixer')}{status.decks?.midi ? ' · MIDI' : ''}</span>
       <div class="faders">
         {#each decks as d (d.n)}
           <div class="vfader">
@@ -57,28 +58,28 @@
           </div>
         {/each}
       </div>
-      <div class="xfader" aria-label="Crossfader">
+      <div class="xfader" aria-label={t('decks.crossfader')}>
         <span class="muted small">A</span>
         <div class="xtrack">
           {#if xfader != null}<div class="knob" style:left="calc({xfader * 100}% - 5px)"></div>{/if}
         </div>
         <span class="muted small">B</span>
       </div>
-      {#if !status.decks?.midi}<span class="muted small">Connect the controller's MIDI to follow faders.</span>{/if}
+      {#if !status.decks?.midi}<span class="muted small">{t('decks.noMidi')}</span>{/if}
     </div>
 
     <div class="panel card rows">
-      <span class="label">Output · {presetLabel(status.loudness)}</span>
+      <span class="label">{t('out.title')} · {presetLabel(status.loudness)}</span>
       <div class="hmeter"><span class="muted">L</span><div class="htrack"><div style:width="{meterFraction(status.level_l) * 100}%"></div></div></div>
       <div class="hmeter"><span class="muted">R</span><div class="htrack"><div style:width="{meterFraction(status.level_r) * 100}%"></div></div></div>
       <div class="loud">
         <span class="big mono">{lufs(status.loudness.out_lufs)}</span>
-        <span class="muted small">LUFS{status.loudness.target_lufs != null ? ` · target ${status.loudness.target_lufs}` : ''}</span>
+        <span class="muted small">LUFS{status.loudness.target_lufs != null ? ` · ${t('out.target', { v: status.loudness.target_lufs })}` : ''}</span>
       </div>
       <div><span class="muted">AGC</span><span class="mono blue">{db(status.loudness.agc_gain_db)} dB</span></div>
-      <div><span class="muted">Limiter</span><span class="mono warn">{db(status.loudness.limiter_db, false)} dB</span></div>
+      <div><span class="muted">{t('out.limiter')}</span><span class="mono warn">{db(status.loudness.limiter_db, false)} dB</span></div>
       {#if status.loudness.bands_db}
-        <div class="bands"><span class="muted">Band reduction</span><BandMeters bands={status.loudness.bands_db} /></div>
+        <div class="bands"><span class="muted">{t('out.bands')}</span><BandMeters bands={status.loudness.bands_db} /></div>
       {/if}
     </div>
   </aside>
@@ -94,7 +95,7 @@
   .deck.onair { background: #1d1416; border-color: var(--on-air); }
   .head { display: flex; align-items: center; gap: 10px; }
   .num { width: 30px; height: 30px; border-radius: 8px; background: #22252c; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-  .state { font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--muted); }
+  .state { font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
   .red { color: var(--on-air-text); }
   .ok { color: var(--ok); }
   .hidden { font-size: 11px; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 999px; padding: 1px 8px; }
