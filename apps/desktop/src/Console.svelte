@@ -1,4 +1,6 @@
 <script>
+  import { invoke } from '@tauri-apps/api/core';
+  import { save } from '@tauri-apps/plugin-dialog';
   import { clock, bytes, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
   import { deckSlots, sourceLabel as srcLabel } from './lib/decks.js';
@@ -19,11 +21,9 @@
   const liveLabel = $derived(!status.live ? t('live.goLive') : status.connected ? t('live.onAir') : t('live.connecting'));
 
   async function saveTracklist() {
-    const { save } = await import('@tauri-apps/plugin-dialog');
     const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', '-');
     const path = await save({ defaultPath: `djcast tracklist ${stamp}.txt`, filters: [{ name: 'Text', extensions: ['txt'] }] });
     if (typeof path === 'string') {
-      const { invoke } = await import('@tauri-apps/api/core');
       await invoke('save_tracklist', { path });
     }
   }

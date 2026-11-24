@@ -1,3 +1,5 @@
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
 /**
  * Colour theme: "system" follows Windows (prefers-color-scheme), "light" / "dark" force one.
  * The CSS palettes live in app.css; the window title bar follows through Tauri.
@@ -7,8 +9,9 @@ export function applyTheme(theme) {
   const root = document.documentElement;
   if (forced) root.dataset.theme = forced;
   else delete root.dataset.theme;
-  // Not available in the browser preview; ignore there.
-  import('@tauri-apps/api/window')
-    .then(({ getCurrentWindow }) => getCurrentWindow().setTheme(forced))
-    .catch(() => {});
+  try {
+    getCurrentWindow().setTheme(forced).catch(() => {});
+  } catch {
+    // Browser preview: there is no window to theme.
+  }
 }
