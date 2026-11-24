@@ -1,5 +1,5 @@
 <script>
-  import { clock, bytes, meterFraction, lufs, db } from './lib/format.js';
+  import { clock, bytes, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
   import { deckSlots } from './lib/decks.js';
 
@@ -60,7 +60,7 @@
       <div><div class="k">Sent</div><div class="v">{bytes(status.bytes_sent)}</div></div>
       <div><div class="k">Status</div><div class="v" class:ok={status.connected}>{status.connected ? 'Connected' : status.live ? 'Retrying' : 'Offline'}</div></div>
       <div><div class="k">Recording</div><div class="v" class:ok={status.recording}>{status.recording ? 'On' : 'Off'}</div></div>
-      <div><div class="k">Preset</div><div class="v cap">{status.loudness.preset}</div></div>
+      <div><div class="k">Preset</div><div class="v preset">{presetLabel(status.loudness)}</div></div>
     </div>
 
     {#if status.outputs.length > 0}
@@ -185,7 +185,7 @@
   .stats { padding: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .k { font-size: 11px; color: var(--muted); }
   .v { font-size: 18px; font-weight: 600; }
-  .cap { text-transform: capitalize; }
+  .preset { font-size: 15px; line-height: 1.3; }
   .ok { color: var(--ok); }
   .servers { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
   .srv { display: flex; align-items: center; gap: 8px; font-size: 13px; }

@@ -1,5 +1,5 @@
 <script>
-  import { lufs, db, meterFraction } from './lib/format.js';
+  import { lufs, db, meterFraction, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
   import { deckSlots, sourceLabel } from './lib/decks.js';
 
@@ -68,7 +68,7 @@
     </div>
 
     <div class="panel card rows">
-      <span class="label">Output · {status.loudness.preset}</span>
+      <span class="label">Output · {presetLabel(status.loudness)}</span>
       <div class="hmeter"><span class="muted">L</span><div class="htrack"><div style:width="{meterFraction(status.level_l) * 100}%"></div></div></div>
       <div class="hmeter"><span class="muted">R</span><div class="htrack"><div style:width="{meterFraction(status.level_r) * 100}%"></div></div></div>
       <div class="loud">

@@ -25,3 +25,10 @@ export function db(v, signed = true) {
   const s = v.toFixed(1);
   return signed && v > 0 ? `+${s}` : s;
 }
+
+/** "Loud", "Radio + multiband", "Off" … from the loudness status. */
+export function presetLabel(loudness) {
+  const p = loudness?.preset || 'off';
+  const name = p.charAt(0).toUpperCase() + p.slice(1);
+  return loudness?.bands_db ? `${name} + multiband` : name;
+}
