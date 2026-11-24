@@ -60,6 +60,16 @@ fn status(app: State<'_, AppState>) -> StationStatus {
     app.station.status()
 }
 
+/// Open a source connection with the given settings and close it again.
+#[tauri::command]
+fn test_connection(config: AppConfig) -> CmdResult<String> {
+    use djcast_core::icecast::{AudioInfo, SourceConnection};
+    let info = AudioInfo { sample_rate: 44_100, bitrate: config.stream.encoder.bitrate, channels: 2 };
+    SourceConnection::connect(&config.stream.server, "audio/mpeg", info).map_err(err)?;
+    let s = &config.stream.server;
+    Ok(format!("{}:{}{} accepted the login", s.host, s.port, s.mount))
+}
+
 #[derive(Serialize)]
 struct Device {
     name: String,
@@ -114,7 +124,8 @@ fn main() {
             stop,
             set_title,
             status,
-            list_devices
+            list_devices,
+            test_connection
         ])
         .run(tauri::generate_context!())
         .expect("error while running djcast");

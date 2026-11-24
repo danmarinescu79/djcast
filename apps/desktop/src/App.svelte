@@ -3,7 +3,9 @@
   import { listen } from '@tauri-apps/api/event';
   import { onMount } from 'svelte';
   import Console from './Console.svelte';
+  import Settings from './Settings.svelte';
 
+  let view = $state('console');
   let status = $state(null);
   let config = $state(null);
   let busy = $state(false);
@@ -46,10 +48,15 @@
     <div class="chip mono">{server}</div>
     <div class="sub">{format}{status?.sample_rate ? ` · ${status.sample_rate / 1000} kHz` : ''}</div>
     <div class="grow"></div>
-    <button class="btn" type="button" disabled title="Coming next">Settings</button>
+    {#if status?.live}<span class="live-pill">LIVE</span>{/if}
+    <button class="btn" type="button" onclick={() => (view = view === 'settings' ? 'console' : 'settings')}>
+      {view === 'settings' ? 'Back' : 'Settings'}
+    </button>
   </header>
 
-  {#if status && config}
+  {#if status && config && view === 'settings'}
+    <Settings {config} live={status.live} onSaved={(c) => (config = c)} onClose={() => (view = 'console')} />
+  {:else if status && config}
     <Console {status} {busy} {actionError} onToggleLive={toggleLive} onSendTitle={sendTitle} />
   {:else}
     <div class="loading">Starting…</div>
@@ -67,4 +74,5 @@
   .sub { font-size: 12px; color: var(--muted); }
   .grow { flex-grow: 1; }
   .loading { margin: auto; color: var(--muted); }
+  .live-pill { font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 4px 10px; border-radius: 999px; background: var(--on-air); color: #fff; }
 </style>
