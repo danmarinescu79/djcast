@@ -5,6 +5,8 @@ use std::path::PathBuf;
 #[serde(default)]
 pub struct Config {
     pub audio: AudioConfig,
+    /// Loudness processing (AGC + limiter) before encoding.
+    pub processing: crate::dsp::ProcessingConfig,
     pub encoder: EncoderConfig,
     pub server: ServerConfig,
     pub record: RecordConfig,

@@ -2,6 +2,7 @@
 
 use crate::audio::{self, Capture, Levels};
 use crate::config::Config;
+use crate::dsp::{DspSnapshot, DspStats, Processor};
 use crate::encoder;
 use crate::icecast::{self, AudioInfo, SourceConnection};
 use anyhow::Result;
@@ -36,6 +37,7 @@ enum MetaMsg {
 pub struct Engine {
     capture: Option<Capture>,
     levels: Arc<Levels>,
+    dsp_stats: Arc<DspStats>,
     status: Arc<Mutex<EngineStatus>>,
     stop: Arc<AtomicBool>,
     meta_tx: Sender<MetaMsg>,
@@ -70,9 +72,15 @@ impl Engine {
         let (net_tx, net_rx) = bounded::<Vec<u8>>(64);
         let (meta_tx, meta_rx) = bounded::<MetaMsg>(16);
 
+        let dsp_stats = Arc::new(DspStats::default());
+        let dsp = Processor::new(&cfg.processing, capture.sample_rate, dsp_stats.clone());
+        if let Some(t) = cfg.processing.target() {
+            log::info!("loudness processing: {:?}, target {t:.1} LUFS, ceiling {:.1} dBFS", cfg.processing.preset, cfg.processing.ceiling_db);
+        }
+
         let encoder_thread = thread::Builder::new()
             .name("encoder".into())
-            .spawn(move || encoder_loop(info.sample_rate, enc, pcm_rx, net_tx, recording.map(|(_, w)| w)))?;
+            .spawn(move || encoder_loop(info.sample_rate, dsp, enc, pcm_rx, net_tx, recording.map(|(_, w)| w)))?;
 
         let net_thread = {
             let (cfg, status, stop, meta_tx) = (cfg.clone(), status.clone(), stop.clone(), meta_tx.clone());
@@ -89,6 +97,7 @@ impl Engine {
         Ok(Self {
             capture: Some(capture),
             levels,
+            dsp_stats,
             status,
             stop,
             meta_tx,
@@ -103,6 +112,11 @@ impl Engine {
 
     pub fn levels(&self) -> (f32, f32) {
         self.levels.get()
+    }
+
+    /// Loudness and processing meters (input/output LUFS, AGC gain, limiter reduction).
+    pub fn processing(&self) -> DspSnapshot {
+        self.dsp_stats.snapshot()
     }
 
     pub fn status(&self) -> EngineStatus {
@@ -167,6 +181,7 @@ impl SilenceClock {
 
 fn encoder_loop(
     sample_rate: u32,
+    mut dsp: Processor,
     mut enc: Box<dyn encoder::AudioEncoder>,
     pcm_rx: Receiver<Vec<f32>>,
     net_tx: Sender<Vec<u8>>,
@@ -191,8 +206,9 @@ fn encoder_loop(
     let mut clock = SilenceClock::new(sample_rate);
     loop {
         match pcm_rx.recv_timeout(Duration::from_millis(50)) {
-            Ok(pcm) => {
+            Ok(mut pcm) => {
                 clock.on_audio();
+                dsp.process(&mut pcm);
                 match enc.encode(&pcm) {
                     Ok(bytes) => emit(bytes, &mut rec),
                     Err(e) => log::error!("{e:#}"),

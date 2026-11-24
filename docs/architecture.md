@@ -12,7 +12,7 @@ docs/          research, architecture, roadmap
 
 ```
 cpal (audio thread)                  "encoder" thread               "network" thread
-capture f32 → stereo + gain  ──200──> LAME MP3       ──┬──64──> SourceConnection (PUT/SOURCE)
+capture f32 → stereo + gain  ──200──> AGC + limiter → LAME MP3       ──┬──64──> SourceConnection (PUT/SOURCE)
      │                               + silence on gaps │        automatic reconnect
      └─> Levels (atomics, VU meter)                    └──────> recording file (optional)
 
@@ -24,6 +24,15 @@ Principles:
 - **Live means no accumulated delay.** If the network is slow or down, encoded data is dropped, not queued.
 - **Silence on capture gaps.** WASAPI loopback delivers nothing while the output is silent, and Icecast drops a source after ~10 s without data. The encoder inserts silence once no audio has arrived for 200 ms. It only reacts to real gaps, so clock drift never inserts silence mid-audio.
 - **No HTTP dependency.** The Icecast source protocol is implemented directly on `TcpStream`, with a fallback to the legacy `SOURCE` method for old servers.
+
+## Loudness processing
+DJ mixes typically leave a lot of headroom (peaks around -8 dBFS, about -20..-26 LUFS), so
+they sound quiet next to processed streams in players that do not normalize (e.g. Second
+Life). `crates/core/src/dsp.rs` adds, before encoding:
+- a slow AGC driven by short-term loudness (EBU R128) towards a target (radio = -13 LUFS),
+  rising 1 dB/s, falling 3 dB/s, gated below -40 LUFS so pauses are not amplified;
+- a stereo-linked look-ahead limiter (5 ms, ceiling -1 dBFS): sliding minimum of the
+  required gain + moving average, applied to delayed audio, so peaks never exceed the ceiling.
 
 ## Capture
 - `mode = "loopback"`: any output device (Windows/WASAPI). Captures exactly what rekordbox plays, no virtual cable needed.

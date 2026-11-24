@@ -33,6 +33,9 @@ enum Cmd {
         /// Stop after this many seconds and print the peak level.
         #[arg(long)]
         seconds: Option<f64>,
+        /// Also run loudness processing and show the result: off, gentle, radio, loud.
+        #[arg(short, long, default_value = "off")]
+        preset: String,
     },
     /// Write a default config file.
     Init {
@@ -109,7 +112,7 @@ fn main() -> Result<()> {
         .init();
     match Cli::parse().cmd {
         Cmd::Devices => devices(),
-        Cmd::Meter { device, input, seconds } => meter_cmd(device, input, seconds),
+        Cmd::Meter { device, input, seconds, preset } => meter_cmd(device, input, seconds, &preset),
         Cmd::Init { path } => init(&path),
         Cmd::Stream { config, title } => stream(&config, title),
         Cmd::Meta { config, title } => icecast::update_metadata(&load(&config)?.stream.server, &title),
@@ -131,23 +134,33 @@ fn devices() -> Result<()> {
     Ok(())
 }
 
-fn meter_cmd(device: String, input: bool, seconds: Option<f64>) -> Result<()> {
+fn meter_cmd(device: String, input: bool, seconds: Option<f64>, preset: &str) -> Result<()> {
     use djcast_core::config::{AudioConfig, CaptureMode};
+    use djcast_core::dsp::{DspStats, ProcessingConfig, Processor};
     let cfg = AudioConfig {
         device,
         mode: if input { CaptureMode::Input } else { CaptureMode::Loopback },
         gain: 1.0,
     };
-    let (tx, rx) = crossbeam_channel::bounded(200);
+    let processing = ProcessingConfig {
+        preset: toml::Value::String(preset.to_string())
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("unknown preset '{preset}' (off, gentle, radio, loud)"))?,
+        ..Default::default()
+    };
+    let (tx, rx) = crossbeam_channel::bounded::<Vec<f32>>(200);
     let levels = Arc::new(audio::Levels::default());
     let cap = audio::start_capture(&cfg, tx, levels.clone())?;
-    eprintln!("metering '{}' ({} Hz), Ctrl+C to stop", cap.device_name, cap.sample_rate);
-    // Drain audio so the capture never stalls; count buffers to detect "no data at all".
+    eprintln!("metering '{}' ({} Hz), processing {preset}, Ctrl+C to stop", cap.device_name, cap.sample_rate);
+    // Process the audio (and count buffers to detect "no data at all").
     let buffers = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let stats = Arc::new(DspStats::default());
     {
         let b = buffers.clone();
+        let mut dsp = Processor::new(&processing, cap.sample_rate, stats.clone());
         std::thread::spawn(move || {
-            for _ in rx {
+            for mut pcm in rx {
+                dsp.process(&mut pcm);
                 b.fetch_add(1, Ordering::Relaxed);
             }
         });
@@ -158,7 +171,7 @@ fn meter_cmd(device: String, input: bool, seconds: Option<f64>) -> Result<()> {
         std::thread::sleep(Duration::from_millis(100));
         let (l, r) = levels.get();
         max_peak = max_peak.max(l).max(r);
-        eprint!("\rL {} R {}  buffers {}\x1b[K", meter(l), meter(r), buffers.load(Ordering::Relaxed));
+        eprint!("\rL {} R {} | {}\x1b[K", meter(l), meter(r), loudness(&stats.snapshot()));
         if seconds.is_some_and(|s| start.elapsed().as_secs_f64() >= s) {
             break;
         }
@@ -166,10 +179,11 @@ fn meter_cmd(device: String, input: bool, seconds: Option<f64>) -> Result<()> {
     let db = 20.0 * max_peak.max(1e-6).log10();
     eprintln!();
     println!(
-        "peak {:.1} dBFS, {} buffers received{}",
+        "input peak {:.1} dBFS, {} buffers received{} | {}",
         db,
         buffers.load(Ordering::Relaxed),
-        if max_peak < 1e-4 { " — SILENCE" } else { "" }
+        if max_peak < 1e-4 { " — SILENCE" } else { "" },
+        loudness(&stats.snapshot())
     );
     Ok(())
 }
@@ -377,6 +391,18 @@ fn is_quit(line: &str) -> bool {
     matches!(l.as_str(), "quit" | "exit") || (!l.is_empty() && l.chars().all(|c| c == 'q'))
 }
 
+/// "out -13.1 LUFS (in -21.4) AGC +7.7 LIM -1.2"
+fn loudness(p: &djcast_core::dsp::DspSnapshot) -> String {
+    let lufs = |v: f32| if v.is_finite() { format!("{v:.1}") } else { "  -inf".into() };
+    format!(
+        "out {} LUFS (in {}) AGC {:+.1} LIM {:.1}",
+        lufs(p.out_lufs),
+        lufs(p.in_lufs),
+        p.agc_gain_db,
+        p.limiter_db
+    )
+}
+
 fn print_status(engine: &Engine) {
     let st = engine.status();
     let (l, r) = engine.levels();
@@ -387,9 +413,10 @@ fn print_status(engine: &Engine) {
         "OFFLINE (reconnecting)".to_string()
     };
     eprint!(
-        "\r{state} | L {} R {} | {}\x1b[K",
+        "\r{state} | L {} R {} | {} | {}\x1b[K",
         meter(l),
         meter(r),
+        loudness(&engine.processing()),
         st.title.as_deref().unwrap_or("—")
     );
     let _ = std::io::stderr().flush();

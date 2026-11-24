@@ -31,6 +31,14 @@
 - [ ] macOS: read the rekordbox window through the Accessibility API
 - [ ] Configurable MIDI mappings for other controllers
 
+## Loudness processing ✅
+- [x] EBU R128 loudness metering (input/output short-term LUFS) in `meter` and the status line
+- [x] Slow AGC towards a LUFS target (gated, so pauses are not pumped up)
+- [x] Look-ahead stereo-linked peak limiter (5 ms, ceiling -1 dBFS) to protect the MP3 encoder
+- [x] Presets off / gentle (-16) / radio (-13) / loud (-10) / custom
+- [ ] Optional multiband compression for an even denser "radio" sound
+- [ ] Listening test in Second Life against other streams
+
 ## Capture sources (ongoing)
 - [x] WASAPI loopback of any output device (verified: DDJ-1000 with rekordbox on WASAPI)
 - [x] Input devices (line-in, virtual cables)

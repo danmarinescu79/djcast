@@ -8,6 +8,17 @@ device = ""
 mode = "loopback"
 gain = 1.0
 
+[processing]
+# Loudness processing before encoding (AGC + look-ahead limiter), like Winamp DSP / Stereo Tool.
+# "off", "gentle" (-16 LUFS), "radio" (-13 LUFS, typical internet radio), "loud" (-10 LUFS),
+# or "custom" (uses target_lufs). DJ mixes are often around -20..-26 LUFS without it.
+preset = "radio"
+target_lufs = -14.0
+# Limiter ceiling; keep at -1.0 or lower so MP3 encoding does not clip
+ceiling_db = -1.0
+# Maximum boost the AGC may apply
+max_gain_db = 15.0
+
 [encoder]
 codec = "mp3"
 bitrate = 192   # 128, 192, 256, 320 ...

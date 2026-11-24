@@ -14,3 +14,4 @@ crossbeam-channel.workspace = true
 base64 = "0.23"
 cpal = "0.18"
 mp3lame-encoder = "0.3"
+ebur128 = "0.1.11"
