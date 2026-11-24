@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 - Settings: General first, with start-up options (start with the computer, stay in the tray,
   close to the tray, go live automatically) and updates (check on start, check now, install
   and restart, what's new after an update)
