@@ -19,9 +19,16 @@
       arrives only in `master.db-wal` and is picked up correctly
 
 ## Stage 3: instant now playing
-- [ ] Read rekordbox process memory (per-version offsets in an updatable file)
-- [ ] "On-air deck" logic (faders + crossfader, hysteresis, confirmation delay)
-- [ ] MIDI from the DDJ-1000 (if the port can be shared)
+- [x] Deck contents from the rekordbox window via Windows UI Automation (no process memory,
+      no per-version offsets); decks identified by their number label, any layout
+- [x] Playing state from the deck's running time display
+- [x] MIDI mixer (Pioneer DDJ mapping, verified on DDJ-1000): channel faders, crossfader,
+      crossfader assign; MIDI port shared with rekordbox (Windows 11 multi-client MIDI)
+- [x] "On-air deck" logic: equal-power crossfader, hysteresis, confirmation delay
+- [x] Sources `rekordbox-live` and `auto` (live, falling back to the history)
+- [ ] Live test during a real mix; tune defaults
+- [ ] macOS: read the rekordbox window through the Accessibility API
+- [ ] Configurable MIDI mappings for other controllers
 
 ## Capture sources (ongoing)
 - [x] WASAPI loopback of any output device (verified: DDJ-1000 with rekordbox on WASAPI)

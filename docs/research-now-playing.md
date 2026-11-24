@@ -56,9 +56,29 @@ rekordbox has **no official API** for the current track (confirmed by Pioneer DJ
 
 ## Decision
 Pluggable sources (the `Source` trait in `crates/nowplaying`):
-1. `rekordbox_db`: implemented first (stable, testable right away); remains the fallback.
-2. `rekordbox_mem` + mixer logic (MIDI or memory): primary, instant source.
-3. `prodjlink`: for CDJ setups.
+1. `rekordbox-db`: implemented first (stable); remains the fallback.
+2. `rekordbox-live`: deck contents via UI Automation + mixer state via MIDI (instant).
+3. `prodjlink`: for CDJ setups (planned).
+
+### Why UI Automation instead of process memory (2026-11)
+- rkbx_link is GPL-3.0, and its memory offsets for current Windows rekordbox versions are
+  sold under a commercial license; only 7.2.2 offsets are public. Offsets also break with
+  every rekordbox update.
+- rekordbox 7 is built with JUCE and exposes its UI through UI Automation: each deck panel
+  shows a deck-number label, title, artist, BPM, key, remaining and elapsed time. One
+  `FindAllBuildCache` call returns ~780 elements in a few hundred ms.
+- The deck MASTER button state and the on-screen faders are *not* exposed (the mixer panel is
+  hidden in the 2-deck layout with a controller), so the mixer state comes from MIDI.
+- On Windows 11 the controller's MIDI input can be opened while rekordbox uses it.
+
+### Pioneer DDJ MIDI mapping (verified on DDJ-1000)
+| Control | Message |
+|---|---|
+| Channel fader N (1–4) | MIDI ch N, CC 0x13 (MSB) + 0x33 (LSB) |
+| Crossfader | MIDI ch 7, CC 0x1F (MSB) + 0x3F (LSB) |
+| Crossfader assign, channel N | MIDI ch N, note 0x16 = A, 0x1D = THRU, 0x18 = B |
+| PLAY, deck N | MIDI ch N, note 0x0B |
+| DECK select (1/3, 2/4) | note 0x72; active deck reported with note 0x3C |
 
 ## References
 - https://github.com/gabek/supbox

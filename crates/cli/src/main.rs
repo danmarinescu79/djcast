@@ -71,10 +71,16 @@ enum RekordboxCmd {
         #[arg(short = 'n', long, default_value_t = 10)]
         count: usize,
     },
-    /// Print new tracks as rekordbox adds them to the history (no streaming).
+    /// Print now-playing changes without streaming.
     Watch {
         #[arg(short, long, default_value = "djcast.toml")]
         config: PathBuf,
+        /// Override the configured source: db, live or auto.
+        #[arg(short, long)]
+        source: Option<String>,
+        /// Print deck and mixer state every second.
+        #[arg(short, long)]
+        verbose: bool,
     },
 }
 
@@ -197,15 +203,24 @@ fn rekordbox_cmd(cmd: RekordboxCmd) -> Result<()> {
                 println!("{}  {}", e.created_at, t.display());
             }
         }
-        RekordboxCmd::Watch { config } => {
-            let np = if config.exists() { load(&config)?.nowplaying } else { NowPlayingConfig::default() };
-            let np = NowPlayingConfig { source: djcast_nowplaying::SourceKind::RekordboxDb, ..np };
+        RekordboxCmd::Watch { config, source, verbose } => {
+            use djcast_nowplaying::SourceKind;
+            let mut np = if config.exists() { load(&config)?.nowplaying } else { NowPlayingConfig::default() };
+            np.source = match source.as_deref() {
+                Some("db") => SourceKind::RekordboxDb,
+                Some("live") => SourceKind::RekordboxLive,
+                Some("auto") => SourceKind::Auto,
+                Some(other) => anyhow::bail!("unknown source '{other}' (use db, live or auto)"),
+                None if np.source == SourceKind::None => SourceKind::Auto,
+                None => np.source,
+            };
             let (tx, rx) = mpsc::channel();
-            spawn_nowplaying(&np, tx)?;
-            eprintln!("watching rekordbox history (tracks appear ~1 min after they start), Ctrl+C to stop");
+            spawn_nowplaying(&np, tx, verbose)?;
+            eprintln!("watching now playing ({:?}), Ctrl+C to stop", np.source);
             for ev in rx {
                 if let Event::Track(t) = ev {
-                    println!("now playing: {}", t.display());
+                    let deck = t.deck.map(|d| format!("[deck {d}] ")).unwrap_or_default();
+                    println!("now playing: {deck}{}", t.display());
                 }
             }
         }
@@ -219,7 +234,7 @@ enum Event {
 }
 
 /// Poll the configured source on a background thread; send a `Track` event on changes.
-fn spawn_nowplaying(cfg: &NowPlayingConfig, tx: mpsc::Sender<Event>) -> Result<bool> {
+fn spawn_nowplaying(cfg: &NowPlayingConfig, tx: mpsc::Sender<Event>, verbose: bool) -> Result<bool> {
     let Some(mut source) = djcast_nowplaying::create_source(cfg)? else {
         return Ok(false);
     };
@@ -229,7 +244,11 @@ fn spawn_nowplaying(cfg: &NowPlayingConfig, tx: mpsc::Sender<Event>) -> Result<b
         let mut last: Option<Track> = None;
         let mut failing = false;
         loop {
-            match source.poll() {
+            let result = source.poll();
+            if verbose && let Some(s) = source.debug_snapshot() {
+                eprintln!("{s}");
+            }
+            match result {
                 Ok(Some(t)) if Some(&t) != last.as_ref() => {
                     last = Some(t.clone());
                     if tx.send(Event::Track(t)).is_err() {
@@ -279,7 +298,7 @@ fn stream(config: &Path, title: Option<String>) -> Result<()> {
             }
         });
     }
-    spawn_nowplaying(&cfg.nowplaying, tx.clone())?;
+    spawn_nowplaying(&cfg.nowplaying, tx.clone(), false)?;
     if let Some(t) = title {
         tx.send(Event::Line(t))?;
     }

@@ -31,10 +31,18 @@ enabled = false
 dir = "recordings"
 
 [nowplaying]
-# "none"         = titles only from manual input
-# "rekordbox-db" = rekordbox play history (tracks appear ~1 min after they start)
-source = "rekordbox-db"
-poll_interval_secs = 2.0
+# "none"           = titles only from manual input
+# "rekordbox-db"   = rekordbox play history (stable; tracks appear ~1 min after they start)
+# "rekordbox-live" = instant: decks read from the rekordbox window (Windows) + mixer via MIDI
+# "auto"           = rekordbox-live, falling back to rekordbox-db when live is unavailable
+source = "auto"
+poll_interval_secs = 1.0
+# Controller MIDI input for faders/crossfader: "auto" (first "DDJ" port), a port name, or "none"
+midi_input = "auto"
+# Seconds a deck must be clearly louder before the title switches to it
+confirm_secs = 4.0
+# Crossfader assign per channel until the switches are moved: "a", "thru" or "b"
+crossfader_assign = ["thru", "thru", "thru", "thru"]
 # Empty = use the key saved with `djcast rekordbox set-key` (see docs/rekordbox-key.md)
 rekordbox_key = ""
 # Empty = auto-detect
