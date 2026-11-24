@@ -14,7 +14,7 @@ mod uia;
 use crate::{Source, Track};
 use anyhow::{Result, anyhow};
 use decks::DeckView;
-use mixer::{Assign, MidiMap, MixerState};
+use mixer::{Assign, MidiControl, MidiMap, MixerState};
 use onair::OnAir;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -32,6 +32,7 @@ pub struct LiveConfig {
     pub midi_input: String,
     pub confirm: Duration,
     pub assign: [Assign; 4],
+    pub map: MidiMap,
 }
 
 #[derive(Debug, Clone)]
@@ -72,7 +73,7 @@ impl RekordboxLiveSource {
         let shared = Arc::new(Mutex::new(Shared::default()));
         spawn_scanner(shared.clone())?;
         let mixer = Arc::new(Mutex::new(MixerState::new(cfg.assign)));
-        let midi = open_midi(&cfg.midi_input, mixer.clone());
+        let midi = open_midi(&cfg.midi_input, cfg.map.clone(), mixer.clone());
         Ok(Self { shared, mixer, _midi: midi, onair: OnAir::new(cfg.confirm) })
     }
 }
@@ -262,20 +263,23 @@ pub fn midi_inputs() -> Vec<String> {
     names
 }
 
-fn open_midi(wanted: &str, mixer: Arc<Mutex<MixerState>>) -> Option<midir::MidiInputConnection<()>> {
+/// The MIDI input matching `wanted` ("auto" = first port with "DDJ" in its name).
+fn find_port(input: &midir::MidiInput, wanted: &str) -> Option<midir::MidiInputPort> {
+    let needle = if wanted.eq_ignore_ascii_case("auto") { "ddj".to_string() } else { wanted.to_lowercase() };
+    input.ports().into_iter().find(|p| input.port_name(p).is_ok_and(|n| n.to_lowercase().contains(&needle)))
+}
+
+fn open_midi(wanted: &str, map: MidiMap, mixer: Arc<Mutex<MixerState>>) -> Option<midir::MidiInputConnection<()>> {
     let wanted = wanted.trim();
     if wanted.is_empty() || wanted.eq_ignore_ascii_case("none") {
         return None;
     }
     let input = midir::MidiInput::new("djcast").ok()?;
-    let needle = if wanted.eq_ignore_ascii_case("auto") { "ddj".to_string() } else { wanted.to_lowercase() };
-    let port = input.ports().into_iter().find(|p| input.port_name(p).is_ok_and(|n| n.to_lowercase().contains(&needle)));
-    let Some(port) = port else {
+    let Some(port) = find_port(&input, wanted) else {
         log::info!("no MIDI input matching '{wanted}'; on-air detection uses deck play state only");
         return None;
     };
     let name = input.port_name(&port).unwrap_or_default();
-    let map = MidiMap::pioneer_ddj();
     match input.connect(&port, "djcast-mixer", move |_, msg, _| mixer.lock().unwrap().apply(&map, msg), ()) {
         Ok(conn) => {
             log::info!("MIDI mixer input: {name}");
@@ -286,6 +290,36 @@ fn open_midi(wanted: &str, mixer: Arc<Mutex<MixerState>>) -> Option<midir::MidiI
             None
         }
     }
+}
+
+/// Listen on the MIDI input `wanted` until the user moves a fader (or `timeout` passes) and
+/// return that control. Works while rekordbox has the port open (multi-client MIDI).
+pub fn midi_learn(wanted: &str, timeout: Duration) -> Result<MidiControl> {
+    let wanted = wanted.trim();
+    if wanted.is_empty() || wanted.eq_ignore_ascii_case("none") {
+        anyhow::bail!("choose a MIDI input first");
+    }
+    let input = midir::MidiInput::new("djcast-learn")?;
+    let port = find_port(&input, wanted).ok_or_else(|| anyhow::anyhow!("no MIDI input matching \"{wanted}\""))?;
+    let msgs: Arc<Mutex<Vec<[u8; 3]>>> = Arc::default();
+    let sink = msgs.clone();
+    let _conn = input
+        .connect(&port, "djcast-learn", move |_, m, _| {
+            if let [a, b, c] = *m {
+                sink.lock().unwrap().push([a, b, c]);
+            }
+        }, ())
+        .map_err(|e| anyhow::anyhow!("could not open the MIDI input: {e}"))?;
+    let start = Instant::now();
+    while start.elapsed() < timeout {
+        std::thread::sleep(Duration::from_millis(100));
+        if mixer::pick_control(&msgs.lock().unwrap()).is_some() {
+            // Let the move finish so a 14-bit LSB is seen too.
+            std::thread::sleep(Duration::from_millis(400));
+            return Ok(mixer::pick_control(&msgs.lock().unwrap()).expect("still there"));
+        }
+    }
+    anyhow::bail!("no fader movement seen — move the control from one end to the other")
 }
 
 #[cfg(test)]

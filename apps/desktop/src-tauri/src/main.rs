@@ -215,6 +215,12 @@ async fn list_midi_inputs() -> CmdResult<Vec<String>> {
     blocking(|| Ok(djcast_nowplaying::live::midi_inputs())).await
 }
 
+/// Wait (up to 15 s) for the user to move a fader on `port`; returns its MIDI control.
+#[tauri::command]
+async fn midi_learn(port: String) -> CmdResult<djcast_nowplaying::live::mixer::MidiControl> {
+    blocking(move || djcast_nowplaying::live::midi_learn(&port, std::time::Duration::from_secs(15)).map_err(err)).await
+}
+
 #[derive(Serialize)]
 struct Device {
     name: String,
@@ -334,6 +340,7 @@ fn main() {
             open_project_page,
             test_discord,
             save_tracklist,
+            midi_learn,
             test_connection
         ])
         .run(tauri::generate_context!())

@@ -37,11 +37,23 @@ pub struct ProcessingConfig {
     pub max_gain_db: f64,
     /// 4-band compression between the AGC and the limiter (denser, more even sound).
     pub multiband: bool,
+    /// Bass shelf below ~100 Hz, dB (-6..=+6; 0 = off). Applied before the AGC.
+    pub eq_bass_db: f64,
+    /// Presence bell around 3.5 kHz, dB (-6..=+6; 0 = off). Applied before the AGC.
+    pub eq_presence_db: f64,
 }
 
 impl Default for ProcessingConfig {
     fn default() -> Self {
-        Self { preset: Preset::Off, target_lufs: -14.0, ceiling_db: -1.0, max_gain_db: 15.0, multiband: false }
+        Self {
+            preset: Preset::Off,
+            target_lufs: -14.0,
+            ceiling_db: -1.0,
+            max_gain_db: 15.0,
+            multiband: false,
+            eq_bass_db: 0.0,
+            eq_presence_db: 0.0,
+        }
     }
 }
 
@@ -100,7 +112,40 @@ impl DspStats {
     }
 }
 
+/// Tone controls: bass shelf + presence bell.
+struct Eq {
+    filters: Vec<crate::multiband::Biquad>,
+}
+
+impl Eq {
+    const MAX_DB: f64 = 6.0;
+
+    fn new(cfg: &ProcessingConfig, rate: u32) -> Option<Self> {
+        use crate::multiband::Biquad;
+        let rate = rate as f32;
+        let clamp = |v: f64| v.clamp(-Self::MAX_DB, Self::MAX_DB) as f32;
+        let mut filters = Vec::new();
+        if cfg.eq_bass_db.abs() >= 0.1 {
+            filters.push(Biquad::low_shelf(100.0, clamp(cfg.eq_bass_db), rate));
+        }
+        if cfg.eq_presence_db.abs() >= 0.1 {
+            filters.push(Biquad::peaking(3500.0, 0.8, clamp(cfg.eq_presence_db), rate));
+        }
+        (!filters.is_empty()).then_some(Self { filters })
+    }
+
+    fn process(&mut self, buf: &mut [f32]) {
+        for frame in buf.as_chunks_mut::<2>().0 {
+            for f in &mut self.filters {
+                frame[0] = f.run(frame[0], 0);
+                frame[1] = f.run(frame[1], 1);
+            }
+        }
+    }
+}
+
 pub struct Processor {
+    eq: Option<Eq>,
     agc: Option<Agc>,
     multiband: Option<crate::multiband::Multiband>,
     limiter: Option<Limiter>,
@@ -115,6 +160,7 @@ impl Processor {
         let ceiling = db_to_lin(cfg.ceiling_db.min(0.0)) as f32;
         let target = cfg.target();
         Self {
+            eq: Eq::new(cfg, sample_rate),
             agc: target.map(|t| Agc::new(t, cfg.max_gain_db, sample_rate)),
             multiband: (target.is_some() && cfg.multiband)
                 .then(|| crate::multiband::Multiband::new(sample_rate, crate::multiband::DEFAULT_BANDS)),
@@ -133,6 +179,10 @@ impl Processor {
     pub fn process(&mut self, buf: &mut [f32]) {
         let _ = self.in_meter.add_frames_f32(buf);
         let in_st = self.in_meter.loudness_shortterm().unwrap_or(f64::NEG_INFINITY);
+
+        if let Some(eq) = &mut self.eq {
+            eq.process(buf);
+        }
 
         if let Some(agc) = &mut self.agc {
             agc.process(buf, in_st);
@@ -373,5 +423,30 @@ mod tests {
         let (out, snap) = run(&cfg, vec![0.5, -0.5, 1.5, -1.5]);
         assert_eq!(out, vec![0.5, -0.5, db_to_lin(-1.0) as f32, -db_to_lin(-1.0) as f32]);
         assert_eq!(snap.agc_gain_db, 0.0);
+    }
+
+    fn tone_rms_db(freq: f32, cfg: &ProcessingConfig) -> f32 {
+        let mut buf: Vec<f32> = (0..RATE)
+            .flat_map(|i| {
+                let s = (i as f32 * freq * std::f32::consts::TAU / RATE as f32).sin() * 0.25;
+                [s, s]
+            })
+            .collect();
+        let mut p = Processor::new(cfg, RATE, Arc::new(DspStats::default()));
+        p.process(&mut buf);
+        let tail = &buf[buf.len() / 2..]; // after the filters settle
+        let rms = (tail.iter().map(|s| s * s).sum::<f32>() / tail.len() as f32).sqrt();
+        20.0 * rms.log10()
+    }
+
+    #[test]
+    fn eq_boosts_bass_and_presence_only_where_asked() {
+        let flat = ProcessingConfig::default();
+        let eq = ProcessingConfig { eq_bass_db: 6.0, eq_presence_db: 4.0, ..Default::default() };
+        let diff = |f: f32| tone_rms_db(f, &eq) - tone_rms_db(f, &flat);
+        assert!((diff(40.0) - 6.0).abs() < 0.8, "40 Hz: {}", diff(40.0));
+        assert!((diff(3500.0) - 4.0).abs() < 0.5, "3.5 kHz: {}", diff(3500.0));
+        assert!(diff(800.0).abs() < 1.0, "800 Hz: {}", diff(800.0));
+        assert!(diff(15_000.0).abs() < 1.0, "15 kHz: {}", diff(15_000.0));
     }
 }

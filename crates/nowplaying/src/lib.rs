@@ -10,7 +10,7 @@ pub mod live;
 pub mod output;
 pub mod rekordbox;
 
-use live::mixer::Assign;
+use live::mixer::{Assign, MappingPreset, MidiMap};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -33,6 +33,10 @@ pub struct NowPlayingConfig {
     pub confirm_secs: f64,
     /// Crossfader assign per channel until the switches are moved (a, thru, b).
     pub crossfader_assign: [Assign; 4],
+    /// Controller mapping: "pioneer-ddj" (built in) or "custom" (`midi_custom`).
+    pub midi_mapping: MappingPreset,
+    /// Faders and crossfader of another controller, usually learned in the app.
+    pub midi_custom: MidiMap,
     /// Folder for OBS text files and the tracklist. Empty = disabled.
     pub output_dir: String,
 }
@@ -47,6 +51,8 @@ impl Default for NowPlayingConfig {
             midi_input: "auto".into(),
             confirm_secs: 4.0,
             crossfader_assign: [Assign::Thru; 4],
+            midi_mapping: MappingPreset::PioneerDdj,
+            midi_custom: MidiMap::default(),
             output_dir: "nowplaying".into(),
         }
     }
@@ -96,6 +102,10 @@ fn live_source(cfg: &NowPlayingConfig) -> anyhow::Result<live::RekordboxLiveSour
         midi_input: cfg.midi_input.clone(),
         confirm: Duration::from_secs_f64(cfg.confirm_secs.max(0.0)),
         assign: cfg.crossfader_assign,
+        map: match cfg.midi_mapping {
+            MappingPreset::PioneerDdj => MidiMap::pioneer_ddj(),
+            MappingPreset::Custom => cfg.midi_custom.clone(),
+        },
     })
 }
 

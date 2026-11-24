@@ -30,6 +30,9 @@ enum Cmd {
         /// Capture an input device instead of loopback of an output device.
         #[arg(long)]
         input: bool,
+        /// Capture one program only (part of its name, e.g. "rekordbox"); Windows 10 2004+.
+        #[arg(long, conflicts_with_all = ["device", "input"])]
+        program: Option<String>,
         /// Stop after this many seconds and print the peak level.
         #[arg(long)]
         seconds: Option<f64>,
@@ -107,7 +110,9 @@ fn main() -> Result<()> {
         .init();
     match Cli::parse().cmd {
         Cmd::Devices => devices(),
-        Cmd::Meter { device, input, seconds, preset, multiband } => meter_cmd(device, input, seconds, &preset, multiband),
+        Cmd::Meter { device, input, program, seconds, preset, multiband } => {
+            meter_cmd(device, input, program, seconds, &preset, multiband)
+        }
         Cmd::Init { path } => init(&path),
         Cmd::Stream { config, title } => stream(&config, title),
         Cmd::Meta { config, title } => icecast::update_metadata(&load(&config)?.stream.server, &title),
@@ -129,13 +134,23 @@ fn devices() -> Result<()> {
     Ok(())
 }
 
-fn meter_cmd(device: String, input: bool, seconds: Option<f64>, preset: &str, multiband: bool) -> Result<()> {
+fn meter_cmd(
+    device: String,
+    input: bool,
+    program: Option<String>,
+    seconds: Option<f64>,
+    preset: &str,
+    multiband: bool,
+) -> Result<()> {
     use djcast_core::config::{AudioConfig, CaptureMode};
     use djcast_core::dsp::{DspStats, ProcessingConfig, Processor};
-    let cfg = AudioConfig {
-        device,
-        mode: if input { CaptureMode::Input } else { CaptureMode::Loopback },
-        gain: 1.0,
+    let cfg = match program {
+        Some(name) => AudioConfig { device: name, mode: CaptureMode::Process, gain: 1.0 },
+        None => AudioConfig {
+            device,
+            mode: if input { CaptureMode::Input } else { CaptureMode::Loopback },
+            gain: 1.0,
+        },
     };
     let processing = ProcessingConfig {
         preset: toml::Value::String(preset.to_string())

@@ -6,12 +6,15 @@
 //!   server answers `OK2`, then `icy-*` headers and audio. No user, no mount.
 //! * Shoutcast v2 (DNAS 2, legacy source mode): like v1 with password `password:#<stream id>`.
 //! * Metadata: Icecast `GET /admin/metadata?mode=updinfo`, Shoutcast `GET /admin.cgi?mode=updinfo`.
+//! * Icecast over TLS (`tls = true`): the same requests inside a rustls session; the server
+//!   certificate is verified by the operating system's trust store.
 
 use crate::config::{Protocol, ServerConfig};
 use anyhow::{Context, Result, bail};
 use base64::Engine as _;
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
@@ -35,9 +38,91 @@ pub struct AudioInfo {
     pub channels: u8,
 }
 
+/// A plain or TLS connection to the server.
+enum Conn {
+    Plain(TcpStream),
+    Tls(Box<rustls::StreamOwned<rustls::ClientConnection, TcpStream>>),
+}
+
+impl Conn {
+    fn tcp(&self) -> &TcpStream {
+        match self {
+            Conn::Plain(s) => s,
+            Conn::Tls(s) => s.get_ref(),
+        }
+    }
+
+    fn set_read_timeout(&self, t: Option<Duration>) -> std::io::Result<()> {
+        self.tcp().set_read_timeout(t)
+    }
+}
+
+impl Read for Conn {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            Conn::Plain(s) => s.read(buf),
+            Conn::Tls(s) => s.read(buf),
+        }
+    }
+}
+
+impl Write for Conn {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        match self {
+            Conn::Plain(s) => s.write(buf),
+            Conn::Tls(s) => s.write(buf),
+        }
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        match self {
+            Conn::Plain(s) => s.flush(),
+            Conn::Tls(s) => s.flush(),
+        }
+    }
+}
+
+fn tls_config() -> Result<Arc<rustls::ClientConfig>> {
+    static CONFIG: OnceLock<Arc<rustls::ClientConfig>> = OnceLock::new();
+    if let Some(c) = CONFIG.get() {
+        return Ok(c.clone());
+    }
+    use rustls_platform_verifier::BuilderVerifierExt;
+    let provider = Arc::new(rustls::crypto::ring::default_provider());
+    let config = rustls::ClientConfig::builder_with_provider(provider)
+        .with_safe_default_protocol_versions()
+        .and_then(|b| b.with_platform_verifier())
+        .context("setting up TLS")?
+        .with_no_client_auth();
+    Ok(CONFIG.get_or_init(|| Arc::new(config)).clone())
+}
+
+/// Connect to the server's HTTP port, through TLS when `cfg.tls` is set.
+fn open(cfg: &ServerConfig) -> Result<Conn> {
+    let tcp = open_tcp(&cfg.host, cfg.port)?;
+    if !cfg.tls {
+        return Ok(Conn::Plain(tcp));
+    }
+    let name = rustls::pki_types::ServerName::try_from(cfg.host.clone())
+        .with_context(|| format!("\"{}\" is not a valid server name for TLS", cfg.host))?;
+    let mut session = rustls::ClientConnection::new(tls_config()?, name).context("starting TLS")?;
+    let mut tcp = tcp;
+    // Handshake now, so certificate problems are reported as such.
+    while session.is_handshaking() {
+        session.complete_io(&mut tcp).map_err(|e| {
+            let hint = if e.to_string().contains("certificate") {
+                " — the server's certificate is not trusted (self-signed, expired or for another name)"
+            } else {
+                " — is TLS enabled on this port?"
+            };
+            anyhow::anyhow!("TLS handshake with {}:{} failed: {e}{hint}", cfg.host, cfg.port)
+        })?;
+    }
+    Ok(Conn::Tls(Box::new(rustls::StreamOwned::new(session, tcp))))
+}
+
 /// An open source connection; write encoded audio into it.
 pub struct SourceConnection {
-    stream: TcpStream,
+    stream: Conn,
 }
 
 impl SourceConnection {
@@ -56,7 +141,7 @@ impl SourceConnection {
     }
 
     fn connect_with(cfg: &ServerConfig, content_type: &str, info: AudioInfo, method: Method) -> Result<Self> {
-        let mut stream = open_tcp(&cfg.host, cfg.port)?;
+        let mut stream = open(cfg)?;
         let mount = normalize_mount(&cfg.mount);
         let (verb, version) = match method {
             Method::Put => ("PUT", "HTTP/1.1"),
@@ -107,7 +192,8 @@ impl SourceConnection {
         }
         match code {
             200 => {
-                log::info!("connected to {}:{}{} ({verb})", cfg.host, cfg.port, mount);
+                let tls = if cfg.tls { ", TLS" } else { "" };
+                log::info!("connected to {}:{}{} ({verb}{tls})", cfg.host, cfg.port, mount);
                 Ok(Self { stream })
             }
             401 => bail!("authentication failed (401): check user/password"),
@@ -120,7 +206,7 @@ impl SourceConnection {
     /// Shoutcast v1 / v2 (legacy source protocol) on port + 1.
     fn connect_shoutcast(cfg: &ServerConfig, content_type: &str, info: AudioInfo) -> Result<Self> {
         let source_port = cfg.port.checked_add(1).context("port too high for Shoutcast (source uses port + 1)")?;
-        let mut stream = open_tcp(&cfg.host, source_port)?;
+        let mut stream = Conn::Plain(open_tcp(&cfg.host, source_port)?);
         stream.write_all(format!("{}\r\n", shoutcast_password(cfg)).as_bytes()).context("sending password")?;
         let reply = read_line(&mut stream).context("waiting for the server's answer")?;
         if !reply.trim().starts_with("OK2") {
@@ -163,7 +249,7 @@ fn shoutcast_password(cfg: &ServerConfig) -> String {
 }
 
 /// Read one `\n`-terminated line.
-fn read_line(stream: &mut TcpStream) -> Result<String> {
+fn read_line(stream: &mut impl Read) -> Result<String> {
     let mut buf = Vec::new();
     let mut byte = [0u8; 1];
     while !buf.ends_with(b"\n") && buf.len() < 1024 {
@@ -193,7 +279,7 @@ pub fn update_metadata(cfg: &ServerConfig, song: &str) -> Result<()> {
     if cfg.protocol != Protocol::Icecast {
         return update_metadata_shoutcast(cfg, song);
     }
-    let mut stream = open_tcp(&cfg.host, cfg.port)?;
+    let mut stream = open(cfg)?;
     let mount = normalize_mount(&cfg.mount);
     let req = format!(
         "GET /admin/metadata?mount={m}&mode=updinfo&song={s}&charset=UTF-8 HTTP/1.0\r\n\
@@ -262,7 +348,7 @@ fn open_tcp(host: &str, port: u16) -> Result<TcpStream> {
 }
 
 /// Read the HTTP status line and headers; returns (code, reason).
-fn read_status(stream: &mut TcpStream) -> Result<(u16, String)> {
+fn read_status(stream: &mut impl Read) -> Result<(u16, String)> {
     let mut buf = Vec::with_capacity(512);
     let mut byte = [0u8; 1];
     while !buf.ends_with(b"\r\n\r\n") && !buf.ends_with(b"\n\n") {
@@ -513,5 +599,20 @@ mod tests {
             head[0],
             "GET /admin/metadata?mount=/live&mode=updinfo&song=A%C8%9Be%C8%99%20%26%20Co%20-%20Tr%C4%83&charset=UTF-8 HTTP/1.0"
         );
+    }
+
+    /// Needs the internet: `cargo test -p djcast-core -- --ignored tls`.
+    #[test]
+    #[ignore]
+    fn tls_reaches_https_servers_and_rejects_bad_certificates() {
+        let info = AudioInfo { sample_rate: 44_100, bitrate: 128, channels: 2 };
+        let cfg = |host: &str| ServerConfig { host: host.into(), port: 443, tls: true, ..Default::default() };
+        // A web server, not Icecast: TLS works, then the HTTP answer is refused as a source.
+        let e = SourceConnection::connect(&cfg("example.com"), "audio/mpeg", info).err().unwrap();
+        let msg = format!("{e:#}");
+        assert!(!msg.contains("TLS"), "{msg}");
+        assert!(msg.contains("server answered") || msg.contains("authentication") || msg.contains("refused"), "{msg}");
+        let e = SourceConnection::connect(&cfg("self-signed.badssl.com"), "audio/mpeg", info).err().unwrap();
+        assert!(format!("{e:#}").contains("certificate"), "{e:#}");
     }
 }

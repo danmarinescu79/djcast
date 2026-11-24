@@ -432,7 +432,7 @@ fn listen_url(cfg: &AppConfig) -> String {
     match s.protocol {
         djcast_core::config::Protocol::Icecast => {
             let mount = if s.mount.starts_with('/') { s.mount.clone() } else { format!("/{}", s.mount) };
-            format!("http://{}:{}{}", s.host, s.port, mount)
+            format!("{}://{}:{}{}", if s.tls { "https" } else { "http" }, s.host, s.port, mount)
         }
         _ => format!("http://{}:{}/", s.host, s.port),
     }

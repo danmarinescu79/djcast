@@ -1,11 +1,15 @@
 //! Mixer state from the controller's MIDI output (channel faders, crossfader, assigns).
 //!
-//! Default mapping = Pioneer DDJ (verified on a DDJ-1000):
+//! Built-in mapping = Pioneer DDJ (verified on a DDJ-1000):
 //! - channel fader N: MIDI channel N, CC 0x13 (MSB) / 0x33 (LSB)
 //! - crossfader: MIDI channel 7, CC 0x1F (MSB) / 0x3F (LSB)
 //! - crossfader assign of channel N: notes 0x16 = A, 0x1D = THRU, 0x18 = B on MIDI channel N
+//!
+//! Other controllers use a custom mapping, usually filled in with "learn" (see
+//! [`pick_control`]): move a fader and djcast records which CC it sends.
 
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -16,32 +20,68 @@ pub enum Assign {
     B,
 }
 
+/// A continuous control: a MIDI CC, 14-bit when it has a second (LSB) CC.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct MidiControl {
+    /// MIDI channel, 1..=16; 0 = not mapped.
+    pub channel: u8,
+    pub cc: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lsb: Option<u8>,
+}
+
+impl MidiControl {
+    pub fn is_mapped(&self) -> bool {
+        (1..=16).contains(&self.channel)
+    }
+
+    /// The 0-based channel of the MIDI status byte, if mapped.
+    fn status_channel(&self) -> Option<usize> {
+        self.is_mapped().then(|| self.channel as usize - 1)
+    }
+}
+
+/// Crossfader assign buttons: notes sent on each channel fader's MIDI channel.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AssignNotes {
+    pub a: u8,
+    pub thru: u8,
+    pub b: u8,
+}
+
 /// Where each control lives in the MIDI stream.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(default)]
 pub struct MidiMap {
-    pub fader_msb: u8,
-    pub fader_lsb: u8,
-    pub xfader_channel: u8,
-    pub xfader_msb: u8,
-    pub xfader_lsb: u8,
-    pub assign_a: u8,
-    pub assign_thru: u8,
-    pub assign_b: u8,
+    /// Channel faders 1..4; unmapped ones count as fully open.
+    pub faders: [MidiControl; 4],
+    pub crossfader: MidiControl,
+    /// `true` when the crossfader sends its lowest value on the B (right) side.
+    pub crossfader_reversed: bool,
+    /// Assign buttons, if the controller sends them; otherwise the configured assigns apply.
+    pub assign_notes: Option<AssignNotes>,
 }
 
 impl MidiMap {
     pub fn pioneer_ddj() -> Self {
+        let fader = |ch| MidiControl { channel: ch, cc: 0x13, lsb: Some(0x33) };
         Self {
-            fader_msb: 0x13,
-            fader_lsb: 0x33,
-            xfader_channel: 6, // 0-based (MIDI channel 7)
-            xfader_msb: 0x1F,
-            xfader_lsb: 0x3F,
-            assign_a: 0x16,
-            assign_thru: 0x1D,
-            assign_b: 0x18,
+            faders: [fader(1), fader(2), fader(3), fader(4)],
+            crossfader: MidiControl { channel: 7, cc: 0x1F, lsb: Some(0x3F) },
+            crossfader_reversed: false,
+            assign_notes: Some(AssignNotes { a: 0x16, thru: 0x1D, b: 0x18 }),
         }
     }
+}
+
+/// Which mapping to use.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum MappingPreset {
+    #[default]
+    PioneerDdj,
+    Custom,
 }
 
 #[derive(Debug, Clone)]
@@ -51,6 +91,7 @@ pub struct MixerState {
     /// 0 = full A (left), 1 = full B (right).
     pub crossfader: Option<f32>,
     pub assign: [Assign; 4],
+    /// Last MSB per control (faders 0..4, crossfader 4), for 14-bit values.
     msb: [u8; 5],
 }
 
@@ -66,27 +107,39 @@ impl MixerState {
         }
         let (kind, ch, num, val) = (msg[0] & 0xF0, (msg[0] & 0x0F) as usize, msg[1], msg[2]);
         match kind {
-            0xB0 if ch < 4 && num == map.fader_msb => {
-                self.msb[ch] = val;
-                self.faders[ch] = Some(val as f32 / 127.0);
+            0xB0 => {
+                let controls = map.faders.iter().chain(std::iter::once(&map.crossfader)).enumerate();
+                for (slot, c) in controls {
+                    if c.status_channel() != Some(ch) {
+                        continue;
+                    }
+                    let value = if num == c.cc {
+                        self.msb[slot] = val;
+                        val as f32 / 127.0
+                    } else if Some(num) == c.lsb {
+                        fourteen_bit(self.msb[slot], val)
+                    } else {
+                        continue;
+                    };
+                    if slot < 4 {
+                        self.faders[slot] = Some(value);
+                    } else {
+                        self.crossfader = Some(if map.crossfader_reversed { 1.0 - value } else { value });
+                    }
+                }
             }
-            0xB0 if ch < 4 && num == map.fader_lsb => {
-                self.faders[ch] = Some(fourteen_bit(self.msb[ch], val));
-            }
-            0xB0 if ch == map.xfader_channel as usize && num == map.xfader_msb => {
-                self.msb[4] = val;
-                self.crossfader = Some(val as f32 / 127.0);
-            }
-            0xB0 if ch == map.xfader_channel as usize && num == map.xfader_lsb => {
-                self.crossfader = Some(fourteen_bit(self.msb[4], val));
-            }
-            0x90 if ch < 4 && val > 0 => {
-                if num == map.assign_a {
-                    self.assign[ch] = Assign::A;
-                } else if num == map.assign_thru {
-                    self.assign[ch] = Assign::Thru;
-                } else if num == map.assign_b {
-                    self.assign[ch] = Assign::B;
+            0x90 if val > 0 => {
+                let Some(notes) = map.assign_notes else { return };
+                for (i, f) in map.faders.iter().enumerate() {
+                    if f.status_channel() == Some(ch) {
+                        if num == notes.a {
+                            self.assign[i] = Assign::A;
+                        } else if num == notes.thru {
+                            self.assign[i] = Assign::Thru;
+                        } else if num == notes.b {
+                            self.assign[i] = Assign::B;
+                        }
+                    }
                 }
             }
             _ => {}
@@ -116,6 +169,38 @@ fn fourteen_bit(msb: u8, lsb: u8) -> f32 {
     (((msb as u32) << 7) | lsb as u32) as f32 / 16383.0
 }
 
+/// Distinct values a CC must take before it counts as a moved fader (jog wheels, buttons
+/// and knob touches send only a few).
+const LEARN_MIN_VALUES: usize = 8;
+
+/// "Learn": from the MIDI messages seen while the user moved one control, find that control.
+/// A fader sends one CC through many values; a 14-bit fader also sends its LSB on CC + 32.
+pub fn pick_control(msgs: &[[u8; 3]]) -> Option<MidiControl> {
+    let mut values: HashMap<(u8, u8), HashSet<u8>> = HashMap::new();
+    let mut order: Vec<(u8, u8)> = Vec::new();
+    for m in msgs {
+        if m[0] & 0xF0 != 0xB0 {
+            continue;
+        }
+        let key = (m[0] & 0x0F, m[1]);
+        if !values.contains_key(&key) {
+            order.push(key);
+        }
+        values.entry(key).or_default().insert(m[2]);
+    }
+    let moved = |k: &(u8, u8)| values.get(k).is_some_and(|v| v.len() >= LEARN_MIN_VALUES);
+    let &(ch, cc) = order.iter().find(|k| moved(k))?;
+    // An LSB (CC 32..63) moves more than its MSB; prefer the MSB when both were sent.
+    let (msb, lsb) = if (32..64).contains(&cc) && values.contains_key(&(ch, cc - 32)) {
+        (cc - 32, Some(cc))
+    } else if cc < 32 && values.contains_key(&(ch, cc + 32)) {
+        (cc, Some(cc + 32))
+    } else {
+        (cc, None)
+    };
+    Some(MidiControl { channel: ch + 1, cc: msb, lsb })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -142,5 +227,52 @@ mod tests {
         // Note-off of an assign button changes nothing.
         m.apply(&map, &[0x92, 0x16, 0]);
         assert_eq!(m.assign[2], Assign::A);
+    }
+
+    #[test]
+    fn custom_map_on_one_channel_with_reversed_crossfader() {
+        // A controller with all faders on MIDI channel 1 (CC 1-4), 7-bit, crossfader CC 8.
+        let c = |cc| MidiControl { channel: 1, cc, lsb: None };
+        let map = MidiMap { faders: [c(1), c(2), c(3), c(4)], crossfader: c(8), crossfader_reversed: true, assign_notes: None };
+        let mut m = MixerState::new([Assign::A, Assign::B, Assign::Thru, Assign::Thru]);
+        m.apply(&map, &[0xB0, 2, 64]);
+        assert!((m.faders[1].unwrap() - 64.0 / 127.0).abs() < 1e-6);
+        assert_eq!(m.faders[0], None);
+        // Reversed: value 0 means fully B.
+        m.apply(&map, &[0xB0, 8, 0]);
+        assert_eq!(m.crossfader, Some(1.0));
+        assert!(m.gain(1) < 1e-6);
+        // Unmapped controls are ignored.
+        let mut partial = map.clone();
+        partial.faders[0] = MidiControl::default();
+        let mut p = MixerState::new([Assign::Thru; 4]);
+        p.apply(&partial, &[0xB0, 1, 0]);
+        assert_eq!(p.gain(1), 1.0);
+        // Notes are ignored without assign notes.
+        m.apply(&map, &[0x90, 0x16, 127]);
+        assert_eq!(m.assign[0], Assign::A);
+    }
+
+    #[test]
+    fn learn_finds_the_moved_fader() {
+        let sweep = |ch: u8, cc: u8, lsb: bool| -> Vec<[u8; 3]> {
+            (0..40u8)
+                .flat_map(|v| {
+                    let mut m = vec![[0xB0 | ch, cc, v * 3]];
+                    if lsb {
+                        m.push([0xB0 | ch, cc + 32, ((v as u32 * 37) % 128) as u8]);
+                    }
+                    m
+                })
+                .collect()
+        };
+        // Jog wheel noise first (relative values 1/127), then a 14-bit fader on channel 2.
+        let mut msgs: Vec<[u8; 3]> = (0..30).map(|i| [0xB0, 0x22, if i % 2 == 0 { 1 } else { 127 }]).collect();
+        msgs.extend(sweep(1, 0x13, true));
+        assert_eq!(pick_control(&msgs), Some(MidiControl { channel: 2, cc: 0x13, lsb: Some(0x33) }));
+        // 7-bit fader.
+        assert_eq!(pick_control(&sweep(0, 7, false)), Some(MidiControl { channel: 1, cc: 7, lsb: None }));
+        // A button press is not a fader.
+        assert_eq!(pick_control(&[[0x90, 1, 127], [0x80, 1, 0]]), None);
     }
 }

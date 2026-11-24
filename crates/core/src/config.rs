@@ -16,9 +16,12 @@ pub struct Config {
 #[serde(default)]
 pub struct AudioConfig {
     /// Device name (substring match, case-insensitive). Empty = system default.
+    /// With `mode = "process"`: the program's executable name (empty = "rekordbox").
     pub device: String,
     /// `loopback` captures what an output device plays (WASAPI loopback on Windows);
-    /// `input` captures a recording device (line-in, mixer USB input, virtual cable).
+    /// `input` captures a recording device (line-in, mixer USB input, virtual cable);
+    /// `process` captures one program only (Windows 10 2004+; the program must play through
+    /// Windows audio, not ASIO).
     pub mode: CaptureMode,
     /// Linear gain applied before encoding (1.0 = unchanged).
     pub gain: f32,
@@ -35,6 +38,7 @@ impl Default for AudioConfig {
 pub enum CaptureMode {
     Loopback,
     Input,
+    Process,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,6 +92,8 @@ pub struct ServerConfig {
     pub mount: String,
     /// Icecast user (Shoutcast has none).
     pub user: String,
+    /// Icecast over TLS (HTTPS). The certificate is checked against the system's trusted roots.
+    pub tls: bool,
     pub password: String,
     /// Shoutcast v2 stream ID (sid), usually 1.
     pub stream_id: u32,
@@ -109,6 +115,7 @@ impl Default for ServerConfig {
             port: 8000,
             mount: "/live".into(),
             user: "source".into(),
+            tls: false,
             password: "hackme".into(),
             stream_id: 1,
             name: "My DJ Stream".into(),

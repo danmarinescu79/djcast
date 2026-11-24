@@ -1074,9 +1074,12 @@ dependencies = [
  "ogg",
  "opus",
  "rubato",
+ "rustls",
+ "rustls-platform-verifier",
  "serde",
  "thiserror 2.0.21",
  "windows",
+ "windows-core",
 ]
 
 [[package]]

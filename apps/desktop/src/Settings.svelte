@@ -30,6 +30,50 @@
   let draft = $state({ language: 'auto', ...structuredClone($state.snapshot(config)) });
   if (!draft.language) draft.language = 'auto';
   draft.app = { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true, ...(draft.app || {}) };
+  draft.processing = { eq_bass_db: 0, eq_presence_db: 0, ...draft.processing };
+  draft.nowplaying = {
+    midi_mapping: 'pioneer-ddj',
+    crossfader_assign: ['thru', 'thru', 'thru', 'thru'],
+    ...draft.nowplaying,
+  };
+  draft.nowplaying.midi_custom = {
+    faders: [0, 1, 2, 3].map(() => ({ channel: 0, cc: 0 })), crossfader: { channel: 0, cc: 0 }, crossfader_reversed: false,
+    ...(draft.nowplaying.midi_custom || {}),
+  };
+
+  // The device field means a device name, or a program name in "process" mode: keep one per mode.
+  const lastDevice = {};
+  function setMode(mode) {
+    lastDevice[draft.audio.mode] = draft.audio.device;
+    draft.audio.mode = mode;
+    draft.audio.device = lastDevice[mode] ?? '';
+  }
+  const signed = (v) => (Number(v) > 0 ? `+${Number(v)}` : `${Number(v)}`);
+
+  // ---- MIDI learn: slot 0..3 = channel faders, 4 = crossfader ----
+  let learning = $state(-1);
+  let learnMsg = $state({ text: '', ok: true });
+  const unset = { channel: 0, cc: 0 };
+  const mapped = (c) => c && c.channel > 0;
+  const controlLabel = (c) =>
+    !mapped(c) ? t('np.notMapped') : c.lsb != null ? t('np.control14', { ch: c.channel, cc: c.cc, lsb: c.lsb }) : t('np.control', { ch: c.channel, cc: c.cc });
+  const slotControl = (slot) => (slot < 4 ? draft.nowplaying.midi_custom.faders[slot] : draft.nowplaying.midi_custom.crossfader);
+  function setSlot(slot, value) {
+    if (slot < 4) draft.nowplaying.midi_custom.faders[slot] = value;
+    else draft.nowplaying.midi_custom.crossfader = value;
+  }
+  async function learn(slot) {
+    learning = slot;
+    learnMsg = { text: t('np.learning'), ok: true };
+    try {
+      setSlot(slot, await invoke('midi_learn', { port: draft.nowplaying.midi_input }));
+      learnMsg = { text: t('np.learned'), ok: true };
+    } catch (e) {
+      learnMsg = { text: String(e), ok: false };
+    } finally {
+      learning = -1;
+    }
+  }
   draft.share = {
     discord_webhook: '', listen_url: '', on_live: true, on_track: false, on_stop: true,
     live_message: '🔴 **{station}** is live! {track}\n{url}', track_message: '🎵 {track}',
@@ -194,6 +238,8 @@
       draft.encoder.bitrate = Number(draft.encoder.bitrate);
       draft.nowplaying.confirm_secs = Number(draft.nowplaying.confirm_secs);
       draft.processing.target_lufs = Number(draft.processing.target_lufs);
+      draft.processing.eq_bass_db = Number(draft.processing.eq_bass_db);
+      draft.processing.eq_presence_db = Number(draft.processing.eq_presence_db);
       if (renaming) finishRename();
       storeCurrent();
       draft.active_profile = current;
@@ -252,27 +298,36 @@
       <div class="grid">
         <div class="field">
           <label for="mode">{t('audio.capture')}</label>
-          <select id="mode" bind:value={draft.audio.mode}>
+          <select id="mode" value={draft.audio.mode} onchange={(e) => setMode(e.currentTarget.value)}>
             <option value="loopback">{t('audio.loopback')}</option>
+            <option value="process">{t('audio.process')}</option>
             <option value="input">{t('audio.input')}</option>
           </select>
         </div>
-        <div class="field">
-          <label for="device">{t('audio.device')}</label>
-          <select id="device" bind:value={draft.audio.device}>
-            <option value="">{t('common.systemDefault')}</option>
-            {#each deviceOptions as name (name)}<option value={name}>{name}</option>{/each}
-            {#if draft.audio.device && !deviceOptions.includes(draft.audio.device)}
-              <option value={draft.audio.device}>{draft.audio.device}</option>
-            {/if}
-          </select>
-        </div>
+        {#if draft.audio.mode === 'process'}
+          <div class="field">
+            <label for="program">{t('audio.program')}</label>
+            <input id="program" bind:value={draft.audio.device} placeholder="rekordbox" spellcheck="false" />
+            <span class="hint">{t('audio.programHint')}</span>
+          </div>
+        {:else}
+          <div class="field">
+            <label for="device">{t('audio.device')}</label>
+            <select id="device" bind:value={draft.audio.device}>
+              <option value="">{t('common.systemDefault')}</option>
+              {#each deviceOptions as name (name)}<option value={name}>{name}</option>{/each}
+              {#if draft.audio.device && !deviceOptions.includes(draft.audio.device)}
+                <option value={draft.audio.device}>{draft.audio.device}</option>
+              {/if}
+            </select>
+          </div>
+        {/if}
         <div class="field">
           <label for="gain">{t('audio.gain', { v: Number(draft.audio.gain).toFixed(2) })}</label>
           <input id="gain" type="range" min="0.25" max="4" step="0.05" bind:value={draft.audio.gain} />
         </div>
       </div>
-      <p class="note">{t('audio.asioNote')}</p>
+      <p class="note">{draft.audio.mode === 'process' ? t('audio.processNote') : t('audio.asioNote')}</p>
     {:else if tab === 'server'}
       <div class="profile-bar">
         <h1>{t('tab.server')}</h1>
@@ -379,6 +434,12 @@
             </button>
           </div>
         </div>
+        {#if draft.server.protocol === 'icecast'}
+          <div class="field">
+            <label class="check"><input type="checkbox" bind:checked={draft.server.tls} /> {t('server.tls')}</label>
+            <span class="hint">{t('server.tlsHint')}</span>
+          </div>
+        {/if}
       </div>
       <div class="grid sep">
         <div class="field"><label for="sname">{t('server.stationName')}</label><input id="sname" bind:value={draft.server.name} /></div>
@@ -408,6 +469,18 @@
           </div>
         </div>
       {/if}
+      <h2 class="sub sep-top">{t('processing.tone')}</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="bass">{t('processing.bass', { v: signed(draft.processing.eq_bass_db) })}</label>
+          <input id="bass" type="range" min="-6" max="6" step="0.5" bind:value={draft.processing.eq_bass_db} />
+        </div>
+        <div class="field">
+          <label for="presence">{t('processing.presence', { v: signed(draft.processing.eq_presence_db) })}</label>
+          <input id="presence" type="range" min="-6" max="6" step="0.5" bind:value={draft.processing.eq_presence_db} />
+        </div>
+      </div>
+      <p class="note">{t('processing.toneNote')}</p>
     {:else if tab === 'nowplaying'}
       <h1>{t('tab.nowplaying')}</h1>
       <div class="radios" role="radiogroup" aria-label={t('np.source')}>
@@ -432,6 +505,13 @@
           </select>
         </div>
         <div class="field">
+          <label for="mapping">{t('np.mapping')}</label>
+          <select id="mapping" bind:value={draft.nowplaying.midi_mapping} disabled={draft.nowplaying.midi_input === 'none'}>
+            <option value="pioneer-ddj">{t('np.mappingDdj')}</option>
+            <option value="custom">{t('np.mappingCustom')}</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="out">{t('np.folder')}</label>
           <div class="folder">
             <input id="out" bind:value={draft.nowplaying.output_dir} placeholder={t('np.folderOff')} />
@@ -444,6 +524,43 @@
           <span class="hint">{t('common.relativeHint', { dir: baseDir })}</span>
         </div>
       </div>
+      {#if draft.nowplaying.midi_input !== 'none'}
+        {#if draft.nowplaying.midi_mapping === 'custom'}
+          <div class="sep-top block">
+            <p class="note">{t('np.mappingIntro')}</p>
+            <div class="maps">
+              {#each [0, 1, 2, 3, 4] as slot (slot)}
+                <div class="maprow">
+                  <span class="mapname">{slot < 4 ? t('np.fader', { n: slot + 1 }) : t('np.crossfader')}</span>
+                  <span class="mapval" class:unset={!mapped(slotControl(slot))}>{controlLabel(slotControl(slot))}</span>
+                  <button type="button" class="btn" disabled={learning >= 0} onclick={() => learn(slot)}>
+                    {learning === slot ? t('np.learning') : t('np.learn')}
+                  </button>
+                  <button type="button" class="btn" disabled={learning >= 0 || !mapped(slotControl(slot))} onclick={() => setSlot(slot, { ...unset })}>{t('np.clear')}</button>
+                </div>
+              {/each}
+            </div>
+            <span class="msg" class:bad={!learnMsg.ok} role="status">{learnMsg.text}</span>
+            <label class="check"><input type="checkbox" bind:checked={draft.nowplaying.midi_custom.crossfader_reversed} /> {t('np.reversed')}</label>
+          </div>
+        {/if}
+        <div class="sep-top block">
+          <h2 class="sub">{t('np.sides')}</h2>
+          <div class="sides">
+            {#each [0, 1, 2, 3] as i (i)}
+              <div class="field">
+                <label for={`side${i}`}>{t('np.side', { n: i + 1 })}</label>
+                <select id={`side${i}`} bind:value={draft.nowplaying.crossfader_assign[i]}>
+                  <option value="a">A</option>
+                  <option value="thru">THRU</option>
+                  <option value="b">B</option>
+                </select>
+              </div>
+            {/each}
+          </div>
+          <p class="note">{draft.nowplaying.midi_mapping === 'custom' ? t('np.sideHintCustom') : t('np.sideHintDdj')}</p>
+        </div>
+      {/if}
     {:else if tab === 'recording'}
       <h1>{t('tab.recording')}</h1>
       <label class="check"><input type="checkbox" bind:checked={draft.record.enabled} /> {t('rec.enable')}</label>
@@ -589,6 +706,14 @@
   h1 { margin: 0; font-size: 22px; }
   .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
   .grid.sep { border-top: 1px solid var(--line); padding-top: 18px; }
+  h2.sub { font-size: 15px; margin: 4px 0 0; }
+  .maps { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; max-width: 640px; }
+  .maprow { display: grid; grid-template-columns: 150px 1fr auto auto; gap: 10px; align-items: center; }
+  .mapname { font-weight: 600; }
+  .mapval { font-family: var(--mono, ui-monospace, monospace); font-size: 13px; color: var(--text-2); }
+  .mapval.unset { color: var(--muted); }
+  .sides { display: grid; grid-template-columns: repeat(4, minmax(0, 140px)); gap: 12px; margin-bottom: 8px; }
+  .block { display: flex; flex-direction: column; gap: 10px; }
   .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
   label { font-size: 12px; color: var(--muted); }

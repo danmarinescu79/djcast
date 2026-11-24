@@ -29,7 +29,8 @@
 - [x] Live test with DDJ-1000 + rekordbox 7.2.20: fader moves switch the title after the
       4 s confirmation; short cuts and equal levels keep the current deck
 - [ ] macOS: read the rekordbox window through the Accessibility API
-- [ ] Configurable MIDI mappings for other controllers
+- [x] Configurable MIDI mappings for other controllers: "learn" faders and crossfader
+      (7/14-bit, reversed crossfader), crossfader assign per channel
 
 ## Loudness processing ✅
 - [x] EBU R128 loudness metering (input/output short-term LUFS) in `meter` and the status line
@@ -41,14 +42,16 @@
       phase compensation, flat within 0.1 dB when idle), per-band stereo-linked compressors,
       between the AGC and the limiter; `multiband = true`, `meter --multiband`, band meters in the UI
 - [x] Listening test of multiband on a real stream (sounds good with the defaults)
-- [ ] Optional bass/presence EQ
+- [x] Optional bass/presence EQ (low shelf 100 Hz, bell 3.5 kHz, ±6 dB, before the AGC)
 
 ## Capture sources (ongoing)
 - [x] WASAPI loopback of any output device (verified: DDJ-1000 with rekordbox on WASAPI)
 - [x] Input devices (line-in, virtual cables)
 - [x] Controller on ASIO + rekordbox "PC MASTER OUT" to a spare output (Realtek Digital Output), loopback that (verified with DDJ-1000)
-- [ ] Process loopback: capture only rekordbox's audio (Windows 10 2004+ process loopback,
-      macOS 14.2+ Core Audio taps). On Windows this only works when rekordbox uses WASAPI.
+- [x] Process loopback on Windows (10 2004+): capture only rekordbox's audio (and its child
+      processes). Works with a controller on ASIO when PC MASTER OUT goes to a Windows output
+      (verified with DDJ-1000)
+- [ ] Process capture on macOS (14.2+ Core Audio taps)
 - [ ] Research: djcast virtual ASIO driver that forwards to the real device and taps the
       master (like ASIO Link Pro). Big effort; check Steinberg ASIO SDK licensing first.
 
@@ -77,7 +80,7 @@
 
 ## Stage 5: extensions
 - [x] Shoutcast v1 and v2 (legacy source protocol on port + 1, stream ID)
-- [ ] TLS (HTTPS Icecast)
+- [x] TLS (HTTPS Icecast) with rustls; certificates checked by the OS trust store
 - [x] Stream to several servers at once: tick profiles as live; one encoder per format,
       independent connections, reconnects, titles and stats per server
 - [x] Formats per server: MP3, AAC-LC (Windows Media Foundation, ADTS) and Opus in Ogg

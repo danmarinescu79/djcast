@@ -15,6 +15,8 @@ pub mod engine;
 pub mod icecast;
 pub mod multiband;
 mod ogg_opus;
+#[cfg(windows)]
+mod process_capture;
 
 pub use config::Config;
 pub use crossbeam_channel;

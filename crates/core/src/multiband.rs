@@ -28,7 +28,7 @@ pub const DEFAULT_BANDS: [BandSettings; 4] = [
 
 /// Stereo biquad (transposed direct form II).
 #[derive(Clone, Copy, Default)]
-struct Biquad {
+pub(crate) struct Biquad {
     b0: f32,
     b1: f32,
     b2: f32,
@@ -53,8 +53,43 @@ impl Biquad {
         Self { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: -2.0 * cos / a0, a2: (1.0 - alpha) / a0, ..Default::default() }
     }
 
+    /// RBJ cookbook low shelf (shelf slope 1).
+    pub(crate) fn low_shelf(freq: f32, gain_db: f32, rate: f32) -> Self {
+        let a = 10f32.powf(gain_db / 40.0);
+        let w0 = std::f32::consts::TAU * freq / rate;
+        let (sin, cos) = w0.sin_cos();
+        let alpha = sin / 2.0 * std::f32::consts::SQRT_2;
+        let k = 2.0 * a.sqrt() * alpha;
+        let a0 = (a + 1.0) + (a - 1.0) * cos + k;
+        Self {
+            b0: a * ((a + 1.0) - (a - 1.0) * cos + k) / a0,
+            b1: 2.0 * a * ((a - 1.0) - (a + 1.0) * cos) / a0,
+            b2: a * ((a + 1.0) - (a - 1.0) * cos - k) / a0,
+            a1: -2.0 * ((a - 1.0) + (a + 1.0) * cos) / a0,
+            a2: ((a + 1.0) + (a - 1.0) * cos - k) / a0,
+            ..Default::default()
+        }
+    }
+
+    /// RBJ cookbook peaking EQ.
+    pub(crate) fn peaking(freq: f32, q: f32, gain_db: f32, rate: f32) -> Self {
+        let a = 10f32.powf(gain_db / 40.0);
+        let w0 = std::f32::consts::TAU * freq / rate;
+        let (sin, cos) = w0.sin_cos();
+        let alpha = sin / (2.0 * q);
+        let a0 = 1.0 + alpha / a;
+        Self {
+            b0: (1.0 + alpha * a) / a0,
+            b1: -2.0 * cos / a0,
+            b2: (1.0 - alpha * a) / a0,
+            a1: -2.0 * cos / a0,
+            a2: (1.0 - alpha / a) / a0,
+            ..Default::default()
+        }
+    }
+
     #[inline]
-    fn run(&mut self, x: f32, ch: usize) -> f32 {
+    pub(crate) fn run(&mut self, x: f32, ch: usize) -> f32 {
         let y = self.b0 * x + self.z1[ch];
         self.z1[ch] = self.b1 * x - self.a1 * y + self.z2[ch];
         self.z2[ch] = self.b2 * x - self.a2 * y;

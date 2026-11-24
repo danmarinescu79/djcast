@@ -58,20 +58,28 @@ impl Levels {
 
 /// A running capture. Dropping it stops the stream.
 pub struct Capture {
-    _stream: cpal::Stream,
+    _stream: Option<cpal::Stream>,
+    #[cfg(windows)]
+    _process: Option<crate::process_capture::ProcessCapture>,
     pub sample_rate: u32,
     pub device_name: String,
 }
 
+/// Program captured by `mode = "process"` when no name is given.
+pub const DEFAULT_PROCESS: &str = "rekordbox";
+
 /// Open the configured device and start pushing stereo f32 chunks into `tx`.
 pub fn start_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Levels>) -> Result<Capture> {
+    if cfg.mode == CaptureMode::Process {
+        return start_process_capture(cfg, tx, levels);
+    }
     let host = cpal::default_host();
     let device = find_device(&host, cfg)?;
     let device_name = device.to_string();
 
     // In loopback mode we capture with the *output* format of the device.
     let supported = match cfg.mode {
-        CaptureMode::Loopback => device.default_output_config(),
+        CaptureMode::Loopback | CaptureMode::Process => device.default_output_config(),
         CaptureMode::Input => device.default_input_config(),
     }
     .with_context(|| format!("no usable config for device '{device_name}'"))?;
@@ -100,20 +108,56 @@ pub fn start_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Levels
     };
     stream.play().context("starting audio stream")?;
 
-    Ok(Capture { _stream: stream, sample_rate, device_name })
+    Ok(Capture {
+        _stream: Some(stream),
+        #[cfg(windows)]
+        _process: None,
+        sample_rate,
+        device_name,
+    })
+}
+
+#[cfg(windows)]
+fn start_process_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Levels>) -> Result<Capture> {
+    let wanted = if cfg.device.trim().is_empty() { DEFAULT_PROCESS } else { cfg.device.trim() };
+    let gain = cfg.gain;
+    let pc = crate::process_capture::start(wanted, move |data| deliver(to_stereo(data, 2, gain), &levels, &tx))?;
+    Ok(Capture {
+        _stream: None,
+        device_name: format!("{} (program audio)", pc.process_name),
+        _process: Some(pc),
+        sample_rate: crate::process_capture::RATE,
+    })
+}
+
+#[cfg(not(windows))]
+fn start_process_capture(_: &AudioConfig, _: Sender<Vec<f32>>, _: Arc<Levels>) -> Result<Capture> {
+    bail!("capturing a single program is only available on Windows for now")
+}
+
+/// Update the meters and hand a stereo chunk to the encoder.
+fn deliver(stereo: Vec<f32>, levels: &Levels, tx: &Sender<Vec<f32>>) {
+    let (mut pl, mut pr) = (0f32, 0f32);
+    for f in stereo.as_chunks::<2>().0 {
+        pl = pl.max(f[0].abs());
+        pr = pr.max(f[1].abs());
+    }
+    levels.set(pl, pr);
+    // Never block the audio thread: drop the chunk if the encoder is stalled.
+    let _ = tx.try_send(stereo);
 }
 
 fn find_device(host: &cpal::Host, cfg: &AudioConfig) -> Result<cpal::Device> {
     if cfg.device.trim().is_empty() {
         return match cfg.mode {
-            CaptureMode::Loopback => host.default_output_device(),
+            CaptureMode::Loopback | CaptureMode::Process => host.default_output_device(),
             CaptureMode::Input => host.default_input_device(),
         }
         .ok_or_else(|| anyhow!("no default {:?} device", cfg.mode));
     }
     let needle = cfg.device.to_lowercase();
     let candidates = match cfg.mode {
-        CaptureMode::Loopback => host.output_devices()?.collect::<Vec<_>>(),
+        CaptureMode::Loopback | CaptureMode::Process => host.output_devices()?.collect::<Vec<_>>(),
         CaptureMode::Input => host.input_devices()?.collect::<Vec<_>>(),
     };
     candidates
@@ -136,17 +180,7 @@ where
 {
     let stream = device.build_input_stream::<T, _, _>(
         config,
-        move |data: &[T], _| {
-            let stereo = to_stereo(data, channels, gain);
-            let (mut pl, mut pr) = (0f32, 0f32);
-            for f in stereo.as_chunks::<2>().0 {
-                pl = pl.max(f[0].abs());
-                pr = pr.max(f[1].abs());
-            }
-            levels.set(pl, pr);
-            // Never block the audio thread: drop the chunk if the encoder is stalled.
-            let _ = tx.try_send(stereo);
-        },
+        move |data: &[T], _| deliver(to_stereo(data, channels, gain), &levels, &tx),
         |err| match err.kind() {
             cpal::ErrorKind::Xrun => log::debug!("audio xrun"),
             _ => log::error!("audio stream error: {err}"),
