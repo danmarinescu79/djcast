@@ -72,6 +72,19 @@
       <div><div class="k">Preset</div><div class="v cap">{status.loudness.preset}</div></div>
     </div>
 
+    {#if status.outputs.length > 0}
+      <div class="panel servers">
+        <div class="k">Servers</div>
+        {#each status.outputs as o (o.name)}
+          <div class="srv" title={o.error || o.host}>
+            <span class="led" class:up={o.connected} class:down={!o.connected && o.error}></span>
+            <span class="srv-name">{o.name}</span>
+            <span class="mono muted small">{o.connected ? bytes(o.bytes_sent) : o.error ? 'retrying' : 'connecting'}</span>
+          </div>
+        {/each}
+      </div>
+    {/if}
+
     <div class="panel input">
       <div class="k">Input</div>
       <div>{status.device || 'System default'}</div>
@@ -172,6 +185,12 @@
   .v { font-size: 18px; font-weight: 600; }
   .cap { text-transform: capitalize; }
   .ok { color: var(--ok); }
+  .servers { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .srv { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .srv-name { flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .led { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .led.up { background: var(--ok); }
+  .led.down { background: var(--on-air); }
   .input { padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 
   .now { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }

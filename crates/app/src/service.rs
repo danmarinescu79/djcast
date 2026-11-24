@@ -29,8 +29,21 @@ pub struct StationStatus {
     pub track: Option<TrackStatus>,
     pub tracklist: Vec<TracklistEntry>,
     pub decks: Option<LiveStatus>,
+    pub outputs: Vec<OutputView>,
     pub nowplaying_source: String,
     pub nowplaying_error: Option<String>,
+    pub error: Option<String>,
+}
+
+/// One destination server while live.
+#[derive(Debug, Clone, Serialize)]
+pub struct OutputView {
+    pub name: String,
+    pub host: String,
+    pub bitrate: u32,
+    pub connected: bool,
+    pub connected_secs: u64,
+    pub bytes_sent: u64,
     pub error: Option<String>,
 }
 
@@ -144,7 +157,7 @@ impl Station {
         let cfg = self.config();
         // Release the monitor's capture first; the engine opens its own.
         self.monitor.lock().unwrap().take();
-        let engine = match Engine::start(cfg.stream.clone()) {
+        let engine = match Engine::start_multi(cfg.stream.clone(), cfg.live_outputs()) {
             Ok(e) => e,
             Err(e) => {
                 self.restart_monitor();
@@ -236,6 +249,19 @@ impl Station {
             }),
             tracklist: np.tracklist.clone(),
             decks: np.status.clone(),
+            outputs: st
+                .outputs
+                .iter()
+                .map(|o| OutputView {
+                    name: o.name.clone(),
+                    host: o.host.clone(),
+                    bitrate: o.bitrate,
+                    connected: o.connected,
+                    connected_secs: o.connected_since.map(|t| t.elapsed().as_secs()).unwrap_or(0),
+                    bytes_sent: o.bytes_sent,
+                    error: o.last_error.clone(),
+                })
+                .collect(),
             nowplaying_source: self.np_source_name.lock().unwrap().clone(),
             nowplaying_error: np.error.clone(),
             error: st.last_error.clone().or_else(|| self.monitor_error.lock().unwrap().clone()),

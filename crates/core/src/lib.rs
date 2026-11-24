@@ -15,4 +15,4 @@ pub mod icecast;
 
 pub use config::Config;
 pub use crossbeam_channel;
-pub use engine::{Engine, EngineStatus};
+pub use engine::{Engine, EngineStatus, Output, OutputStatus};

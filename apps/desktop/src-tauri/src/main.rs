@@ -49,10 +49,18 @@ fn validate_server(s: &djcast_core::config::ServerConfig) -> CmdResult<()> {
     Ok(())
 }
 
+/// Every server that will be streamed to must be complete.
+fn validate_outputs(config: &AppConfig) -> CmdResult<()> {
+    for o in config.live_outputs() {
+        validate_server(&o.server).map_err(|e| format!("Profile \"{}\": {e}", o.name))?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 async fn save_config(app: State<'_, AppState>, mut config: AppConfig) -> CmdResult<AppConfig> {
     config.normalize();
-    validate_server(&config.stream.server).map_err(|e| format!("Profile \"{}\": {e}", config.active_profile))?;
+    validate_outputs(&config)?;
     let (station, path) = (app.station.clone(), app.config_path.clone());
     blocking(move || {
         let old = station.config();
@@ -71,7 +79,7 @@ fn get_config_path(app: State<'_, AppState>) -> String {
 
 #[tauri::command]
 async fn go_live(app: State<'_, AppState>) -> CmdResult<()> {
-    validate_server(&app.station.config().stream.server)?;
+    validate_outputs(&app.station.config())?;
     let station = app.station.clone();
     blocking(move || station.go_live().map_err(err)).await
 }

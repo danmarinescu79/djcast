@@ -69,9 +69,10 @@
 ## Stage 5: extensions
 - [x] Shoutcast v1 and v2 (legacy source protocol on port + 1, stream ID)
 - [ ] TLS (HTTPS Icecast)
-- [ ] Stream to several servers at once (tick several profiles as live; independent reconnects)
+- [x] Stream to several servers at once: tick profiles as live; one encoder per bitrate,
+      independent connections, reconnects, titles and stats per server
 - [ ] Opus/Ogg (in-stream metadata), AAC
-- [ ] Pro DJ Link (CDJs)
+- [ ] Pro DJ Link (CDJs) — low priority: needs CDJ hardware to test
 - [ ] macOS (loopback, builds, code signing)
 - [ ] Tracklist export (Mixcloud/SoundCloud), webhooks (Discord)
 - [ ] CI (GitHub Actions: build + test on Windows and macOS), release binaries

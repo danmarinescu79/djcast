@@ -31,11 +31,13 @@ pub struct ServerProfile {
     pub name: String,
     pub server: djcast_core::config::ServerConfig,
     pub bitrate: u32,
+    /// Stream to this server when going live (several profiles can be live at once).
+    pub live: bool,
 }
 
 impl Default for ServerProfile {
     fn default() -> Self {
-        Self { name: "Default".into(), server: Default::default(), bitrate: 192 }
+        Self { name: "Default".into(), server: Default::default(), bitrate: 192, live: false }
     }
 }
 
@@ -76,6 +78,7 @@ impl AppConfig {
                 name: "Default".into(),
                 server: self.stream.server.clone(),
                 bitrate: self.stream.encoder.bitrate,
+                live: true,
             });
         }
         if !self.profiles.iter().any(|p| p.name == self.active_profile) {
@@ -84,6 +87,19 @@ impl AppConfig {
         let p = self.profiles.iter().find(|p| p.name == self.active_profile).unwrap();
         self.stream.server = p.server.clone();
         self.stream.encoder.bitrate = p.bitrate;
+    }
+
+    /// The servers to stream to: every profile marked live, or the active profile if
+    /// none is marked. The active profile comes first (it is the one recorded).
+    pub fn live_outputs(&self) -> Vec<djcast_core::Output> {
+        let mut live: Vec<&ServerProfile> = self.profiles.iter().filter(|p| p.live).collect();
+        if live.is_empty() {
+            live = self.profiles.iter().filter(|p| p.name == self.active_profile).collect();
+        }
+        live.sort_by_key(|p| p.name != self.active_profile);
+        live.into_iter()
+            .map(|p| djcast_core::Output { name: p.name.clone(), server: p.server.clone(), bitrate: p.bitrate })
+            .collect()
     }
 
     /// Load, or return defaults when the file does not exist yet.
@@ -151,6 +167,11 @@ mod tests {
         assert_eq!(cfg.profiles[0].bitrate, 256);
 
         cfg.profiles.push(ServerProfile { name: "Backup".into(), bitrate: 128, ..Default::default() });
+        // Only the migrated profile is live; the new one is not.
+        assert_eq!(cfg.live_outputs().iter().map(|o| o.name.as_str()).collect::<Vec<_>>(), ["Default"]);
+        cfg.profiles[1].live = true;
+        let names: Vec<_> = cfg.live_outputs().into_iter().map(|o| o.name).collect();
+        assert_eq!(names, ["Default", "Backup"]);
         cfg.active_profile = "Backup".into();
         cfg.normalize();
         assert_eq!(cfg.stream.server.host, "localhost");

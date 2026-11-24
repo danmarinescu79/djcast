@@ -74,7 +74,7 @@
     storeCurrent();
     const name = uniqueName('New server');
     const server = { ...structuredClone($state.snapshot(draft.server)), host: '', password: '', mount: '/live' };
-    draft.profiles.push({ name, server, bitrate: Number(draft.encoder.bitrate) });
+    draft.profiles.push({ name, server, bitrate: Number(draft.encoder.bitrate), live: false });
     loadProfile(name);
     startRename();
   }
@@ -115,6 +115,7 @@
   ]);
   const midiOptions = $derived([...new Set(midiPorts)]);
   const midiSpecial = ['auto', 'none', ''];
+  const liveCount = $derived(draft.profiles.filter((p) => p.live).length);
   const baseDir = $derived(configPath.replace(/[\\/][^\\/]*$/, ''));
 
   async function save() {
@@ -132,8 +133,8 @@
       const saved = await invoke('save_config', { config: draft });
       message = {
         text: live
-          ? `Saved. "${current}" and audio changes apply the next time you go live.`
-          : `Saved. Going live uses "${current}".`,
+          ? 'Saved. Server and audio changes apply the next time you go live.'
+          : `Saved. Going live streams to: ${liveNames(saved)}.`,
         ok: true,
       };
       onSaved(saved);
@@ -142,6 +143,11 @@
     } finally {
       saving = false;
     }
+  }
+
+  function liveNames(cfg) {
+    const live = cfg.profiles.filter((p) => p.live).map((p) => p.name);
+    return (live.length ? live : [cfg.active_profile]).map((n) => `"${n}"`).join(', ');
   }
 
   async function test() {
@@ -230,7 +236,7 @@
           <label for="profile">Profile</label>
           <select id="profile" class="profile-select" value={current} onchange={(e) => selectProfile(e.currentTarget.value)}>
             {#each draft.profiles as p (p.name)}
-              <option value={p.name}>{p.name}{p.name === draft.active_profile ? ' (in use)' : ''}</option>
+              <option value={p.name}>{p.name}{p.live ? ' · live' : ''}</option>
             {/each}
           </select>
           <button type="button" class="btn big" onclick={newProfile}>New</button>
@@ -243,6 +249,20 @@
             onclick={() => (confirmingDelete = true)}>Delete</button>
         {/if}
       </div>
+      <label class="check live-check">
+        <input
+          type="checkbox"
+          checked={!!draft.profiles.find((p) => p.name === current)?.live}
+          onchange={(e) => {
+            const p = draft.profiles.find((x) => x.name === current);
+            if (p) p.live = e.currentTarget.checked;
+          }}
+        />
+        Stream to this server when I go live
+        <span class="hint">
+          {liveCount > 1 ? `${liveCount} servers will be live at once.` : liveCount === 0 ? 'No server is ticked: the selected profile is used.' : ''}
+        </span>
+      </label>
       <div class="grid">
         <div class="field">
           <label for="proto">Server type</label>
@@ -409,6 +429,8 @@
   .radios { display: flex; flex-direction: column; gap: 12px; }
   input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-color: var(--info); }
   .profile-bar { display: flex; align-items: center; gap: 10px; }
+  .live-check { gap: 10px; }
+  .live-check .hint { margin-left: 8px; }
   .confirm { font-size: 14px; color: var(--on-air-text); }
   .danger { border-color: var(--on-air) !important; color: var(--on-air-text) !important; }
   .danger:hover { background: var(--on-air-soft); }
