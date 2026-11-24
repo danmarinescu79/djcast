@@ -1,11 +1,25 @@
+/** "mm:ss" or "-mm:ss" → seconds (null if absent). */
+function secs(t) {
+  const m = /^-?(\d{1,3}):(\d{2})$/.exec((t || '').trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
 /** Four deck slots for the UI, filled from the live source when it knows them. */
 export function deckSlots(status) {
   return [1, 2, 3, 4].map((n) => {
     const d = status.decks?.decks?.find((x) => x.deck === n);
     const fader = status.decks?.faders?.[n - 1];
+    const el = secs(d?.elapsed);
+    const rem = secs(d?.remaining);
+    const total = el != null && rem != null ? el + rem : null;
     return {
       n,
       loaded: !!d,
+      remaining: d?.remaining || '',
+      // Track position 0..1 when both times are known.
+      progress: total ? el / total : 0,
+      // Last 30 seconds of a playing track: time to mix.
+      ending: !!d?.playing && rem != null && rem <= 30,
       title: d?.title || '',
       artist: d?.artist || '',
       elapsed: d?.elapsed || '--:--',

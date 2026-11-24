@@ -22,6 +22,8 @@ pub struct DeckView {
     pub artist: String,
     /// Elapsed time text ("mm:ss"); changes every second while the deck plays.
     pub elapsed: Option<String>,
+    /// Remaining time text ("-mm:ss").
+    pub remaining: Option<String>,
 }
 
 const LABEL_MAX_W: i32 = 24;
@@ -67,7 +69,8 @@ pub fn parse_decks(items: &[TextItem]) -> Vec<DeckView> {
                 .map(|t| t.name.trim().to_string())
         });
         if decks.iter().all(|d| d.deck != deck) {
-            decks.push(DeckView { deck, title: title.name.trim().to_string(), artist, elapsed });
+            let remaining = remaining.map(|r| r.name.trim().to_string());
+            decks.push(DeckView { deck, title: title.name.trim().to_string(), artist, elapsed, remaining });
         }
     }
     decks.sort_by_key(|d| d.deck);
@@ -142,12 +145,14 @@ mod tests {
                     title: "Shut Up And Dance (Short Edit)".into(),
                     artist: "Walk The Moon".into(),
                     elapsed: Some("01:12".into()),
+                    remaining: Some("-02:26".into()),
                 },
                 DeckView {
                     deck: 3,
                     title: "Miami (Rowshay Edit)".into(),
                     artist: "Will Smith".into(),
                     elapsed: Some("00:00".into()),
+                    remaining: Some("-03:37".into()),
                 },
             ]
         );

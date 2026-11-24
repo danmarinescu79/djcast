@@ -191,6 +191,8 @@ pub struct DeckStatus {
     pub title: String,
     pub artist: String,
     pub elapsed: Option<String>,
+    /// Remaining time as shown by rekordbox ("-mm:ss").
+    pub remaining: Option<String>,
     pub playing: bool,
     /// Shown in the rekordbox window right now (2-deck layouts hide two decks).
     pub visible: bool,

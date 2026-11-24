@@ -1,6 +1,7 @@
 <script>
   import { clock, bytes, meterFraction, lufs, db } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
+  import { deckSlots } from './lib/decks.js';
 
   let { status, busy, actionError, onToggleLive, onSendTitle } = $props();
 
@@ -9,18 +10,7 @@
 
   // Always show four deck slots, filled from the live source when it knows them.
   const decks = $derived(
-    [1, 2, 3, 4].map((n) => {
-      const d = status.decks?.decks?.find((x) => x.deck === n);
-      const fader = status.decks?.faders?.[n - 1];
-      return {
-        n,
-        title: d?.title || '—',
-        state: d ? (d.on_air ? 'ON AIR' : d.playing ? 'playing' : 'stopped') : 'empty',
-        onAir: !!d?.on_air,
-        playing: !!d?.playing,
-        fader: Math.round(100 * (fader ?? (d ? d.gain : 0))),
-      };
-    })
+    deckSlots(status).map((d) => ({ ...d, title: d.title || '—', state: d.state.toLowerCase().replace('on air', 'ON AIR') }))
   );
 
   const sourceLabel = $derived(
@@ -120,6 +110,11 @@
           </div>
           <div class="deck-title">{d.title}</div>
           <div class="fader"><div style:width="{d.fader}%" class:hot={d.onAir}></div></div>
+          {#if d.loaded}
+            <div class="pos" title="{d.elapsed} / {d.remaining}">
+              <div style:width="{d.progress * 100}%" class:ending={d.ending}></div>
+            </div>
+          {/if}
         </div>
       {/each}
     </div>
@@ -223,6 +218,9 @@
   .fader { height: 6px; background: var(--line); border-radius: 3px; }
   .fader > div { height: 6px; background: #5b6470; border-radius: 3px; transition: width 80ms linear; }
   .fader > div.hot { background: #ff6b6b; }
+  .pos { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .pos > div { height: 3px; background: var(--text-2); transition: width 400ms linear; }
+  .pos > div.ending { background: var(--warn); }
 
   .tracklist { flex-grow: 1; min-height: 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
   .tl-head { display: flex; justify-content: space-between; align-items: center; }

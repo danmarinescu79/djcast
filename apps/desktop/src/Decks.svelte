@@ -15,14 +15,22 @@
       <div class="deck" class:onair={d.onAir}>
         <div class="head">
           <span class="num">{d.n}</span>
+          {#if d.playing}<span class="pulse" class:red-dot={d.onAir} aria-hidden="true"></span>{/if}
           <span class="state" class:red={d.onAir} class:ok={!d.onAir && d.playing}>{d.state}</span>
           {#if d.hidden}<span class="hidden">not on screen</span>{/if}
-          <span class="grow"></span>
-          <span class="mono muted">{d.elapsed}</span>
         </div>
         <div class="title">{d.loaded ? d.title : 'No track loaded'}</div>
         <div class="artist">{d.artist}</div>
         <div class="grow"></div>
+        {#if d.loaded}
+          <div class="pos-row">
+            <span class="mono muted">{d.elapsed}</span>
+            <div class="pos" role="progressbar" aria-label="Deck {d.n} track position" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(d.progress * 100)}>
+              <div style:width="{d.progress * 100}%" class:ending={d.ending}></div>
+            </div>
+            <span class="mono rem" class:ending-text={d.ending}>{d.remaining}</span>
+          </div>
+        {/if}
         <div class="fader-row">
           <span class="muted">Fader</span>
           <div class="fader"><div style:width="{d.fader}%" class:hot={d.onAir}></div></div>
@@ -93,6 +101,16 @@
   .title { font-size: 19px; font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
   .artist { font-size: 14px; color: var(--text-2); min-height: 20px; user-select: text; }
   .grow { flex-grow: 1; }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: pulse 1.2s ease-in-out infinite; }
+  .pulse.red-dot { background: var(--on-air-text); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  .pos-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .pos { flex-grow: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .pos > div { height: 6px; background: var(--text-2); border-radius: 3px; transition: width 400ms linear; }
+  .pos > div.ending { background: var(--warn); }
+  .rem { color: var(--text-2); }
+  .ending-text { color: var(--warn); font-weight: 600; }
   .fader-row { display: flex; align-items: center; gap: 10px; font-size: 11px; }
   .fader { flex-grow: 1; height: 8px; background: var(--line); border-radius: 4px; }
   .fader > div { height: 8px; background: #5b6470; border-radius: 4px; transition: width 80ms linear; }

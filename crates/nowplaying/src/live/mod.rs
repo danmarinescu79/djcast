@@ -92,6 +92,7 @@ impl RekordboxLiveSource {
                 title: d.view.title.clone(),
                 artist: d.view.artist.clone(),
                 elapsed: d.view.elapsed.clone(),
+                remaining: d.view.remaining.clone(),
                 playing: d.playing(now),
                 visible: d.visible,
                 gain: mixer.gain(d.view.deck),
@@ -292,7 +293,7 @@ mod tests {
     use super::*;
 
     fn view(deck: u8, title: &str, elapsed: &str) -> DeckView {
-        DeckView { deck, title: title.into(), artist: "A".into(), elapsed: Some(elapsed.into()) }
+        DeckView { deck, title: title.into(), artist: "A".into(), elapsed: Some(elapsed.into()), remaining: None }
     }
 
     #[test]
