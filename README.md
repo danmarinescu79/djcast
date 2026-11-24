@@ -76,7 +76,19 @@ To add a language:
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Releasing](docs/releasing.md)
+- [Code signing policy](docs/code-signing-policy.md)
 - [Changelog](CHANGELOG.md)
+
+## Privacy
+djcast has no accounts, analytics or telemetry. It only connects to:
+- the streaming servers you add (Icecast / Shoutcast), to send your audio and track titles;
+- GitHub, to check for and download updates (Settings → General; can be turned off);
+- Discord, only if you add a webhook in Settings → Sharing, to post the messages you set up.
+
+rekordbox files, MIDI and audio are read on your computer and never uploaded. Server
+passwords and the Discord webhook are kept in the system credential store (Windows
+Credential Manager / macOS Keychain). Logs stay in the settings folder and are only shared
+if you attach them to a problem report yourself.
 
 ## Disclaimer
 This project is not affiliated with, endorsed by, or connected to AlphaTheta Corporation or Pioneer DJ.
