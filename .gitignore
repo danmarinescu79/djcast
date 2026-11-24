@@ -1,6 +1,6 @@
 /target
-/recordings
-/nowplaying
+recordings/
+nowplaying/
 # local config may contain server passwords
 /djcast.toml
 /apps/desktop/node_modules

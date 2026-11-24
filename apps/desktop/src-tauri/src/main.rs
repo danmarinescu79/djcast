@@ -85,6 +85,13 @@ fn main() {
         AppConfig::default()
     });
     log::info!("config: {}", config_path.display());
+    // Relative paths in the config (OBS files, recordings) live next to the config file.
+    if let Some(dir) = config_path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+        if let Err(e) = std::env::set_current_dir(dir) {
+            log::warn!("cannot use {} as working folder: {e}", dir.display());
+        }
+    }
     let station = Station::new(config);
 
     tauri::Builder::default()
