@@ -15,23 +15,26 @@ const status = {
   live: true, connected: true, connected_secs: 221, bytes_sent: 5_400_000, device: 'Realtek Digital Output',
   sample_rate: 48000, recording: false, level_l: 0.42, level_r: 0.47,
   loudness: { preset: 'loud', target_lufs: -10, in_lufs: -22.1, out_lufs: -12.4, agc_gain_db: 11.0, limiter_db: -0.2, bands_db: [-4.5, -1.2, -0.2, -2.5] },
-  track: { artist: 'Digital Underground', title: 'The Humpty Dance [xtendz] - Clean', deck: 1, display: 'Digital Underground - The Humpty Dance [xtendz] - Clean' },
-  tracklist: [{ time: '00:00:00', title: 'Digital Underground - The Humpty Dance [xtendz] - Clean' }],
+  track: { artist: 'Nova Tide', title: 'Midnight Signal (Extended Mix)', deck: 1, display: 'Nova Tide - Midnight Signal (Extended Mix)' },
+  tracklist: [
+    { time: '00:00:00', title: 'Kairo Lane - First Light' },
+    { time: '00:02:58', title: 'Nova Tide - Midnight Signal (Extended Mix)' },
+  ],
   decks: {
     decks: [
-      deck(1, 'The Humpty Dance [xtendz] - Clean', 'Digital Underground', '01:12', '-02:26', true, true, 1),
-      deck(2, 'Salt Shaker (Quick Hit Clean)', 'Ying Yang Twins Ft Lil Jon', '03:01', '-00:21', true, false, 0.4),
+      deck(1, 'Midnight Signal (Extended Mix)', 'Nova Tide', '01:12', '-02:26', true, true, 1),
+      deck(2, 'Golden Hour', 'The Sundays Collective', '03:01', '-00:21', true, false, 0.4),
     ],
     on_air: 1, faders: [1, 0.4, null, null], crossfader: 0.5, midi: true, using_fallback: false, error: null,
   },
-  outputs: [{ name: 'Default', host: 'my.powerstream.live:8828', bitrate: 192, connected: true, connected_secs: 221, bytes_sent: 5_400_000, error: null }],
+  outputs: [{ name: 'Default', host: 'radio.example.com:8000', bitrate: 192, connected: true, connected_secs: 221, bytes_sent: 5_400_000, error: null }],
   nowplaying_source: 'auto', nowplaying_error: null, error: null,
 };
 const params = new URLSearchParams(location.search);
 const view = params.get('view') || 'mini';
 setLanguage(params.get('lang') || 'en');
 const props = { status, busy: false, actionError: '', onToggleLive() {}, onExpand() {}, onSendTitle() {} };
-const server = { protocol: 'icecast', host: 'my.powerstream.live', port: 8828, mount: '/live', user: 'source', password: 'example', stream_id: 1, name: 'My DJ Stream', description: '', genre: 'Electronic', url: '', public: false, reconnect_delay_secs: 3 };
+const server = { protocol: 'icecast', host: 'radio.example.com', port: 8000, mount: '/live', user: 'source', password: 'example', stream_id: 1, name: 'My DJ Stream', description: 'Live DJ sets', genre: 'Electronic', url: 'https://radio.example.com', public: false, reconnect_delay_secs: 3 };
 const config = {
   audio: { device: 'Realtek Digital Output', mode: 'loopback', gain: 1 },
   processing: { preset: 'loud', target_lufs: -14, ceiling_db: -1, max_gain_db: 15, multiband: true },

@@ -20,6 +20,8 @@ Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
 - `nowplaying.txt` / `artist.txt` / `title.txt` for OBS, plus a timestamped tracklist per session
 
 ## Download
+Website: https://danmarinescu79.github.io/djcast/
+
 Windows installers are on the [releases page](https://github.com/danmarinescu79/djcast/releases/latest)
 (`djcast_<version>_x64-setup.exe`, or the `.msi`). The app updates itself from there.
 

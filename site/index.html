@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>djcast — live streaming for DJs, with now playing from rekordbox</title>
+<meta name="description" content="Free, open-source app that streams your DJ set to Icecast and Shoutcast, with track titles taken automatically from rekordbox.">
+<meta property="og:title" content="djcast — live streaming for DJs">
+<meta property="og:description" content="Stream your DJ set to Icecast and Shoutcast, with now-playing titles taken automatically from rekordbox.">
+<meta property="og:image" content="https://danmarinescu79.github.io/djcast/img/console.png">
+<link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<link rel="icon" href="img/icon-128.png" type="image/png">
+<style>
+  :root {
+    --bg: #0e0f12; --panel: #17191e; --panel-2: #1c1f25; --line: #262a31;
+    --text: #e8eaed; --text-2: #c9cdd3; --muted: #9aa0a8;
+    --red: #d93a3a; --red-text: #ff8a8a; --green: #3ecf8e; --blue: #6cb6ff; --amber: #f5b83d;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  img { max-width: 100%; height: auto; display: block; }
+
+  /* header */
+  header { position: sticky; top: 0; z-index: 10; background: rgba(14, 15, 18, .85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; font-size: 18px; }
+  .brand img { width: 28px; height: 28px; }
+  header nav { display: flex; gap: 22px; margin-left: auto; font-size: 15px; }
+  header nav a { color: var(--text-2); }
+  @media (max-width: 640px) { header nav a.opt { display: none; } }
+
+  /* hero */
+  .hero { padding-block: 84px 40px; text-align: center; }
+  .onair { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border-radius: 999px; background: #2a1416; color: var(--red-text); font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .onair::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 0 rgba(217, 58, 58, .6); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(217, 58, 58, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 58, 58, 0); } }
+  @media (prefers-reduced-motion: reduce) { .onair::before { animation: none; } }
+  h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.08; margin: 22px auto 18px; max-width: 860px; letter-spacing: -.02em; }
+  h1 em { font-style: normal; color: var(--red-text); }
+  .lead { font-size: clamp(17px, 2.2vw, 20px); color: var(--text-2); max-width: 720px; margin: 0 auto 34px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 16px; border: 1px solid var(--line); color: var(--text); background: var(--panel); }
+  .btn:hover { text-decoration: none; border-color: #3a3f48; }
+  .btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn.primary:hover { background: #e24747; }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .small { font-size: 14px; color: var(--muted); margin-top: 16px; }
+
+  .shot { margin: 56px auto 0; border-radius: 16px; border: 1px solid var(--line); overflow: hidden; box-shadow: 0 30px 80px rgba(0, 0, 0, .55); background: var(--bg); }
+
+  /* sections */
+  section { padding: 72px 0; }
+  h2 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.2; margin: 0 0 12px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 40px; max-width: 680px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .card h3 { margin: 12px 0 6px; font-size: 18px; }
+  .card p { margin: 0; color: var(--text-2); font-size: 15px; }
+  .ico { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--panel-2); }
+  .ico svg { width: 22px; height: 22px; }
+
+  .split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+  .split.rev { grid-template-columns: 1fr 1.2fr; }
+  .split.rev .media { order: 2; }
+  @media (max-width: 860px) { .split, .split.rev { grid-template-columns: 1fr; } .split.rev .media { order: 0; } }
+  .media img { border-radius: 14px; border: 1px solid var(--line); }
+  ul.ticks { list-style: none; padding: 0; margin: 18px 0 0; }
+  ul.ticks li { padding-left: 28px; position: relative; margin: 10px 0; color: var(--text-2); }
+  ul.ticks li::before { content: ""; position: absolute; left: 4px; top: .55em; width: 10px; height: 6px; border-left: 2px solid var(--green); border-bottom: 2px solid var(--green); transform: rotate(-45deg); }
+
+  .steps { counter-reset: s; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .steps .card { position: relative; padding-top: 56px; }
+  .steps .card::before { counter-increment: s; content: counter(s); position: absolute; top: 20px; left: 24px; width: 28px; height: 28px; border-radius: 50%; background: var(--red); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .facts .card h3 { margin-top: 0; }
+  code { font-family: "Cascadia Mono", Consolas, ui-monospace, monospace; font-size: .92em; background: var(--panel-2); padding: 1px 6px; border-radius: 6px; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+  footer p { margin: 0; max-width: 640px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/icon.svg" alt="">djcast</a>
+    <nav>
+      <a class="opt" href="#features">Features</a>
+      <a class="opt" href="#start">Get started</a>
+      <a class="opt" href="#privacy">Privacy</a>
+      <a href="https://github.com/danmarinescu79/djcast">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero wrap">
+    <span class="onair">On air</span>
+    <h1>Stream your DJ set.<br><em>The track titles take care of themselves.</em></h1>
+    <p class="lead">djcast sends what you play to Icecast and Shoutcast and reads the track that is actually on air from rekordbox — the deck that's playing and where your faders are. Free and open source.</p>
+    <div class="cta">
+      <a class="btn primary" id="download" href="https://github.com/danmarinescu79/djcast/releases/latest">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 19h16"/></svg>
+        <span id="download-label">Download for Windows</span>
+      </a>
+      <a class="btn" href="https://github.com/danmarinescu79/djcast">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+        Source code
+      </a>
+    </div>
+    <p class="small" id="download-note">Windows 10 and 11, 64-bit · MIT / Apache-2.0 · macOS planned</p>
+    <div class="shot"><img src="img/console.png" width="2000" height="1040" alt="The djcast console while live: on-air timer, the track on air from deck 1, the four decks, the session tracklist and the output loudness meters."></div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>Everything a DJ stream needs, in one window</h2>
+      <p class="sub">No virtual audio cables, no typing titles by hand, no separate encoder app.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/><path d="M12 12l4.5-4.5"/></svg></div>
+          <h3>Now playing from rekordbox</h3>
+          <p>Reads the decks in real time and follows your channel faders and crossfader over MIDI, so listeners see the track that is really on air. Falls back to the play history when needed.</p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 18V9M9 18V5M14 18v-7M19 18V8"/></svg></div>
+          <h3>Radio-ready sound</h3>
+          <p>Loudness levelling to EBU R128, optional four-band compression and a look-ahead limiter: your mix sounds as full as other stations, without clipping.</p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#6cb6ff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.2" fill="#6cb6ff"/><path d="M12 13v7"/></svg></div>
+          <h3>Several servers at once</h3>
+          <p>Icecast 2 and Shoutcast v1/v2, each in MP3, AAC or Opus. Every server reconnects on its own; a slow one never holds the others back.</p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#f5b83d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="#f5b83d" stroke="none"/></svg></div>
+          <h3>Record the set</h3>
+          <p>A recording of exactly what listeners heard, with a CUE sheet so players show every track, and a timestamped tracklist ready for Mixcloud.</p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#c9cdd3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg></div>
+          <h3>Discord and OBS</h3>
+          <p>Posts to your Discord channel when you go live, on every track and when you stop. Writes now-playing text files for OBS overlays.</p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#c9cdd3" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.5 5.7 3.5 9s-1 6.3-3.5 9c-2.5-2.7-3.5-5.7-3.5-9s1-6.3 3.5-9z"/></svg></div>
+          <h3>Made to stay out of the way</h3>
+          <p>A compact mini window, a tray icon, start with Windows, automatic updates — in 13 languages.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div class="media"><img src="img/decks.png" width="2000" height="1280" loading="lazy" alt="The Decks view: four deck cards with track, elapsed and remaining time and fader level; the title sent to listeners; the MIDI mixer; output loudness."></div>
+      <div>
+        <h2>It knows which deck is on air</h2>
+        <p class="sub" style="margin-bottom:0">Two tracks playing during a blend? djcast waits until one deck is clearly louder through the mixer, then switches the title — not too early, not too late.</p>
+        <ul class="ticks">
+          <li>Elapsed and remaining time for every deck</li>
+          <li>Channel faders, crossfader and assign switches over MIDI (Pioneer DDJ controllers)</li>
+          <li>Type a title yourself at any moment when you want to</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split rev">
+      <div class="media"><img src="img/server.png" width="2000" height="1400" loading="lazy" alt="Server settings: server type, format and bitrate, address, port, mount point, user and password, station details."></div>
+      <div>
+        <h2>Set up once, go live with one click</h2>
+        <p class="sub" style="margin-bottom:0">Keep a profile for every station you play on and tick the ones to stream to.</p>
+        <ul class="ticks">
+          <li>Test the login before you go live</li>
+          <li>Passwords kept in Windows Credential Manager, not in a text file</li>
+          <li>Captures what rekordbox plays directly — no extra drivers</li>
+        </ul>
+        <div class="media" style="margin-top:28px; max-width:420px"><img src="img/mini.png" width="1040" height="600" loading="lazy" alt="The mini window: live timer, the track on air and output meters."></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="wrap">
+      <h2>Get started</h2>
+      <p class="sub">You need a streaming server — your own Icecast or Shoutcast, or one from a hosting provider.</p>
+      <div class="steps">
+        <div class="card"><h3>Install</h3><p>Download the installer and run it. Windows may warn that the file isn't commonly downloaded while djcast is new — choose <em>More info → Run anyway</em>.</p></div>
+        <div class="card"><h3>Add your server</h3><p>Settings → Server: address, port, mount point and password, and the format you want. <em>Test connection</em> tells you right away if the login works.</p></div>
+        <div class="card"><h3>Go live</h3><p>Play in rekordbox and press <em>Go live</em>. Titles follow your mix; the tracklist and recording build themselves.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <div class="wrap facts">
+      <div class="card">
+        <h3>Privacy</h3>
+        <p>No accounts, analytics or telemetry. djcast only connects to the streaming servers you add, to GitHub to check for updates (you can turn it off), and to Discord if you set up a webhook. Your rekordbox library never leaves your computer. <a href="https://github.com/danmarinescu79/djcast#privacy">Details</a></p>
+      </div>
+      <div class="card" id="signing">
+        <h3>Code signing</h3>
+        <p>Windows releases are to be signed with free code signing provided by <a href="https://signpath.io">SignPath.io</a>, certificate by <a href="https://signpath.org">SignPath Foundation</a> (application in progress). Installers are built only by GitHub Actions. <a href="https://github.com/danmarinescu79/djcast/blob/main/docs/code-signing-policy.md">Code signing policy</a></p>
+      </div>
+      <div class="card">
+        <h3>Open source</h3>
+        <p>Written in Rust, dual-licensed MIT / Apache-2.0. Bug reports, ideas and translations are welcome on <a href="https://github.com/danmarinescu79/djcast/issues">GitHub</a>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>© Dan Marinescu · <a href="https://github.com/danmarinescu79/djcast">djcast on GitHub</a> · <a href="https://github.com/danmarinescu79/djcast/blob/main/CHANGELOG.md">Changelog</a></p>
+    <p>djcast is not affiliated with AlphaTheta Corporation or Pioneer DJ. "rekordbox" is a trademark of AlphaTheta Corporation.</p>
+  </div>
+</footer>
+
+<script>
+  // Point the button straight at the newest installer.
+  fetch('https://api.github.com/repos/danmarinescu79/djcast/releases/latest')
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((rel) => {
+      const exe = (rel.assets || []).find((a) => /x64-setup\.exe$/i.test(a.name));
+      if (!exe) return;
+      document.getElementById('download').href = exe.browser_download_url;
+      document.getElementById('download-label').textContent = `Download ${rel.tag_name} for Windows`;
+      const mb = (exe.size / 1048576).toFixed(1);
+      document.getElementById('download-note').textContent =
+        `Windows 10 and 11, 64-bit · ${mb} MB · MIT / Apache-2.0 · macOS planned`;
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>
