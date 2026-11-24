@@ -55,8 +55,14 @@ While streaming:
 Example configuration: [djcast.example.toml](djcast.example.toml).
 
 ## Translations
-The desktop app is available in English and Romanian; the language follows the system or can be
-chosen in Settings → General. To add a language:
+The desktop app is available in English, Romanian, German, Spanish, French, Italian, Dutch,
+Polish, Portuguese (Brazil), Turkish, Russian, Japanese and Chinese (Simplified); the language
+follows the system or can be chosen in Settings → General.
+
+Except English and Romanian, the translations have not yet been reviewed by native speakers —
+corrections are very welcome (edit `apps/desktop/src/locales/<code>.js` and open a pull request).
+
+To add a language:
 1. copy `apps/desktop/src/locales/en.js` to `<code>.js` (e.g. `de.js`) and translate the values,
    keeping the `{placeholders}`;
 2. register it in `apps/desktop/src/lib/i18n.svelte.js` (`LANGUAGES` and `DICTS`);

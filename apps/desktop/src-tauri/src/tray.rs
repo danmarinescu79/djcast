@@ -40,13 +40,51 @@ const RO: Texts = Texts {
     connecting: "se conectează…",
 };
 
-/// "auto"/"" follows the system language.
+const fn tx(
+    go_live: &'static str,
+    stop: &'static str,
+    show: &'static str,
+    quit: &'static str,
+    offline: &'static str,
+    connecting: &'static str,
+) -> Texts {
+    Texts { go_live, stop, show, quit, offline, connecting }
+}
+
+const DE: Texts = tx("Live gehen", "Streaming beenden", "djcast anzeigen", "djcast beenden", "offline", "verbinde…");
+const ES: Texts = tx("Emitir en vivo", "Detener la emisión", "Mostrar djcast", "Salir de djcast", "sin conexión", "conectando…");
+const FR: Texts = tx("Passer en direct", "Arrêter la diffusion", "Afficher djcast", "Quitter djcast", "hors ligne", "connexion…");
+const IT: Texts = tx("Vai in diretta", "Ferma lo streaming", "Mostra djcast", "Esci da djcast", "offline", "connessione…");
+const JA: Texts = tx("配信開始", "配信を停止", "djcast を表示", "djcast を終了", "オフライン", "接続中…");
+const NL: Texts = tx("Ga live", "Streamen stoppen", "djcast tonen", "djcast afsluiten", "offline", "verbinden…");
+const PL: Texts = tx("Nadawaj", "Zatrzymaj stream", "Pokaż djcast", "Zamknij djcast", "offline", "łączenie…");
+const PT: Texts = tx("Transmitir ao vivo", "Parar a transmissão", "Mostrar djcast", "Sair do djcast", "offline", "conectando…");
+const RU: Texts = tx("Начать эфир", "Остановить трансляцию", "Показать djcast", "Выйти из djcast", "не в сети", "подключение…");
+const TR: Texts = tx("Yayına başla", "Yayını durdur", "djcast'i göster", "djcast'ten çık", "çevrimdışı", "bağlanıyor…");
+const ZH: Texts = tx("开始直播", "停止推流", "显示 djcast", "退出 djcast", "离线", "正在连接…");
+
+/// "auto"/"" follows the system language; unknown languages use English.
 fn texts(language: &str) -> &'static Texts {
     let lang = match language.trim() {
         "" | "auto" => sys_locale::get_locale().unwrap_or_default(),
         l => l.to_string(),
     };
-    if lang.to_lowercase().starts_with("ro") { &RO } else { &EN }
+    let code = lang.to_lowercase();
+    match code.split(['-', '_']).next().unwrap_or("") {
+        "de" => &DE,
+        "es" => &ES,
+        "fr" => &FR,
+        "it" => &IT,
+        "ja" => &JA,
+        "nl" => &NL,
+        "pl" => &PL,
+        "pt" => &PT,
+        "ro" => &RO,
+        "ru" => &RU,
+        "tr" => &TR,
+        "zh" => &ZH,
+        _ => &EN,
+    }
 }
 
 impl Tray {

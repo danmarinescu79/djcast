@@ -4,9 +4,14 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import en from '../src/locales/en.js';
-import ro from '../src/locales/ro.js';
 
-const languages = { ro };
+// Every locale file next to en.js is checked.
+const localeDir = fileURLToPath(new URL('../src/locales', import.meta.url));
+const languages = {};
+for (const f of readdirSync(localeDir)) {
+  const code = f.replace(/\.js$/, '');
+  if (code !== 'en' && f.endsWith('.js')) languages[code] = (await import(`../src/locales/${f}`)).default;
+}
 const files = [];
 (function walk(dir) {
   for (const f of readdirSync(dir)) {
