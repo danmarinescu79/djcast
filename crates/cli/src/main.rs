@@ -94,7 +94,19 @@ struct AppConfig {
 }
 
 fn main() -> Result<()> {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        // Start each log line by clearing the live status line, so they don't run together.
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "\r\x1b[K[{} {:<5} {}] {}",
+                buf.timestamp(),
+                record.level(),
+                record.target(),
+                record.args()
+            )
+        })
+        .init();
     match Cli::parse().cmd {
         Cmd::Devices => devices(),
         Cmd::Meter { device, input, seconds } => meter_cmd(device, input, seconds),
