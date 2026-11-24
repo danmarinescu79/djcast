@@ -91,6 +91,8 @@ Licensed under either of
 
 at your option.
 
+If you build on djcast, a link back to the project is appreciated (see `NOTICE`).
+
 The MP3 encoder links [LAME](https://lame.sourceforge.io/) (LGPL-2.0) via the `mp3lame-encoder` crate.
 
 ### Contribution

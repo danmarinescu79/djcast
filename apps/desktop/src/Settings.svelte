@@ -483,6 +483,7 @@
       </div>
       <span class="hint">{t('about.logsNote')}</span>
       <p class="note disclaimer">{t('about.disclaimer')}</p>
+      <p class="note copyright">© 2026 Dan Marinescu</p>
     {/if}
 
     <div class="grow"></div>
@@ -555,6 +556,7 @@
   .about-version { margin: -8px 0 0; color: var(--muted); }
   .about-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
   .disclaimer { font-size: 12px; margin-top: 8px; }
+  .copyright { font-size: 12px; margin-top: -8px; }
   .folder { display: flex; gap: 8px; }
   .folder input { flex: 1 1 auto; min-width: 0; }
   .folder .btn { flex-shrink: 0; }
