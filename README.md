@@ -26,6 +26,15 @@ Requires Rust (`rustup`). On Windows, also the Visual Studio Build Tools (MSVC).
 cargo build --release
 ```
 
+Desktop app (needs Node.js too):
+
+```sh
+cd apps/desktop
+npm install
+npx tauri dev     # run in development
+npx tauri build   # installers in target/release/bundle (msi, nsis)
+```
+
 ## Usage
 
 ```sh
