@@ -3,7 +3,7 @@
 Audio streaming for DJs, in the spirit of BUTT, with automatic "now playing" detection from rekordbox.
 Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
 
-> **Status:** early development. The streaming core works; rekordbox detection is in progress. See the [roadmap](docs/roadmap.md).
+> **Status:** early development. Streaming and now playing from the rekordbox history work; instant detection is next. See the [roadmap](docs/roadmap.md).
 > The name "djcast" is provisional.
 
 ## Features
@@ -13,6 +13,8 @@ Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
 - Now-playing metadata, re-sent automatically after reconnects
 - Automatic reconnect, silence padding so the server never drops you
 - Optional local recording of your set
+- Now playing from the rekordbox 6/7 play history (read-only, decrypted in memory)
+- `nowplaying.txt` / `artist.txt` / `title.txt` for OBS, plus a timestamped tracklist per session
 
 ## Build
 
@@ -29,6 +31,10 @@ djcast devices                   # list audio devices
 djcast init                      # create djcast.toml with defaults
 djcast stream -t "Intro"         # start streaming
 djcast meta "Artist - Title"     # send a title manually
+
+djcast rekordbox set-key <KEY>   # one-time setup, see docs/rekordbox-key.md
+djcast rekordbox history         # recent tracks from the rekordbox history
+djcast rekordbox watch           # print tracks as rekordbox plays them (no streaming)
 ```
 
 While streaming:
@@ -39,6 +45,7 @@ Example configuration: [djcast.example.toml](djcast.example.toml).
 
 ## Documentation
 - [Now-playing research](docs/research-now-playing.md)
+- [rekordbox database key](docs/rekordbox-key.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 

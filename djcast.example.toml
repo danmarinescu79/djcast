@@ -29,3 +29,16 @@ reconnect_delay_secs = 3
 [record]
 enabled = false
 dir = "recordings"
+
+[nowplaying]
+# "none"         = titles only from manual input
+# "rekordbox-db" = rekordbox play history (tracks appear ~1 min after they start)
+source = "rekordbox-db"
+poll_interval_secs = 2.0
+# Empty = use the key saved with `djcast rekordbox set-key` (see docs/rekordbox-key.md)
+rekordbox_key = ""
+# Empty = auto-detect
+rekordbox_db = ""
+# Folder for nowplaying.txt / artist.txt / title.txt (for OBS) and the session tracklist.
+# Empty = disabled.
+output_dir = "nowplaying"

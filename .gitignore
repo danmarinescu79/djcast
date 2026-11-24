@@ -1,4 +1,5 @@
 /target
 /recordings
+/nowplaying
 # local config may contain server passwords
 /djcast.toml

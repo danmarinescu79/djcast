@@ -9,10 +9,13 @@
 - [x] CLI: `devices`, `init`, `stream`, `meta`
 - [ ] Test against a real Icecast server
 
-## Stage 2: now playing from `master.db`
-- [ ] Auto-detect DB path (`rekordbox3.settings` → `masterDbDirectory`)
-- [ ] Open SQLCipher read-only, poll `djmdSongHistory`
-- [ ] Wire source → `Engine::set_title`, text files for OBS, timestamped tracklist
+## Stage 2: now playing from `master.db` ✅
+- [x] Auto-detect DB path (`rekordboxAgent/storage/options.json` → `db-path`)
+- [x] Pure-Rust SQLCipher 4 decryption in memory (+ committed WAL frames), no OpenSSL
+- [x] Poll `djmdSongHistory` only when master.db / WAL change
+- [x] Wire source → `Engine::set_title`, text files for OBS, timestamped tracklist
+- [x] CLI: `rekordbox set-key | info | history | watch`
+- [ ] Live test while rekordbox is running (file sharing, WAL updates)
 
 ## Stage 3: instant now playing
 - [ ] Read rekordbox process memory (per-version offsets in an updatable file)

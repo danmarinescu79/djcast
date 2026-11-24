@@ -1,12 +1,67 @@
 //! Now-playing detection.
 //!
 //! Each detection method is a [`Source`]. Planned sources (see `docs/research-now-playing.md`):
-//! - `rekordbox_db`  – history table of rekordbox `master.db` (stable, ~1 min delay)
-//! - `rekordbox_mem` – deck state read from rekordbox process memory (instant, version-specific)
+//! - `rekordbox-db`  – history table of rekordbox `master.db` (stable, ~1 min delay) ✅
+//! - `rekordbox-mem` – deck state read from rekordbox process memory (instant, version-specific)
 //! - `midi`          – controller faders/crossfader to decide which deck is on air
 //! - `prodjlink`     – CDJs / DJM over the network
 
+pub mod output;
+pub mod rekordbox;
+
 use serde::{Deserialize, Serialize};
+
+/// Now-playing settings (the `[nowplaying]` config section).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct NowPlayingConfig {
+    pub source: SourceKind,
+    /// Seconds between polls.
+    pub poll_interval_secs: f64,
+    /// rekordbox database key. Empty = read from the user key file
+    /// (see `djcast rekordbox set-key`).
+    pub rekordbox_key: String,
+    /// rekordbox `master.db` path. Empty = auto-detect.
+    pub rekordbox_db: String,
+    /// Folder for OBS text files and the tracklist. Empty = disabled.
+    pub output_dir: String,
+}
+
+impl Default for NowPlayingConfig {
+    fn default() -> Self {
+        Self {
+            source: SourceKind::None,
+            poll_interval_secs: 2.0,
+            rekordbox_key: String::new(),
+            rekordbox_db: String::new(),
+            output_dir: "nowplaying".into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SourceKind {
+    /// Titles only come from manual input.
+    None,
+    RekordboxDb,
+}
+
+/// Build the configured source (None if `source = "none"`).
+pub fn create_source(cfg: &NowPlayingConfig) -> anyhow::Result<Option<Box<dyn Source>>> {
+    match cfg.source {
+        SourceKind::None => Ok(None),
+        SourceKind::RekordboxDb => {
+            let path = if cfg.rekordbox_db.trim().is_empty() {
+                rekordbox::find_master_db()?
+            } else {
+                cfg.rekordbox_db.trim().into()
+            };
+            let key = rekordbox::load_key(Some(&cfg.rekordbox_key))?;
+            Ok(Some(Box::new(rekordbox::RekordboxDbSource::new(rekordbox::MasterDb::new(path, key)))))
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Track {
