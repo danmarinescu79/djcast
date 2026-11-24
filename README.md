@@ -19,6 +19,14 @@ Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
 - Now playing from the rekordbox 6/7 play history (read-only, decrypted in memory)
 - `nowplaying.txt` / `artist.txt` / `title.txt` for OBS, plus a timestamped tracklist per session
 
+## Download
+Windows installers are on the [releases page](https://github.com/danmarinescu79/djcast/releases/latest)
+(`djcast_<version>_x64-setup.exe`, or the `.msi`). The app updates itself from there.
+
+Code signing: Windows releases are to be signed with free code signing provided by
+[SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)
+(application in progress; see the [code signing policy](docs/code-signing-policy.md)).
+
 ## Build
 
 Requires Rust (`rustup`). On Windows, also the Visual Studio Build Tools (MSVC).
