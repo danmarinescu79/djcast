@@ -1,5 +1,6 @@
 <script>
   import { clock, meterFraction, lufs, db } from './lib/format.js';
+  import BandMeters from './lib/BandMeters.svelte';
 
   let { status, busy, onToggleLive, onExpand } = $props();
 </script>
@@ -25,6 +26,7 @@
 
   <div class="grow"></div>
 
+  <div class="bottom">
   <div class="meters">
     <div class="row"><span>L</span><div class="track"><div style:width="{meterFraction(status.level_l) * 100}%"></div></div></div>
     <div class="row"><span>R</span><div class="track"><div style:width="{meterFraction(status.level_r) * 100}%"></div></div></div>
@@ -33,6 +35,10 @@
       <span>AGC {db(status.loudness.agc_gain_db)}</span>
       <span>LIM {db(status.loudness.limiter_db, false)}</span>
     </div>
+  </div>
+  {#if status.loudness.bands_db}
+    <BandMeters bands={status.loudness.bands_db} />
+  {/if}
   </div>
 </div>
 
@@ -52,7 +58,8 @@
   .title { font-size: 18px; font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
   .artist { font-size: 13px; color: var(--text-2); min-height: 18px; }
   .grow { flex-grow: 1; }
-  .meters { display: flex; flex-direction: column; gap: 6px; }
+  .bottom { display: flex; align-items: flex-end; gap: 14px; }
+  .meters { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
   .row span { width: 10px; }
   .track { flex-grow: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
