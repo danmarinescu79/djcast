@@ -70,6 +70,22 @@ fn test_connection(config: AppConfig) -> CmdResult<String> {
     Ok(format!("{}:{}{} accepted the login", s.host, s.port, s.mount))
 }
 
+/// Open a folder in Explorer / Finder. Relative paths are next to the config file
+/// (the app's working folder); the folder is created if missing.
+#[tauri::command]
+fn open_folder(path: String) -> CmdResult<()> {
+    let dir = std::env::current_dir().map_err(|e| e.to_string())?.join(path.trim());
+    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    #[cfg(target_os = "windows")]
+    let program = "explorer";
+    #[cfg(target_os = "macos")]
+    let program = "open";
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    let program = "xdg-open";
+    std::process::Command::new(program).arg(&dir).spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 fn list_midi_inputs() -> Vec<String> {
     djcast_nowplaying::live::midi_inputs()
@@ -110,6 +126,7 @@ fn main() {
     let station = Station::new(config);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState { station: station.clone(), config_path })
         .setup(move |app| {
             let handle = app.handle().clone();
@@ -131,6 +148,7 @@ fn main() {
             status,
             list_devices,
             list_midi_inputs,
+            open_folder,
             test_connection
         ])
         .run(tauri::generate_context!())

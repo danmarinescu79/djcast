@@ -1,6 +1,22 @@
 <script>
   import { invoke } from '@tauri-apps/api/core';
+  import { open } from '@tauri-apps/plugin-dialog';
   import { onMount } from 'svelte';
+
+  /** Folder picker; returns the chosen absolute path or null. */
+  async function pickFolder(current, title) {
+    const isAbs = /^([a-zA-Z]:[\\/]|\/)/.test(current || '');
+    const chosen = await open({ directory: true, title, defaultPath: isAbs ? current : baseDir });
+    return typeof chosen === 'string' ? chosen : null;
+  }
+
+  async function openFolder(path) {
+    try {
+      await invoke('open_folder', { path: path || '.' });
+    } catch (e) {
+      message = { text: String(e), ok: false };
+    }
+  }
 
   let { config, live, onSaved, onClose } = $props();
 
@@ -196,7 +212,14 @@
         </div>
         <div class="field">
           <label for="out">Folder for OBS text files and tracklists</label>
-          <input id="out" bind:value={draft.nowplaying.output_dir} placeholder="empty = off" />
+          <div class="folder">
+            <input id="out" bind:value={draft.nowplaying.output_dir} placeholder="empty = off" />
+            <button type="button" class="btn big" onclick={async () => {
+              const p = await pickFolder(draft.nowplaying.output_dir, 'Folder for OBS text files and tracklists');
+              if (p) draft.nowplaying.output_dir = p;
+            }}>Browse…</button>
+            <button type="button" class="btn big" disabled={!draft.nowplaying.output_dir} onclick={() => openFolder(draft.nowplaying.output_dir)}>Open</button>
+          </div>
           <span class="hint">A name without a drive letter is created next to the settings file: {baseDir}</span>
         </div>
       </div>
@@ -204,7 +227,14 @@
       <h1>Recording</h1>
       <label class="check"><input type="checkbox" bind:checked={draft.record.enabled} /> Record every session to an MP3 file</label>
       <div class="grid">
-        <div class="field"><label for="rdir">Folder</label><input id="rdir" bind:value={draft.record.dir} placeholder="recordings" /><span class="hint">A name without a drive letter is created in {baseDir}</span></div>
+        <div class="field"><label for="rdir">Folder</label><div class="folder">
+            <input id="rdir" bind:value={draft.record.dir} placeholder="recordings" />
+            <button type="button" class="btn big" onclick={async () => {
+              const p = await pickFolder(draft.record.dir, 'Folder for recordings');
+              if (p) draft.record.dir = p;
+            }}>Browse…</button>
+            <button type="button" class="btn big" onclick={() => openFolder(draft.record.dir || 'recordings')}>Open</button>
+          </div><span class="hint">A name without a drive letter is created in {baseDir}</span></div>
       </div>
     {/if}
 
@@ -244,6 +274,9 @@
   .check, .radio { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
   .radios { display: flex; flex-direction: column; gap: 12px; }
   input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-color: var(--info); }
+  .folder { display: flex; gap: 8px; }
+  .folder input { flex: 1 1 auto; min-width: 0; }
+  .folder .btn { flex-shrink: 0; }
   .hint { font-size: 12px; color: var(--muted); user-select: text; overflow-wrap: anywhere; }
   .note { margin: 0; font-size: 13px; color: var(--muted); max-width: 640px; }
   footer { display: flex; align-items: center; gap: 12px; }
