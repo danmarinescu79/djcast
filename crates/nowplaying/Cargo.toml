@@ -1,0 +1,10 @@
+[package]
+name = "djcast-nowplaying"
+description = "Now-playing detection for DJ software (rekordbox first)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true

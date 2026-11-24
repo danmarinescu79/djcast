@@ -1,0 +1,16 @@
+[package]
+name = "djcast-core"
+description = "Audio capture, encoding and Icecast/Shoutcast streaming engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+log.workspace = true
+serde.workspace = true
+crossbeam-channel.workspace = true
+base64 = "0.23"
+cpal = "0.18"
+mp3lame-encoder = "0.3"

@@ -1,0 +1,31 @@
+# Copy to djcast.toml and fill in your server details.
+
+[audio]
+# Device name (a substring is enough). Empty = system default. See `djcast devices`.
+device = ""
+# "loopback" = capture what plays on an output device (e.g. your DJ controller's sound card)
+# "input"    = capture an input (line-in, USB mixer input, virtual cable)
+mode = "loopback"
+gain = 1.0
+
+[encoder]
+codec = "mp3"
+bitrate = 192   # 128, 192, 256, 320 ...
+
+[server]
+protocol = "icecast"
+host = "localhost"
+port = 8000
+mount = "/live"
+user = "source"
+password = "hackme"
+name = "My DJ Stream"
+description = ""
+genre = "Electronic"
+url = ""
+public = false
+reconnect_delay_secs = 3
+
+[record]
+enabled = false
+dir = "recordings"

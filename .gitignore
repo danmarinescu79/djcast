@@ -1,0 +1,4 @@
+/target
+/recordings
+# local config may contain server passwords
+/djcast.toml
