@@ -57,12 +57,14 @@
 - [x] Settings: audio input, server profiles (Icecast / Shoutcast v1 / v2), connection test,
       show/hide password, processing presets, now-playing source + MIDI picker, folders with
       Browse… / Open
-- [ ] Decks view (mock-up B) and switching between views
-- [ ] Mini window (mock-up C), tray icon, autostart
+- [x] Decks view (mock-up B) and switching between views
+- [x] Mini window (mock-up C), tray icon (Go Live/Stop, tooltip), hide to tray while live
+- [ ] Start with Windows (optional, from settings)
 - [x] Passwords in the OS credential store (Windows Credential Manager / macOS Keychain),
       plain-text passwords migrated automatically, removed with their profile
 - [x] Windows installers: `npx tauri build` → .msi (WiX) and setup .exe (NSIS)
-- [ ] Code signing (avoids the SmartScreen warning), GitHub release
+- [ ] Code signing to avoid the SmartScreen warning (e.g. SignPath Foundation for open source)
+- [ ] First public release v0.1.0 on GitHub with the installers attached
 
 ## Stage 5: extensions
 - [x] Shoutcast v1 and v2 (legacy source protocol on port + 1, stream ID)
