@@ -119,6 +119,10 @@ impl Source for AutoSource {
         ))
     }
 
+    fn live_status(&self) -> Option<LiveStatus> {
+        Some(LiveStatus { using_fallback: self.using_db, ..self.live.status() })
+    }
+
     fn poll(&mut self) -> anyhow::Result<Option<Track>> {
         // Keep the history source's baseline current so switching to it never
         // announces an old track.
@@ -174,6 +178,39 @@ pub trait Source: Send {
     fn debug_snapshot(&self) -> Option<String> {
         None
     }
+    /// Deck and mixer state, for sources that know it.
+    fn live_status(&self) -> Option<LiveStatus> {
+        None
+    }
+}
+
+/// One deck as shown in a UI.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DeckStatus {
+    pub deck: u8,
+    pub title: String,
+    pub artist: String,
+    pub elapsed: Option<String>,
+    pub playing: bool,
+    /// Shown in the rekordbox window right now (2-deck layouts hide two decks).
+    pub visible: bool,
+    /// Mixer gain 0..=1 (fader × crossfader); 1 when unknown.
+    pub gain: f32,
+    pub on_air: bool,
+}
+
+/// Deck and mixer state of a live source.
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct LiveStatus {
+    pub decks: Vec<DeckStatus>,
+    pub on_air: Option<u8>,
+    pub faders: [Option<f32>; 4],
+    pub crossfader: Option<f32>,
+    /// The controller's MIDI input is connected.
+    pub midi: bool,
+    /// `auto` source currently using the rekordbox history.
+    pub using_fallback: bool,
+    pub error: Option<String>,
 }
 
 #[cfg(test)]

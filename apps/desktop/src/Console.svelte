@@ -1,0 +1,222 @@
+<script>
+  import { clock, bytes, meterFraction, lufs, db } from './lib/format.js';
+
+  let { status, busy, actionError, onToggleLive, onSendTitle } = $props();
+
+  let manualTitle = $state('');
+  let copied = $state(false);
+
+  // Always show four deck slots, filled from the live source when it knows them.
+  const decks = $derived(
+    [1, 2, 3, 4].map((n) => {
+      const d = status.decks?.decks?.find((x) => x.deck === n);
+      const fader = status.decks?.faders?.[n - 1];
+      return {
+        n,
+        title: d?.title || '—',
+        state: d ? (d.on_air ? 'ON AIR' : d.playing ? 'playing' : 'stopped') : 'empty',
+        onAir: !!d?.on_air,
+        playing: !!d?.playing,
+        fader: Math.round(100 * (fader ?? (d ? d.gain : 0))),
+      };
+    })
+  );
+
+  const sourceLabel = $derived(
+    status.nowplaying_source === 'none'
+      ? 'manual titles'
+      : status.decks?.using_fallback
+        ? 'rekordbox history'
+        : status.decks
+          ? 'live detection'
+          : status.nowplaying_source
+  );
+
+  const liveLabel = $derived(!status.live ? 'GO LIVE' : status.connected ? 'ON AIR' : 'CONNECTING');
+
+  async function copyTracklist() {
+    const text = status.tracklist.map((t) => `${t.time} ${t.title}`).join('\n');
+    await navigator.clipboard.writeText(text);
+    copied = true;
+    setTimeout(() => (copied = false), 1500);
+  }
+
+  function submitTitle(e) {
+    e.preventDefault();
+    onSendTitle(manualTitle);
+    manualTitle = '';
+  }
+</script>
+
+<main>
+  <section class="col">
+    <button
+      type="button"
+      class="live"
+      class:on={status.live}
+      class:waiting={status.live && !status.connected}
+      disabled={busy}
+      onclick={onToggleLive}
+    >
+      <span class="live-label">{liveLabel}</span>
+      <span class="live-time mono">{status.live ? clock(status.connected_secs) : '00:00:00'}</span>
+      <span class="live-hint">{status.live ? 'Click to stop' : 'Click to start streaming'}</span>
+    </button>
+    {#if actionError}<p class="error" role="alert">{actionError}</p>{/if}
+    {#if status.error}<p class="error" role="status">{status.error}</p>{/if}
+
+    <div class="panel stats">
+      <div><div class="k">Sent</div><div class="v">{bytes(status.bytes_sent)}</div></div>
+      <div><div class="k">Status</div><div class="v" class:ok={status.connected}>{status.connected ? 'Connected' : status.live ? 'Retrying' : 'Offline'}</div></div>
+      <div><div class="k">Recording</div><div class="v" class:ok={status.recording}>{status.recording ? 'On' : 'Off'}</div></div>
+      <div><div class="k">Preset</div><div class="v cap">{status.loudness.preset}</div></div>
+    </div>
+
+    <div class="panel input">
+      <div class="k">Input</div>
+      <div>{status.device || 'System default'}</div>
+      <div class="k">Loopback capture</div>
+    </div>
+  </section>
+
+  <section class="col center">
+    <div class="panel now">
+      <div class="badges">
+        <span class="label">Now playing</span>
+        {#if status.track?.deck}<span class="badge red">Deck {status.track.deck} · on air</span>{/if}
+        <span class="badge blue">{sourceLabel}</span>
+      </div>
+      <div class="title">{status.track?.title || 'Waiting for a track…'}</div>
+      <div class="artist">{status.track?.artist || ''}</div>
+      {#if status.nowplaying_error && !status.decks?.using_fallback}
+        <div class="hint">{status.nowplaying_error}</div>
+      {/if}
+      <form class="manual" onsubmit={submitTitle}>
+        <label for="manual-title" class="sr">Send a title manually</label>
+        <input id="manual-title" placeholder="Type a title and press Enter to send it now" bind:value={manualTitle} />
+      </form>
+    </div>
+
+    <div class="decks">
+      {#each decks as d (d.n)}
+        <div class="panel deck" class:onair={d.onAir}>
+          <div class="deck-head">
+            <span>DECK {d.n}</span>
+            <span class:red-text={d.onAir} class:ok={!d.onAir && d.playing}>{d.state}</span>
+          </div>
+          <div class="deck-title">{d.title}</div>
+          <div class="fader"><div style:width="{d.fader}%" class:hot={d.onAir}></div></div>
+        </div>
+      {/each}
+    </div>
+
+    <div class="panel tracklist">
+      <div class="tl-head">
+        <span class="label">Tracklist · this session</span>
+        <button type="button" class="link" disabled={!status.tracklist.length} onclick={copyTracklist}>
+          {copied ? 'Copied' : 'Copy for Mixcloud'}
+        </button>
+      </div>
+      <div class="tl-rows">
+        {#each status.tracklist as t, i (i)}
+          <div class="tl-row"><span class="mono muted">{t.time}</span><span class="ellipsis">{t.title}</span></div>
+        {:else}
+          <div class="muted small">Tracks appear here once you are live.</div>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <section class="panel col out">
+    <span class="label">Output</span>
+    <div class="meters">
+      <div class="meter"><div class="track"><div class="fill" style:height="{meterFraction(status.level_l) * 100}%"></div></div><span>L</span></div>
+      <div class="meter"><div class="track"><div class="fill" style:height="{meterFraction(status.level_r) * 100}%"></div></div><span>R</span></div>
+      <div class="lufs">
+        <span class="big mono">{lufs(status.loudness.out_lufs)}</span>
+        <span class="muted small">LUFS{status.loudness.target_lufs != null ? ` · target ${status.loudness.target_lufs}` : ''}</span>
+      </div>
+    </div>
+    <div class="rows">
+      <div><span class="muted">Mix in</span><span class="mono">{lufs(status.loudness.in_lufs)} LUFS</span></div>
+      <div><span class="muted">AGC</span><span class="mono blue-text">{db(status.loudness.agc_gain_db)} dB</span></div>
+      <div><span class="muted">Limiter</span><span class="mono warn-text">{db(status.loudness.limiter_db, false)} dB</span></div>
+      <div><span class="muted">MIDI mixer</span><span>{status.decks?.midi ? 'Connected' : '—'}</span></div>
+    </div>
+  </section>
+</main>
+
+<style>
+  main {
+    flex-grow: 1; min-height: 0;
+    display: grid; grid-template-columns: 260px minmax(0, 1fr) 230px;
+    gap: 16px; padding: 16px 20px;
+  }
+  .col { display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; }
+
+  .live {
+    height: 150px; border: 1px solid var(--line-strong); border-radius: 14px;
+    background: var(--panel); color: var(--text);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  }
+  .live:hover { border-color: #4a505a; }
+  .live.on { background: var(--on-air); border-color: var(--on-air); color: #fff; }
+  .live.waiting { background: #8a3030; }
+  .live-label { font-size: 13px; font-weight: 600; letter-spacing: 2px; }
+  .live-time { font-size: 34px; font-weight: 700; }
+  .live-hint { font-size: 12px; opacity: 0.85; }
+
+  .error { margin: 0; font-size: 12px; color: var(--on-air-text); user-select: text; }
+  .stats { padding: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .k { font-size: 11px; color: var(--muted); }
+  .v { font-size: 18px; font-weight: 600; }
+  .cap { text-transform: capitalize; }
+  .ok { color: var(--ok); }
+  .input { padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+
+  .now { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .badges { display: flex; align-items: center; gap: 8px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; }
+  .red { background: var(--on-air-soft); color: var(--on-air-text); }
+  .blue { background: var(--info-soft); color: var(--info); }
+  .title { font-size: 26px; font-weight: 700; line-height: 1.2; user-select: text; }
+  .artist { font-size: 16px; color: var(--text-2); min-height: 22px; user-select: text; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .manual input {
+    width: 100%; height: 34px; padding: 0 10px; margin-top: 4px;
+    background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: 8px; font-size: 13px;
+  }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  .decks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .deck { padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; border-radius: 10px; }
+  .deck.onair { border-color: var(--on-air); }
+  .deck-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .red-text { color: var(--on-air-text); }
+  .deck-title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fader { height: 6px; background: var(--line); border-radius: 3px; }
+  .fader > div { height: 6px; background: #5b6470; border-radius: 3px; transition: width 80ms linear; }
+  .fader > div.hot { background: #ff6b6b; }
+
+  .tracklist { flex-grow: 1; min-height: 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  .tl-head { display: flex; justify-content: space-between; align-items: center; }
+  .link { background: none; border: none; color: var(--info); font-size: 12px; padding: 0; }
+  .tl-rows { overflow-y: auto; min-height: 0; }
+  .tl-row { display: flex; gap: 14px; font-size: 13px; padding: 5px 0; border-top: 1px solid #22252c; user-select: text; }
+  .tl-row .mono { width: 64px; flex-shrink: 0; }
+  .ellipsis { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12px; }
+
+  .out { padding: 14px; gap: 14px; }
+  .meters { display: flex; gap: 14px; height: 230px; align-items: stretch; }
+  .meter { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .track { width: 22px; flex-grow: 1; background: var(--line); border-radius: 4px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+  .fill { background: var(--ok); border-radius: 4px; transition: height 50ms linear; }
+  .lufs { display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding-bottom: 22px; }
+  .big { font-size: 30px; font-weight: 700; }
+  .rows { display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+  .rows > div { display: flex; justify-content: space-between; }
+  .blue-text { color: var(--info); }
+  .warn-text { color: var(--warn); }
+</style>

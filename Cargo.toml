@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/nowplaying", "crates/cli"]
+members = ["crates/core", "crates/nowplaying", "crates/app", "crates/cli", "apps/desktop/src-tauri"]
 
 [workspace.package]
 version = "0.1.0"
@@ -10,6 +10,7 @@ license = "MIT OR Apache-2.0"
 [workspace.dependencies]
 djcast-core = { path = "crates/core" }
 djcast-nowplaying = { path = "crates/nowplaying" }
+djcast-app = { path = "crates/app" }
 anyhow = "1"
 thiserror = "2"
 log = "0.4"

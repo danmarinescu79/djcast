@@ -3,3 +3,8 @@
 /nowplaying
 # local config may contain server passwords
 /djcast.toml
+/apps/desktop/node_modules
+/apps/desktop/dist
+/apps/desktop/src-tauri/gen
+/apps/desktop/src-tauri/icons/android
+/apps/desktop/src-tauri/icons/ios

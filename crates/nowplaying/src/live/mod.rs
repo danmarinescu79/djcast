@@ -78,6 +78,38 @@ impl RekordboxLiveSource {
 }
 
 impl RekordboxLiveSource {
+    /// Structured deck/mixer state for a UI.
+    pub fn status(&self) -> crate::LiveStatus {
+        let now = Instant::now();
+        let shared = self.shared.lock().unwrap();
+        let mixer = self.mixer.lock().unwrap();
+        let on_air = self.onair.current();
+        let mut decks: Vec<crate::DeckStatus> = shared
+            .decks
+            .values()
+            .map(|d| crate::DeckStatus {
+                deck: d.view.deck,
+                title: d.view.title.clone(),
+                artist: d.view.artist.clone(),
+                elapsed: d.view.elapsed.clone(),
+                playing: d.playing(now),
+                visible: d.visible,
+                gain: mixer.gain(d.view.deck),
+                on_air: on_air == Some(d.view.deck),
+            })
+            .collect();
+        decks.sort_by_key(|d| d.deck);
+        crate::LiveStatus {
+            decks,
+            on_air,
+            faders: mixer.faders,
+            crossfader: mixer.crossfader,
+            midi: self._midi.is_some(),
+            using_fallback: false,
+            error: shared.error.clone(),
+        }
+    }
+
     /// One line per deck plus the mixer, for troubleshooting.
     pub fn debug_snapshot(&self) -> String {
         let now = Instant::now();
@@ -121,6 +153,10 @@ impl Source for RekordboxLiveSource {
 
     fn debug_snapshot(&self) -> Option<String> {
         Some(RekordboxLiveSource::debug_snapshot(self))
+    }
+
+    fn live_status(&self) -> Option<crate::LiveStatus> {
+        Some(self.status())
     }
 
     fn poll(&mut self) -> Result<Option<Track>> {

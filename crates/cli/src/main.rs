@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use djcast_core::{Config, Engine, audio, icecast};
+use djcast_app::AppConfig;
+use djcast_core::{Engine, audio, icecast};
 use djcast_nowplaying::output::NowPlayingFiles;
 use djcast_nowplaying::rekordbox::{self, MasterDb, history};
 use djcast_nowplaying::{NowPlayingConfig, Track};
-use serde::{Deserialize, Serialize};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -87,14 +87,6 @@ enum RekordboxCmd {
     },
 }
 
-/// The whole config file: streaming settings plus `[nowplaying]`.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(default)]
-struct AppConfig {
-    #[serde(flatten)]
-    stream: Config,
-    nowplaying: NowPlayingConfig,
-}
 
 fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
@@ -198,9 +190,7 @@ fn init(path: &Path) -> Result<()> {
 }
 
 fn load(path: &Path) -> Result<AppConfig> {
-    let text = std::fs::read_to_string(path)
-        .with_context(|| format!("reading {} (create one with `djcast init`)", path.display()))?;
-    toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))
+    AppConfig::load(path)
 }
 
 fn rekordbox_cmd(cmd: RekordboxCmd) -> Result<()> {
