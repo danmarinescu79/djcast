@@ -24,12 +24,15 @@ codec = "mp3"
 bitrate = 192   # 128, 192, 256, 320 ...
 
 [server]
+# "icecast", "shoutcast2" (DNAS 2, uses stream_id) or "shoutcast1".
+# Shoutcast sends audio to port + 1 and uses only the password (no user / mount).
 protocol = "icecast"
 host = "localhost"
 port = 8000
 mount = "/live"
 user = "source"
 password = "hackme"
+stream_id = 1
 name = "My DJ Stream"
 description = ""
 genre = "Electronic"

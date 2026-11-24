@@ -117,6 +117,7 @@
     try {
       // Number inputs may hand back strings; normalize before saving.
       draft.server.port = Number(draft.server.port);
+      draft.server.stream_id = Number(draft.server.stream_id) || 1;
       draft.encoder.bitrate = Number(draft.encoder.bitrate);
       draft.nowplaying.confirm_secs = Number(draft.nowplaying.confirm_secs);
       draft.processing.target_lufs = Number(draft.processing.target_lufs);
@@ -231,7 +232,11 @@
       <div class="grid">
         <div class="field">
           <label for="proto">Server type</label>
-          <select id="proto" bind:value={draft.server.protocol}><option value="icecast">Icecast 2</option></select>
+          <select id="proto" bind:value={draft.server.protocol}>
+            <option value="icecast">Icecast 2</option>
+            <option value="shoutcast2">Shoutcast v2 (DNAS 2)</option>
+            <option value="shoutcast1">Shoutcast v1</option>
+          </select>
         </div>
         <div class="field">
           <label for="br">Format</label>
@@ -242,9 +247,19 @@
         <div class="field"><label for="host">Address</label><input id="host" bind:value={draft.server.host} /></div>
         <div class="pair">
           <div class="field"><label for="port">Port</label><input id="port" type="number" bind:value={draft.server.port} /></div>
-          <div class="field"><label for="mount">Mount point</label><input id="mount" bind:value={draft.server.mount} /></div>
+          {#if draft.server.protocol === 'icecast'}
+            <div class="field"><label for="mount">Mount point</label><input id="mount" bind:value={draft.server.mount} /></div>
+          {:else if draft.server.protocol === 'shoutcast2'}
+            <div class="field"><label for="sid">Stream ID</label><input id="sid" type="number" min="1" bind:value={draft.server.stream_id} /></div>
+          {/if}
         </div>
-        <div class="field"><label for="user">User</label><input id="user" bind:value={draft.server.user} /></div>
+        {#if draft.server.protocol === 'icecast'}
+          <div class="field"><label for="user">User</label><input id="user" bind:value={draft.server.user} /></div>
+        {:else}
+          <p class="note login-note">
+            Shoutcast sends audio to port {Number(draft.server.port) + 1} and logs in with the password only{draft.server.protocol === 'shoutcast2' ? `, as password:#${draft.server.stream_id || 1}` : ''}.
+          </p>
+        {/if}
         <div class="field">
           <label for="pass">Password</label>
           <div class="pass">
@@ -371,7 +386,7 @@
   .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
   label { font-size: 12px; color: var(--muted); }
-  input:not([type]), input[type='number'], input[type='password'], select {
+  input:not([type]), input[type='text'], input[type='number'], input[type='password'], select {
     height: 40px; padding: 0 12px; background: var(--panel); color: var(--text);
     border: 1px solid var(--line-strong); border-radius: 8px; font-size: 14px; width: 100%;
   }
@@ -384,6 +399,7 @@
   .rename { display: flex; gap: 8px; align-items: center; }
   .rename input { width: 220px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .login-note { align-self: end; padding-bottom: 10px; }
   .pass { position: relative; }
   .pass input { padding-right: 44px; }
   .eye {

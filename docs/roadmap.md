@@ -52,11 +52,20 @@
       master (like ASIO Link Pro). Big effort; check Steinberg ASIO SDK licensing first.
 
 ## Stage 4: GUI (Tauri)
-- [ ] Settings, server profiles, VU meter, Go Live button, status, track history
-- [ ] Tray icon, autostart
+- [x] Tauri v2 + Svelte 5 app sharing the Rust engine (`crates/app` Station service)
+- [x] Console view: Go Live, stats, now playing, decks, tracklist, meters, LUFS/AGC/limiter
+- [x] Settings: audio input, server profiles (Icecast / Shoutcast v1 / v2), connection test,
+      show/hide password, processing presets, now-playing source + MIDI picker, folders with
+      Browse… / Open
+- [ ] Decks view (mock-up B) and switching between views
+- [ ] Mini window (mock-up C), tray icon, autostart
+- [ ] Password in the OS credential store (Windows Credential Manager / macOS Keychain)
+- [ ] Installer (.msi / NSIS), app signing
 
 ## Stage 5: extensions
-- [ ] Shoutcast v1/v2, TLS (HTTPS Icecast)
+- [x] Shoutcast v1 and v2 (legacy source protocol on port + 1, stream ID)
+- [ ] TLS (HTTPS Icecast)
+- [ ] Stream to several servers at once (tick several profiles as live; independent reconnects)
 - [ ] Opus/Ogg (in-stream metadata), AAC
 - [ ] Pro DJ Link (CDJs)
 - [ ] macOS (loopback, builds, code signing)

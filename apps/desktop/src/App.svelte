@@ -34,11 +34,16 @@
     if (title.trim()) await invoke('set_title', { title });
   }
 
-  const server = $derived(
-    config ? `${config.server.host}:${config.server.port}${config.server.mount}` : ''
-  );
+  const PROTOCOLS = { icecast: 'Icecast', shoutcast1: 'Shoutcast v1', shoutcast2: 'Shoutcast v2' };
+  const server = $derived.by(() => {
+    if (!config) return '';
+    const s = config.server;
+    const where =
+      s.protocol === 'icecast' ? s.mount : s.protocol === 'shoutcast2' ? ` · stream ${s.stream_id}` : '';
+    return `${s.host}:${s.port}${where}`;
+  });
   const format = $derived(
-    config ? `${config.server.protocol === 'icecast' ? 'Icecast' : config.server.protocol} · MP3 ${config.encoder.bitrate} kbps` : ''
+    config ? `${config.active_profile} · ${PROTOCOLS[config.server.protocol] ?? config.server.protocol} · MP3 ${config.encoder.bitrate} kbps` : ''
   );
 </script>
 

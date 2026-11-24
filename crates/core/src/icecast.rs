@@ -1,10 +1,13 @@
-//! Minimal Icecast source client (no external HTTP dependency).
+//! Minimal Icecast / Shoutcast source client (no external HTTP dependency).
 //!
-//! * Icecast 2.4+: `PUT /mount HTTP/1.1` with `Expect: 100-continue`.
+//! * Icecast 2.4+: `PUT /mount HTTP/1.1` with `Expect: 100-continue`, Basic auth (user + password).
 //! * Older Icecast: legacy `SOURCE /mount HTTP/1.0` (used as fallback).
-//! * Metadata for MP3/AAC streams: `GET /admin/metadata?mode=updinfo&song=...`.
+//! * Shoutcast v1: source connects to port + 1, sends the password as the first line,
+//!   server answers `OK2`, then `icy-*` headers and audio. No user, no mount.
+//! * Shoutcast v2 (DNAS 2, legacy source mode): like v1 with password `password:#<stream id>`.
+//! * Metadata: Icecast `GET /admin/metadata?mode=updinfo`, Shoutcast `GET /admin.cgi?mode=updinfo`.
 
-use crate::config::ServerConfig;
+use crate::config::{Protocol, ServerConfig};
 use anyhow::{Context, Result, bail};
 use base64::Engine as _;
 use std::io::{Read, Write};
@@ -30,6 +33,9 @@ pub struct SourceConnection {
 
 impl SourceConnection {
     pub fn connect(cfg: &ServerConfig, content_type: &str, info: AudioInfo) -> Result<Self> {
+        if cfg.protocol != Protocol::Icecast {
+            return Self::connect_shoutcast(cfg, content_type, info);
+        }
         match Self::connect_with(cfg, content_type, info, Method::Put) {
             Ok(c) => Ok(c),
             Err(e) if e.downcast_ref::<MethodRejected>().is_some() => {
@@ -90,9 +96,63 @@ impl SourceConnection {
         }
     }
 
+    /// Shoutcast v1 / v2 (legacy source protocol) on port + 1.
+    fn connect_shoutcast(cfg: &ServerConfig, content_type: &str, info: AudioInfo) -> Result<Self> {
+        let source_port = cfg.port.checked_add(1).context("port too high for Shoutcast (source uses port + 1)")?;
+        let mut stream = open_tcp(&cfg.host, source_port)?;
+        stream.write_all(format!("{}\r\n", shoutcast_password(cfg)).as_bytes()).context("sending password")?;
+        let reply = read_line(&mut stream).context("waiting for the server's answer")?;
+        if !reply.trim().starts_with("OK2") {
+            let r = reply.trim();
+            if r.to_lowercase().contains("password") {
+                bail!("authentication failed: the server said \"{r}\" — check the password");
+            }
+            bail!("server refused the source: \"{r}\"");
+        }
+        let headers = format!(
+            "content-type:{content_type}\r\n\
+             icy-name:{name}\r\n\
+             icy-genre:{genre}\r\n\
+             icy-url:{url}\r\n\
+             icy-pub:{public}\r\n\
+             icy-br:{br}\r\n\r\n",
+            name = header_safe(&cfg.name),
+            genre = header_safe(&cfg.genre),
+            url = header_safe(&cfg.url),
+            public = u8::from(cfg.public),
+            br = info.bitrate,
+        );
+        stream.write_all(headers.as_bytes()).context("sending stream headers")?;
+        log::info!("connected to {}:{} ({:?}, source port {source_port})", cfg.host, cfg.port, cfg.protocol);
+        Ok(Self { stream })
+    }
+
     pub fn send(&mut self, data: &[u8]) -> std::io::Result<()> {
         self.stream.write_all(data)
     }
+}
+
+fn shoutcast_password(cfg: &ServerConfig) -> String {
+    match cfg.protocol {
+        Protocol::Shoutcast2 => format!("{}:#{}", cfg.password, cfg.stream_id.max(1)),
+        _ => cfg.password.clone(),
+    }
+}
+
+/// Read one `\n`-terminated line.
+fn read_line(stream: &mut TcpStream) -> Result<String> {
+    let mut buf = Vec::new();
+    let mut byte = [0u8; 1];
+    while !buf.ends_with(b"\n") && buf.len() < 1024 {
+        match stream.read(&mut byte)? {
+            0 => break,
+            _ => buf.push(byte[0]),
+        }
+    }
+    if buf.is_empty() {
+        bail!("connection closed by the server");
+    }
+    Ok(String::from_utf8_lossy(&buf).into_owned())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -107,6 +167,9 @@ struct MethodRejected;
 
 /// Update the "now playing" title of an MP3/AAC mount.
 pub fn update_metadata(cfg: &ServerConfig, song: &str) -> Result<()> {
+    if cfg.protocol != Protocol::Icecast {
+        return update_metadata_shoutcast(cfg, song);
+    }
     let mut stream = open_tcp(&cfg.host, cfg.port)?;
     let mount = normalize_mount(&cfg.mount);
     let req = format!(
@@ -119,6 +182,30 @@ pub fn update_metadata(cfg: &ServerConfig, song: &str) -> Result<()> {
         host = cfg.host,
         port = cfg.port,
         auth = basic_auth(&cfg.user, &cfg.password),
+    );
+    stream.write_all(req.as_bytes())?;
+    let (code, reason) = read_status(&mut stream)?;
+    if code != 200 {
+        bail!("metadata update failed: {code} {reason}");
+    }
+    Ok(())
+}
+
+fn update_metadata_shoutcast(cfg: &ServerConfig, song: &str) -> Result<()> {
+    let mut stream = open_tcp(&cfg.host, cfg.port)?;
+    let sid = match cfg.protocol {
+        Protocol::Shoutcast2 => format!("sid={}&", cfg.stream_id.max(1)),
+        _ => String::new(),
+    };
+    // Shoutcast v1 only answers admin.cgi for browser-like user agents.
+    let req = format!(
+        "GET /admin.cgi?{sid}pass={p}&mode=updinfo&song={s} HTTP/1.0\r\n\
+         Host: {host}:{port}\r\n\
+         User-Agent: Mozilla/5.0 (compatible; {USER_AGENT})\r\n\r\n",
+        p = url_encode(&cfg.password),
+        s = url_encode(song),
+        host = cfg.host,
+        port = cfg.port,
     );
     stream.write_all(req.as_bytes())?;
     let (code, reason) = read_status(&mut stream)?;
@@ -275,6 +362,76 @@ mod tests {
         let info = AudioInfo { sample_rate: 44_100, bitrate: 128, channels: 2 };
         let err = SourceConnection::connect(&server_cfg(port), "audio/mpeg", info).err().unwrap();
         assert!(err.to_string().contains("401"));
+    }
+
+    /// Fake Shoutcast source port: checks the password line, answers OK2, returns headers.
+    fn fake_shoutcast(listener: TcpListener, reply: &'static [u8]) -> thread::JoinHandle<(String, Vec<String>)> {
+        thread::spawn(move || {
+            let (s, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(s.try_clone().unwrap());
+            let mut pass = String::new();
+            reader.read_line(&mut pass).unwrap();
+            (&s).write_all(reply).unwrap();
+            let head = if reply.starts_with(b"OK2") { read_head(&mut reader) } else { vec![] };
+            (pass.trim_end().to_string(), head)
+        })
+    }
+
+    /// Bind two adjacent ports (server port P is unused by the source; P + 1 is).
+    fn adjacent_ports() -> (u16, TcpListener) {
+        for _ in 0..50 {
+            let probe = TcpListener::bind("127.0.0.1:0").unwrap();
+            let p = probe.local_addr().unwrap().port();
+            drop(probe);
+            if let Ok(l) = TcpListener::bind(("127.0.0.1", p + 1)) {
+                return (p, l);
+            }
+        }
+        panic!("no free adjacent ports");
+    }
+
+    #[test]
+    fn shoutcast_v1_and_v2_handshakes() {
+        let info = AudioInfo { sample_rate: 44_100, bitrate: 192, channels: 2 };
+
+        let (port, listener) = adjacent_ports();
+        let srv = fake_shoutcast(listener, b"OK2\r\nicy-caps:11\r\n\r\n");
+        let cfg = ServerConfig { protocol: Protocol::Shoutcast1, password: "secret".into(), ..server_cfg(port) };
+        SourceConnection::connect(&cfg, "audio/mpeg", info).unwrap();
+        let (pass, head) = srv.join().unwrap();
+        assert_eq!(pass, "secret");
+        assert!(head.contains(&"icy-br:192".to_string()));
+        assert!(head.contains(&"content-type:audio/mpeg".to_string()));
+
+        let (port, listener) = adjacent_ports();
+        let srv = fake_shoutcast(listener, b"OK2\r\nicy-caps:11\r\n\r\n");
+        let cfg = ServerConfig { protocol: Protocol::Shoutcast2, password: "secret".into(), stream_id: 3, ..server_cfg(port) };
+        SourceConnection::connect(&cfg, "audio/mpeg", info).unwrap();
+        assert_eq!(srv.join().unwrap().0, "secret:#3");
+
+        let (port, listener) = adjacent_ports();
+        let srv = fake_shoutcast(listener, b"invalid password\r\n");
+        let cfg = ServerConfig { protocol: Protocol::Shoutcast1, password: "nope".into(), ..server_cfg(port) };
+        let err = SourceConnection::connect(&cfg, "audio/mpeg", info).err().unwrap();
+        assert!(err.to_string().contains("check the password"), "{err}");
+        srv.join().unwrap();
+    }
+
+    #[test]
+    fn shoutcast_v2_metadata_uses_admin_cgi_with_sid() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let srv = thread::spawn(move || {
+            let (s, _) = listener.accept().unwrap();
+            let head = read_head(&mut BufReader::new(s.try_clone().unwrap()));
+            (&s).write_all(b"HTTP/1.0 200 OK\r\n\r\n").unwrap();
+            head
+        });
+        let cfg = ServerConfig { protocol: Protocol::Shoutcast2, password: "p w".into(), stream_id: 2, ..server_cfg(port) };
+        update_metadata(&cfg, "A - B").unwrap();
+        let head = srv.join().unwrap();
+        assert_eq!(head[0], "GET /admin.cgi?sid=2&pass=p%20w&mode=updinfo&song=A%20-%20B HTTP/1.0");
+        assert!(head.iter().any(|h| h.starts_with("User-Agent: Mozilla/")));
     }
 
     #[test]

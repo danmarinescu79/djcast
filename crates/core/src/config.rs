@@ -63,9 +63,13 @@ pub struct ServerConfig {
     pub protocol: Protocol,
     pub host: String,
     pub port: u16,
+    /// Icecast mount point (not used by Shoutcast).
     pub mount: String,
+    /// Icecast user (Shoutcast has none).
     pub user: String,
     pub password: String,
+    /// Shoutcast v2 stream ID (sid), usually 1.
+    pub stream_id: u32,
     /// Station info sent as ice-* / icy-* headers.
     pub name: String,
     pub description: String,
@@ -85,6 +89,7 @@ impl Default for ServerConfig {
             mount: "/live".into(),
             user: "source".into(),
             password: "hackme".into(),
+            stream_id: 1,
             name: "My DJ Stream".into(),
             description: String::new(),
             genre: "Electronic".into(),
@@ -100,6 +105,10 @@ impl Default for ServerConfig {
 pub enum Protocol {
     /// Icecast 2.4+ (HTTP PUT, falls back to the legacy SOURCE method).
     Icecast,
+    /// Shoutcast v1 (source on port + 1, password only).
+    Shoutcast1,
+    /// Shoutcast v2 / DNAS 2 in legacy source mode (password + stream ID).
+    Shoutcast2,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
