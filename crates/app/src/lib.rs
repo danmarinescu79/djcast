@@ -44,11 +44,13 @@ pub struct AppPrefs {
     pub auto_live: bool,
     /// Check for updates when the app starts.
     pub check_updates: bool,
+    /// Colour theme: "system" (follows Windows), "light" or "dark".
+    pub theme: String,
 }
 
 impl Default for AppPrefs {
     fn default() -> Self {
-        Self { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true }
+        Self { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true, theme: "system".into() }
     }
 }
 

@@ -29,7 +29,7 @@
   // svelte-ignore state_referenced_locally
   let draft = $state({ language: 'auto', ...structuredClone($state.snapshot(config)) });
   if (!draft.language) draft.language = 'auto';
-  draft.app = { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true, ...(draft.app || {}) };
+  draft.app = { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true, theme: 'system', ...(draft.app || {}) };
   draft.processing = { eq_bass_db: 0, eq_presence_db: 0, ...draft.processing };
   draft.nowplaying = {
     midi_mapping: 'pioneer-ddj',
@@ -619,6 +619,14 @@
           </select>
           <span class="hint">{t('general.languageNote')}</span>
         </div>
+        <div class="field">
+          <label for="theme">{t('general.theme')}</label>
+          <select id="theme" bind:value={draft.app.theme}>
+            <option value="system">{t('general.themeSystem')}</option>
+            <option value="dark">{t('general.themeDark')}</option>
+            <option value="light">{t('general.themeLight')}</option>
+          </select>
+        </div>
       </div>
 
       <h2>{t('general.startup')}</h2>
@@ -700,7 +708,7 @@
   .nav-title { font-weight: 700; font-size: 17px; padding: 0 10px 16px; }
   .tab { text-align: left; padding: 10px 12px; border-radius: 8px; border: none; background: transparent; color: var(--muted); font-size: 14px; }
   .tab:hover { color: var(--text); }
-  .tab.active { background: #22252c; color: var(--text); }
+  .tab.active { background: var(--raised); color: var(--text); }
   .path { font-size: 11px; color: var(--muted); padding: 0 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
   .body { flex-grow: 1; min-width: 0; padding: 24px 32px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
   h1 { margin: 0; font-size: 22px; }
@@ -743,7 +751,7 @@
     display: flex; align-items: center; justify-content: center;
     background: transparent; border: none; border-radius: 6px; color: var(--muted);
   }
-  .eye:hover { color: var(--text); background: #22252c; }
+  .eye:hover { color: var(--text); background: var(--raised); }
   .sep-top { border-top: 1px solid var(--line); padding-top: 18px; }
   h2 { margin: 8px 0 0; font-size: 15px; font-weight: 600; color: var(--text-2); border-top: 1px solid var(--line); padding-top: 18px; }
   .checks { display: flex; flex-direction: column; gap: 10px; }

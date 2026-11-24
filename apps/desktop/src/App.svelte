@@ -10,6 +10,7 @@
   import Settings from './Settings.svelte';
   import { clock, formatLabel } from './lib/format.js';
   import { t, setLanguage } from './lib/i18n.svelte.js';
+  import { applyTheme } from './lib/theme.js';
   import { getVersion } from '@tauri-apps/api/app';
   import { checkForUpdate, takeWhatsNew } from './lib/updates.js';
 
@@ -63,6 +64,7 @@
     Promise.all([invoke('get_config'), invoke('system_locale').catch(() => 'en')]).then(([c, sys]) => {
       systemLocale = sys;
       setLanguage(c.language, sys);
+      applyTheme(c.app?.theme);
       config = c;
       startupChecks(c);
     });
@@ -169,7 +171,7 @@
     {/if}
 
     {#if status && config && showSettings}
-      <Settings {config} live={status.live} {systemLocale} initialTab={settingsTab} onSaved={(c) => { config = c; setLanguage(c.language, systemLocale); }} onClose={() => (showSettings = false)} />
+      <Settings {config} live={status.live} {systemLocale} initialTab={settingsTab} onSaved={(c) => { config = c; setLanguage(c.language, systemLocale); applyTheme(c.app?.theme); }} onClose={() => (showSettings = false)} />
     {:else if status && config && layout === 'decks'}
       {#if actionError}<p class="banner" role="alert">{actionError}</p>{/if}
       <Decks {status} />
@@ -194,7 +196,7 @@
   .loading { margin: auto; color: var(--muted); }
   .seg { display: flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
   .seg button { height: 30px; padding: 0 12px; border: none; background: transparent; color: var(--muted); font-size: 13px; }
-  .seg button.active { background: #22252c; color: var(--text); }
+  .seg button.active { background: var(--raised); color: var(--text); }
   .live-tag { font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 4px 10px; border-radius: 999px; background: var(--on-air); color: #fff; }
   .live-pill {
     height: 32px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; flex-shrink: 0;

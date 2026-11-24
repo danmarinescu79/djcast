@@ -1,6 +1,7 @@
 // Developer preview: render a view with sample data, without Tauri (for screenshots).
 // Open /preview.html?view=mini (or console / decks) on the Vite dev server.
 import { mount } from 'svelte';
+import { applyTheme } from './lib/theme.js';
 import './app.css';
 import { setLanguage } from './lib/i18n.svelte.js';
 import Mini from './Mini.svelte';
@@ -33,6 +34,7 @@ const status = {
 const params = new URLSearchParams(location.search);
 const view = params.get('view') || 'mini';
 setLanguage(params.get('lang') || 'en');
+applyTheme(params.get('theme') || 'dark');
 const props = { status, busy: false, actionError: '', onToggleLive() {}, onExpand() {}, onSendTitle() {} };
 const server = { protocol: 'icecast', host: 'radio.example.com', port: 8000, mount: '/live', user: 'source', password: 'example', stream_id: 1, name: 'My DJ Stream', description: 'Live DJ sets', genre: 'Electronic', url: 'https://radio.example.com', public: false, reconnect_delay_secs: 3 };
 const config = {

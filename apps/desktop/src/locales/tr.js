@@ -272,4 +272,9 @@ export default {
   'audio.program': 'Program',
   'audio.programHint': 'Adının bir kısmı, Görev Yöneticisi’ndeki gibi. Boş = rekordbox. Yayına geçtiğinde çalışıyor olmalı.',
   'audio.processNote': 'Yalnızca o program yayınlanır — tarayıcı, bildirimler ve diğer sesler dışarıda kalır. Windows 10 (2004) veya daha yenisi gerekir ve programın sesi Windows üzerinden geçmelidir: yalnızca bir ASIO sürücüsüne giden ses görülmez. ASIO’daki bir kontrolcüyle rekordbox, PC MASTER OUT bir Windows çıkışına ayarlıysa çalışır.',
+
+  'general.theme': 'Görünüm',
+  'general.themeSystem': 'Windows gibi',
+  'general.themeDark': 'Koyu',
+  'general.themeLight': 'Açık',
 };

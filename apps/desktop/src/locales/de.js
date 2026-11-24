@@ -272,4 +272,9 @@ export default {
   'audio.program': 'Programm',
   'audio.programHint': 'Ein Teil seines Namens, wie im Task-Manager. Leer = rekordbox. Es muss laufen, wenn du live gehst.',
   'audio.processNote': 'Nur dieses Programm wird gestreamt – Browser, Benachrichtigungen und andere Sounds bleiben draußen. Benötigt Windows 10 (2004) oder neuer, und der Ton des Programms muss über Windows laufen: Audio, das nur an einen ASIO-Treiber geht, wird nicht erfasst. rekordbox mit einem Controller über ASIO funktioniert, wenn PC MASTER OUT auf einen Windows-Ausgang gestellt ist.',
+
+  'general.theme': 'Darstellung',
+  'general.themeSystem': 'Wie Windows',
+  'general.themeDark': 'Dunkel',
+  'general.themeLight': 'Hell',
 };

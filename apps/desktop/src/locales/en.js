@@ -275,4 +275,9 @@ export default {
   'audio.program': 'Program',
   'audio.programHint': 'Part of its name, as in Task Manager. Empty = rekordbox. It must be running when you go live.',
   'audio.processNote': 'Only that program is streamed — browser, notifications and other sounds stay out. Needs Windows 10 (2004) or newer, and the program’s sound must go through Windows: audio that goes only to an ASIO driver is not seen. rekordbox with a controller on ASIO works when PC MASTER OUT is set to a Windows output.',
+
+  'general.theme': 'Appearance',
+  'general.themeSystem': 'Like Windows',
+  'general.themeDark': 'Dark',
+  'general.themeLight': 'Light',
 };

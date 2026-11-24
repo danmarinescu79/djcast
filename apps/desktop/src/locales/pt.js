@@ -272,4 +272,9 @@ export default {
   'audio.program': 'Programa',
   'audio.programHint': 'Parte do nome dele, como no Gerenciador de Tarefas. Vazio = rekordbox. Ele precisa estar aberto quando você entrar ao vivo.',
   'audio.processNote': 'Só esse programa é transmitido — navegador, notificações e outros sons ficam de fora. Requer Windows 10 (2004) ou mais recente, e o som do programa precisa passar pelo Windows: áudio que vai só para um driver ASIO não é capturado. rekordbox com um controlador em ASIO funciona quando o PC MASTER OUT está configurado para uma saída do Windows.',
+
+  'general.theme': 'Aparência',
+  'general.themeSystem': 'Como o Windows',
+  'general.themeDark': 'Escuro',
+  'general.themeLight': 'Claro',
 };

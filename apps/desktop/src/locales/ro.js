@@ -273,4 +273,9 @@ export default {
   'audio.program': 'Program',
   'audio.programHint': 'O parte din nume, ca în Task Manager. Gol = rekordbox. Trebuie să ruleze când pornești transmisia.',
   'audio.processNote': 'Se transmite doar acel program — browserul, notificările și alte sunete rămân pe dinafară. Necesită Windows 10 (2004) sau mai nou, iar sunetul programului trebuie să treacă prin Windows: ce merge doar într-un driver ASIO nu se vede. rekordbox cu controller pe ASIO merge când PC MASTER OUT e setat pe o ieșire Windows.',
+
+  'general.theme': 'Aspect',
+  'general.themeSystem': 'Ca Windows',
+  'general.themeDark': 'Întunecat',
+  'general.themeLight': 'Luminos',
 };

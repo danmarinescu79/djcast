@@ -272,4 +272,9 @@ export default {
   'audio.program': 'Программа',
   'audio.programHint': 'Часть её имени, как в Диспетчере задач. Пусто = rekordbox. Программа должна быть запущена, когда вы выходите в эфир.',
   'audio.processNote': 'Транслируется только эта программа — браузер, уведомления и другие звуки не попадают в эфир. Нужна Windows 10 (2004) или новее, и звук программы должен идти через Windows: звук, который идёт только в драйвер ASIO, не виден. rekordbox с контроллером на ASIO работает, если PC MASTER OUT назначен на выход Windows.',
+
+  'general.theme': 'Оформление',
+  'general.themeSystem': 'Как в Windows',
+  'general.themeDark': 'Тёмное',
+  'general.themeLight': 'Светлое',
 };

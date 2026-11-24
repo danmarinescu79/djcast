@@ -14,8 +14,66 @@
   --info: #7cc8ff;
   --info-soft: #13222b;
   --warn: #f5b83d;
+  --raised: #22252c;
+  --line-hover: #3a3f48;
+  --on-air-dim: #8a3030;
+  --on-air-card: #1d1416;
+  --meter-idle: #5b6470;
+  --hot: #ff6b6b;
   --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   color-scheme: dark;
+}
+
+/* Light palette: chosen in Settings → General, or "system" while Windows uses light mode. */
+:root[data-theme='light'] {
+  --bg: #f3f4f6;
+  --bar: #e9ebef;
+  --panel: #ffffff;
+  --line: #dcdfe5;
+  --line-strong: #c9ced6;
+  --text: #15171c;
+  --text-2: #353b45;
+  --muted: #626973;
+  --on-air: #d93a3a;
+  --on-air-soft: #fde7e7;
+  --on-air-text: #b3261e;
+  --ok: #157a45;
+  --info: #1763b3;
+  --info-soft: #e2eefa;
+  --warn: #a86b00;
+  --raised: #e4e7ec;
+  --line-hover: #a9b0ba;
+  --on-air-dim: #e57373;
+  --on-air-card: #fff1f1;
+  --meter-idle: #a3abb6;
+  --hot: #e53935;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg: #f3f4f6;
+    --bar: #e9ebef;
+    --panel: #ffffff;
+    --line: #dcdfe5;
+    --line-strong: #c9ced6;
+    --text: #15171c;
+    --text-2: #353b45;
+    --muted: #626973;
+    --on-air: #d93a3a;
+    --on-air-soft: #fde7e7;
+    --on-air-text: #b3261e;
+    --ok: #157a45;
+    --info: #1763b3;
+    --info-soft: #e2eefa;
+    --warn: #a86b00;
+    --raised: #e4e7ec;
+    --line-hover: #a9b0ba;
+    --on-air-dim: #e57373;
+    --on-air-card: #fff1f1;
+    --meter-idle: #a3abb6;
+    --hot: #e53935;
+    color-scheme: light;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -60,6 +118,6 @@ input, select { font: inherit; }
   border-radius: 6px;
   font-size: 13px;
 }
-.btn:hover { border-color: #3a3f48; color: var(--text); }
+.btn:hover { border-color: var(--line-hover); color: var(--text); }
 
 a { color: var(--info); }

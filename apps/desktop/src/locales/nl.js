@@ -272,4 +272,9 @@ export default {
   'audio.program': 'Programma',
   'audio.programHint': 'Een deel van de naam, zoals in Taakbeheer. Leeg = rekordbox. Het moet draaien wanneer je live gaat.',
   'audio.processNote': 'Alleen dat programma wordt gestreamd — browser, meldingen en andere geluiden blijven erbuiten. Vereist Windows 10 (2004) of nieuwer, en het geluid van het programma moet via Windows gaan: audio die alleen naar een ASIO-driver gaat, wordt niet gezien. rekordbox met een controller op ASIO werkt als PC MASTER OUT op een Windows-uitgang staat.',
+
+  'general.theme': 'Weergave',
+  'general.themeSystem': 'Zoals Windows',
+  'general.themeDark': 'Donker',
+  'general.themeLight': 'Licht',
 };

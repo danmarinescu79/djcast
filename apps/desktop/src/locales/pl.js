@@ -272,4 +272,9 @@ export default {
   'audio.program': 'Program',
   'audio.programHint': 'Część jego nazwy, jak w Menedżerze zadań. Puste = rekordbox. Musi być uruchomiony, gdy wchodzisz na żywo.',
   'audio.processNote': 'Streamowany jest tylko ten program — przeglądarka, powiadomienia i inne dźwięki zostają poza transmisją. Wymaga Windows 10 (2004) lub nowszego, a dźwięk programu musi przechodzić przez Windows: audio wysyłane tylko do sterownika ASIO nie jest widoczne. rekordbox z kontrolerem na ASIO działa, gdy PC MASTER OUT jest ustawione na wyjście Windows.',
+
+  'general.theme': 'Wygląd',
+  'general.themeSystem': 'Jak w Windows',
+  'general.themeDark': 'Ciemny',
+  'general.themeLight': 'Jasny',
 };

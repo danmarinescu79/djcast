@@ -272,4 +272,9 @@ export default {
   'audio.program': 'プログラム',
   'audio.programHint': 'タスク マネージャーに表示される名前の一部。空欄 = rekordbox。ライブ開始時に起動している必要があります。',
   'audio.processNote': 'そのプログラムの音だけが配信され、ブラウザー、通知、その他の音は入りません。Windows 10 (2004) 以降が必要で、プログラムの音が Windows を経由している必要があります。ASIO ドライバーにのみ出力される音声は認識されません。コントローラーを ASIO で使う rekordbox は、PC MASTER OUT を Windows の出力に設定すれば動作します。',
+
+  'general.theme': '外観',
+  'general.themeSystem': 'Windows に合わせる',
+  'general.themeDark': 'ダーク',
+  'general.themeLight': 'ライト',
 };

@@ -92,9 +92,9 @@
     background: var(--panel); border: 2px solid var(--line); border-radius: 14px;
     padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0;
   }
-  .deck.onair { background: #1d1416; border-color: var(--on-air); }
+  .deck.onair { background: var(--on-air-card); border-color: var(--on-air); }
   .head { display: flex; align-items: center; gap: 10px; }
-  .num { width: 30px; height: 30px; border-radius: 8px; background: #22252c; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .num { width: 30px; height: 30px; border-radius: 8px; background: var(--raised); display: flex; align-items: center; justify-content: center; font-weight: 700; }
   .state { font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
   .red { color: var(--on-air-text); }
   .ok { color: var(--ok); }
@@ -114,8 +114,8 @@
   .ending-text { color: var(--warn); font-weight: 600; }
   .fader-row { display: flex; align-items: center; gap: 10px; font-size: 11px; }
   .fader { flex-grow: 1; height: 8px; background: var(--line); border-radius: 4px; }
-  .fader > div { height: 8px; background: #5b6470; border-radius: 4px; transition: width 80ms linear; }
-  .hot { background: #ff6b6b !important; }
+  .fader > div { height: 8px; background: var(--meter-idle); border-radius: 4px; transition: width 80ms linear; }
+  .hot { background: var(--hot) !important; }
   .pct { width: 36px; text-align: right; }
 
   aside { width: 250px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
@@ -124,7 +124,7 @@
   .faders { display: flex; justify-content: space-between; height: 110px; }
   .vfader { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .vtrack { width: 14px; flex-grow: 1; background: var(--line); border-radius: 3px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
-  .vtrack > div { background: #5b6470; border-radius: 3px; transition: height 80ms linear; }
+  .vtrack > div { background: var(--meter-idle); border-radius: 3px; transition: height 80ms linear; }
   .xfader { display: flex; align-items: center; gap: 8px; }
   .xtrack { flex-grow: 1; height: 6px; background: var(--line); border-radius: 3px; position: relative; }
   .knob { position: absolute; top: -5px; width: 10px; height: 16px; background: var(--text-2); border-radius: 2px; transition: left 80ms linear; }

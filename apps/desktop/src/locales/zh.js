@@ -272,4 +272,9 @@ export default {
   'audio.program': '程序',
   'audio.programHint': '其名称的一部分，与任务管理器中显示的一致。留空 = rekordbox。开播时它必须正在运行。',
   'audio.processNote': '只直播该程序的声音 — 浏览器、通知和其他声音不会混入。需要 Windows 10 (2004) 或更新版本，且程序的声音必须经过 Windows：只输出到 ASIO 驱动的音频无法捕获。控制器使用 ASIO 的 rekordbox，只要将 PC MASTER OUT 设置为 Windows 输出即可。',
+
+  'general.theme': '外观',
+  'general.themeSystem': '跟随 Windows',
+  'general.themeDark': '深色',
+  'general.themeLight': '浅色',
 };
