@@ -15,9 +15,9 @@
         "label": "main",
         "title": "djcast",
         "width": 1100,
-        "height": 720,
-        "minWidth": 900,
-        "minHeight": 600,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 720,
         "backgroundColor": "#0e0f12"
       }
     ],

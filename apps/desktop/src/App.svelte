@@ -71,8 +71,8 @@
       await win.setAlwaysOnTop(true);
     } else {
       await win.setAlwaysOnTop(false);
-      await win.setSize(new LogicalSize(1100, 720));
-      await win.setMinSize(new LogicalSize(900, 600));
+      await win.setSize(new LogicalSize(1100, 800));
+      await win.setMinSize(new LogicalSize(960, 720));
     }
     mini = on;
   }
