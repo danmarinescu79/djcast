@@ -546,8 +546,11 @@ mod tests {
         let (port, listener) = adjacent_ports();
         let srv = fake_shoutcast(listener, b"OK2\r\nicy-caps:11\r\n\r\n");
         let cfg = ServerConfig { protocol: Protocol::Shoutcast1, password: "secret".into(), ..server_cfg(port) };
-        SourceConnection::connect(&cfg, "audio/mpeg", info).unwrap();
+        // Keep the connection open until the fake server has read everything: closing a
+        // socket with unread data sends a reset on Windows, which fails the server's read.
+        let conn = SourceConnection::connect(&cfg, "audio/mpeg", info).unwrap();
         let (pass, head) = srv.join().unwrap();
+        drop(conn);
         assert_eq!(pass, "secret");
         assert!(head.contains(&"icy-br:192".to_string()));
         assert!(head.contains(&"content-type:audio/mpeg".to_string()));
@@ -555,8 +558,9 @@ mod tests {
         let (port, listener) = adjacent_ports();
         let srv = fake_shoutcast(listener, b"OK2\r\nicy-caps:11\r\n\r\n");
         let cfg = ServerConfig { protocol: Protocol::Shoutcast2, password: "secret".into(), stream_id: 3, ..server_cfg(port) };
-        SourceConnection::connect(&cfg, "audio/mpeg", info).unwrap();
+        let conn = SourceConnection::connect(&cfg, "audio/mpeg", info).unwrap();
         assert_eq!(srv.join().unwrap().0, "secret:#3");
+        drop(conn);
 
         let (port, listener) = adjacent_ports();
         let srv = fake_shoutcast(listener, b"invalid password\r\n");
