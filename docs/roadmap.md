@@ -7,7 +7,7 @@
 - [x] Icecast client: PUT + SOURCE fallback, ice-* headers, `updinfo` metadata
 - [x] Automatic reconnect, silence on capture gaps, local recording
 - [x] CLI: `devices`, `init`, `stream`, `meta`
-- [ ] Test against a real Icecast server
+- [x] Tested against a real server (Icecast 2.4.0-kh15): audio, metadata, auto title changes
 
 ## Stage 2: now playing from `master.db` ✅
 - [x] Auto-detect DB path (`rekordboxAgent/storage/options.json` → `db-path`)
@@ -26,7 +26,7 @@
 ## Capture sources (ongoing)
 - [x] WASAPI loopback of any output device (verified: DDJ-1000 with rekordbox on WASAPI)
 - [x] Input devices (line-in, virtual cables)
-- [ ] Guide + test: controller on ASIO, rekordbox "PC master out" to a spare output, loopback that
+- [x] Controller on ASIO + rekordbox "PC MASTER OUT" to a spare output (Realtek Digital Output), loopback that (verified with DDJ-1000)
 - [ ] Process loopback: capture only rekordbox's audio (Windows 10 2004+ process loopback,
       macOS 14.2+ Core Audio taps). On Windows this only works when rekordbox uses WASAPI.
 - [ ] Research: djcast virtual ASIO driver that forwards to the real device and taps the
