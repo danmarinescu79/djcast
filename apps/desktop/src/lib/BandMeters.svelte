@@ -1,28 +1,35 @@
 <script>
   // Multiband gain reduction: bars fill downward (like broadcast processors), 12 dB full scale.
-  // `fill`: stretch to the parent's height (bars from the top edge, labels on the bottom line).
-  let { bands, fill = false } = $props();
+  // `part`: 'both' (bars with labels under them), or 'bars' / 'labels' alone so a parent
+  // grid can line the bars up with its meters and the labels with its text row.
+  let { bands, part = 'both' } = $props();
   const NAMES = ['Bass', 'Low mids', 'High mids', 'Highs'];
   const SHORT = ['B', 'LM', 'HM', 'H'];
 </script>
 
-<div class="mb-bars" class:fill aria-label="Multiband gain reduction: bass, low mids, high mids, highs">
-  {#each bands as gr, i (i)}
-    <div class="mb-col" title="{NAMES[i]}: {gr.toFixed(1)} dB of compression (bar fills downward, 12 dB max)">
-      <div class="mb-track"><div style:height="{Math.min(100, (-gr / 12) * 100)}%"></div></div>
-      <span class="mb-label">{SHORT[i]}</span>
-    </div>
-  {/each}
-</div>
+{#if part === 'labels'}
+  <div class="row labels" aria-hidden="true">
+    {#each SHORT as s (s)}<span class="mb-label">{s}</span>{/each}
+  </div>
+{:else}
+  <div class="row" class:stretch={part === 'bars'} aria-label="Multiband gain reduction: bass, low mids, high mids, highs">
+    {#each bands as gr, i (i)}
+      <div class="mb-col" title="{NAMES[i]}: {gr.toFixed(1)} dB of compression (bar fills downward, 12 dB max)">
+        <div class="mb-track"><div style:height="{Math.min(100, (-gr / 12) * 100)}%"></div></div>
+        {#if part === 'both'}<span class="mb-label">{SHORT[i]}</span>{/if}
+      </div>
+    {/each}
+  </div>
+{/if}
 
 <style>
-  .mb-bars { display: flex; gap: 6px; }
+  .row { display: flex; gap: 6px; }
   .mb-col { width: 16px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .mb-track { width: 10px; height: 34px; background: var(--line); border-radius: 2px; position: relative; overflow: hidden; }
   .mb-track > div { position: absolute; top: 0; left: 0; right: 0; background: var(--warn); transition: height 60ms linear; }
-  .mb-label { font-size: 9px; color: var(--muted); line-height: 1; }
-  .fill { height: 100%; }
-  .fill .mb-col { height: 100%; }
-  .fill .mb-track { height: auto; flex-grow: 1; min-height: 20px; }
-  .fill .mb-label { font-size: 11px; line-height: 16px; }
+  .mb-label { width: 16px; text-align: center; font-size: 9px; color: var(--muted); line-height: 1; }
+  .stretch { height: 100%; }
+  .stretch .mb-col { height: 100%; }
+  .stretch .mb-track { height: 100%; }
+  .labels .mb-label { font-size: 11px; line-height: inherit; }
 </style>

@@ -26,19 +26,18 @@
 
   <div class="grow"></div>
 
-  <div class="bottom">
-  <div class="meters">
-    <div class="row"><span>L</span><div class="track"><div style:width="{meterFraction(status.level_l) * 100}%"></div></div></div>
-    <div class="row"><span>R</span><div class="track"><div style:width="{meterFraction(status.level_r) * 100}%"></div></div></div>
+  <div class="bottom" class:with-bands={!!status.loudness.bands_db}>
+    <div class="row l"><span>L</span><div class="track"><div style:width="{meterFraction(status.level_l) * 100}%"></div></div></div>
+    <div class="row r"><span>R</span><div class="track"><div style:width="{meterFraction(status.level_r) * 100}%"></div></div></div>
     <div class="nums mono">
       <span>{lufs(status.loudness.out_lufs)} LUFS</span>
       <span>AGC {db(status.loudness.agc_gain_db)}</span>
       <span>LIM {db(status.loudness.limiter_db, false)}</span>
     </div>
-  </div>
-  {#if status.loudness.bands_db}
-    <BandMeters bands={status.loudness.bands_db} fill />
-  {/if}
+    {#if status.loudness.bands_db}
+      <div class="bands"><BandMeters bands={status.loudness.bands_db} part="bars" /></div>
+      <div class="band-labels"><BandMeters bands={status.loudness.bands_db} part="labels" /></div>
+    {/if}
   </div>
 </div>
 
@@ -58,8 +57,18 @@
   .title { font-size: 18px; font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
   .artist { font-size: 13px; color: var(--text-2); min-height: 18px; }
   .grow { flex-grow: 1; }
-  .bottom { display: flex; align-items: stretch; gap: 14px; }
-  .meters { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  /* Rows: L, R, numbers. Band bars span the L and R rows; their labels sit on the numbers row. */
+  .bottom {
+    display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 14px 14px 18px;
+    row-gap: 6px; column-gap: 16px; align-items: center;
+  }
+  .bottom.with-bands { grid-template-columns: minmax(0, 1fr) auto; }
+  .l { grid-row: 1; grid-column: 1; }
+  .r { grid-row: 2; grid-column: 1; }
+  .nums { grid-row: 3; grid-column: 1; line-height: 18px; }
+  /* 3px in from the row edges = the top of the L bar to the bottom of the R bar (8px bars in 14px rows). */
+  .bands { grid-row: 1 / 3; grid-column: 2; align-self: stretch; padding: 3px 0; }
+  .band-labels { grid-row: 3; grid-column: 2; line-height: 18px; }
   .row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
   .row span { width: 10px; }
   .track { flex-grow: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
