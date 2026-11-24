@@ -12,7 +12,7 @@ pub mod rekordbox;
 
 use live::mixer::{Assign, MappingPreset, MidiMap};
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// Now-playing settings (the `[nowplaying]` config section).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,7 +82,7 @@ pub fn create_source(cfg: &NowPlayingConfig) -> anyhow::Result<Option<Box<dyn So
                     None
                 }
             };
-            Some(Box::new(AutoSource { live: live_source(cfg)?, db, using_db: false }))
+            Some(Box::new(AutoSource { live: live_source(cfg)?, db, using_db: false, live_lost: None, last_live: None }))
         }
     })
 }
@@ -109,11 +109,21 @@ fn live_source(cfg: &NowPlayingConfig) -> anyhow::Result<live::RekordboxLiveSour
     })
 }
 
+/// How long a live outage must last before the play history takes over. Reading the
+/// rekordbox window stalls for a few seconds now and then (loading or analysing tracks);
+/// the history lags a track behind, so switching to it at once announces the previous
+/// track and then the current one again.
+const FALLBACK_AFTER: Duration = Duration::from_secs(30);
+
 /// Live detection, with the play history as fallback while live is unavailable.
 struct AutoSource {
     live: live::RekordboxLiveSource,
     db: Option<rekordbox::RekordboxDbSource>,
     using_db: bool,
+    /// When live detection last started failing.
+    live_lost: Option<Instant>,
+    /// Last track live detection reported, kept during short outages.
+    last_live: Option<Track>,
 }
 
 impl Source for AutoSource {
@@ -137,15 +147,24 @@ impl Source for AutoSource {
         // Keep the history source's baseline current so switching to it never
         // announces an old track.
         let db_result = self.db.as_mut().map(|db| db.poll());
+        let now = Instant::now();
         match self.live.poll() {
             Ok(t) => {
                 if self.using_db {
                     log::info!("now playing: live detection available again");
                     self.using_db = false;
                 }
+                self.live_lost = None;
+                if t.is_some() {
+                    self.last_live = t.clone();
+                }
                 Ok(t)
             }
             Err(e) => match db_result {
+                // A short outage: keep the last live track.
+                Some(_) if !self.using_db && now.duration_since(*self.live_lost.get_or_insert(now)) < FALLBACK_AFTER => {
+                    Ok(self.last_live.clone())
+                }
                 Some(r) => {
                     if !self.using_db {
                         log::info!("now playing: live unavailable ({e:#}); using rekordbox history");

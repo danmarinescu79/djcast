@@ -223,8 +223,12 @@ fn spawn_scanner(shared: Arc<Mutex<Shared>>) -> Result<()> {
             }
         };
         loop {
+            let started = Instant::now();
             let result = scanner.scan();
             let now = Instant::now();
+            if now - started > Duration::from_secs(1) {
+                log::debug!("reading rekordbox took {:?}", now - started);
+            }
             {
                 let mut s = shared.lock().unwrap();
                 match result {

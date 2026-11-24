@@ -335,7 +335,7 @@ fn spawn_nowplaying(cfg: &NowPlayingConfig, tx: mpsc::Sender<Event>, verbose: bo
                 }
             }
             match result {
-                Ok(Some(t)) if Some(&t) != last.as_ref() => {
+                Ok(Some(t)) if last.as_ref().map(Track::display) != Some(t.display()) => {
                     last = Some(t.clone());
                     if tx.send(Event::Track(t)).is_err() {
                         break;

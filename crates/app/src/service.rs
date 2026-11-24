@@ -375,8 +375,10 @@ impl Station {
                     s.status = status;
                     s.error = result.as_ref().err().map(|e| format!("{e:#}"));
                 }
+                // Compare what listeners see: the same track on another deck, or found again
+                // by another source, is not a new title.
                 if let Ok(Some(t)) = result
-                    && Some(&t) != last.as_ref()
+                    && last.as_ref().map(Track::display) != Some(t.display())
                 {
                     last = Some(t.clone());
                     on_track(&ctx, &t);

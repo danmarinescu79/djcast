@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+- Now playing no longer repeats titles: a title is sent only when its text changes, and a
+  short pause in reading rekordbox (common while it is busy) keeps the current track for up to
+  30 s instead of switching to the play history, which lags a track behind
+- Reading rekordbox is much lighter: only the text of the deck panels (~95 elements instead
+  of ~770), which takes about 0.1 s instead of up to several seconds
+
 ## 0.3.0
 - Formats per server: MP3, AAC (96–192 kbps, the encoder built into Windows) and Opus
   (Icecast only; titles travel inside the stream). Servers with the same format share one

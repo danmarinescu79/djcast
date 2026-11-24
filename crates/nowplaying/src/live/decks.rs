@@ -77,7 +77,7 @@ pub fn parse_decks(items: &[TextItem]) -> Vec<DeckView> {
     decks
 }
 
-fn is_deck_label(i: &TextItem) -> bool {
+pub(crate) fn is_deck_label(i: &TextItem) -> bool {
     let n = i.name.trim();
     i.w <= LABEL_MAX_W && matches!(n, "1" | "2" | "3" | "4")
 }
