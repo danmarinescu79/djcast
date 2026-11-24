@@ -6,13 +6,21 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Wait a week after a release before proposing it (supply-chain safety).
+    cooldown:
+      default-days: 7
     groups:
+      # windows and windows-core must move together, majors included.
+      windows:
+        patterns: ["windows", "windows-*"]
       rust:
         update-types: [minor, patch]
   - package-ecosystem: npm
     directory: /apps/desktop
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     groups:
       npm:
         update-types: [minor, patch]
@@ -20,6 +28,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
