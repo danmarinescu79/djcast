@@ -184,4 +184,42 @@ export default {
   'general.languageAuto': 'Automatisch (systeem: {lang})',
   'general.languageNote':
     'Technische meldingen van servers en het systeem blijven in het Engels, zodat je ze makkelijk kunt opzoeken of melden.',
+
+  'tab.about': 'Over',
+
+  'general.startup': 'Opstarten en venster',
+  'general.autostart': 'djcast starten wanneer ik me aanmeld op mijn computer',
+  'general.startMinimized': 'Bij zo’n start verborgen blijven in het systeemvak',
+  'general.closeToTray': 'Bij het sluiten van het venster blijft djcast actief in het systeemvak',
+  'general.closeNote': 'Zolang je live bent, blijft de stream altijd doorgaan als je het venster sluit.',
+  'general.autoLive': 'Automatisch live gaan wanneer djcast start',
+  'general.autoLiveNote': 'Voor 24/7-zenders. Streamt naar de servers die als live zijn aangevinkt.',
+  'general.updates': 'Updates',
+  'general.checkUpdates': 'Controleren op updates wanneer djcast start',
+  'general.checkNow': 'Nu controleren',
+  'general.checking': 'Controleren…',
+  'general.upToDate': 'djcast {v} is up-to-date.',
+  'general.updateAvailable': 'Versie {v} is beschikbaar.',
+  'general.whatsNew': 'Wat is er nieuw',
+  'general.install': 'Installeren en herstarten',
+  'general.installing': 'Downloaden… {pct}%',
+  'general.updateError': 'Kan niet controleren op updates: {error}',
+  'general.updatesNote':
+    'Updates komen uit de GitHub-releases van het project en worden vóór de installatie met een handtekening gecontroleerd.',
+
+  'about.version': 'Versie {v}',
+  'about.tagline': 'Audiostreaming voor dj’s, met automatisch "Nu speelt" vanuit rekordbox.',
+  'about.license': 'Gratis en open source, onder de MIT- of Apache-2.0-licentie.',
+  'about.github': 'Projectpagina',
+  'about.releases': 'Release notes',
+  'about.issue': 'Probleem melden',
+  'about.logs': 'Logmap openen',
+  'about.settingsFolder': 'Map met instellingen openen',
+  'about.logsNote': 'Voeg bij het melden van een probleem de nieuwste djcast.log uit de logmap toe.',
+  'about.disclaimer': 'Niet verbonden aan AlphaTheta of Pioneer DJ. rekordbox is een handelsmerk van AlphaTheta Corporation.',
+
+  'banner.update': 'djcast {v} is beschikbaar.',
+  'banner.view': 'Bekijken',
+  'banner.whatsNew': 'Nieuw in djcast {v}',
+  'banner.dismiss': 'Sluiten',
 };

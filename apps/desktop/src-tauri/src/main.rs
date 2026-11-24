@@ -9,7 +9,11 @@ use std::sync::Arc;
 use std::time::Duration;
 use tauri::{Emitter, Manager, State, WindowEvent};
 
+mod logging;
 mod tray;
+
+/// Argument the autostart entry passes, so a system start can be told from a manual one.
+const AUTOSTART_ARG: &str = "--autostart";
 
 /// Status pushes to the UI per second.
 const STATUS_HZ: u64 = 20;
@@ -17,6 +21,42 @@ const STATUS_HZ: u64 = 20;
 struct AppState {
     station: Arc<Station>,
     config_path: PathBuf,
+    logs_dir: PathBuf,
+}
+
+const REPO_URL: &str = "https://github.com/danmarinescu79/djcast";
+
+/// Folders the About screen can open.
+#[derive(Serialize)]
+struct Folders {
+    config: String,
+    logs: String,
+}
+
+#[tauri::command]
+fn app_folders(app: State<'_, AppState>) -> Folders {
+    Folders {
+        config: app.config_path.parent().map(|p| p.display().to_string()).unwrap_or_default(),
+        logs: app.logs_dir.display().to_string(),
+    }
+}
+
+/// Open a page of the project's GitHub repository in the default browser.
+#[tauri::command]
+fn open_project_page(path: String) -> CmdResult<()> {
+    // Only our own repository: the UI never passes arbitrary URLs.
+    let path = path.trim_start_matches('/');
+    if !path.chars().all(|c| c.is_ascii_alphanumeric() || "/-_.#".contains(c)) {
+        return Err("invalid path".into());
+    }
+    let url = if path.is_empty() { REPO_URL.to_string() } else { format!("{REPO_URL}/{path}") };
+    #[cfg(target_os = "windows")]
+    let r = std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler", &url]).spawn();
+    #[cfg(target_os = "macos")]
+    let r = std::process::Command::new("open").arg(&url).spawn();
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    let r = std::process::Command::new("xdg-open").arg(&url).spawn();
+    r.map(|_| ()).map_err(|e| e.to_string())
 }
 
 type CmdResult<T> = Result<T, String>;
@@ -172,9 +212,9 @@ async fn list_devices() -> CmdResult<Vec<Device>> {
 }
 
 fn main() {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-
     let config_path = user_config_path();
+    let logs_dir = logging::init(config_path.parent().unwrap_or(std::path::Path::new(".")));
+    log::info!("djcast {} starting", env!("CARGO_PKG_VERSION"));
     let config = AppConfig::load_or_default(&config_path).unwrap_or_else(|e| {
         log::error!("{e:#}; starting with defaults");
         AppConfig::default()
@@ -194,23 +234,48 @@ fn main() {
             log::warn!("cannot use {} as working folder: {e}", dir.display());
         }
     }
+    let prefs = config.app.clone();
+    let started_by_system = std::env::args().any(|a| a == AUTOSTART_ARG);
     let station = Station::new(config);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .manage(AppState { station: station.clone(), config_path })
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![AUTOSTART_ARG]),
+        ))
+        .manage(AppState { station: station.clone(), config_path, logs_dir })
         .setup(move |app| {
             let tray = tray::build(app, station.clone())?;
 
-            // Closing the window while live hides it to the tray instead of cutting the stream.
             if let Some(win) = app.get_webview_window("main") {
+                // Started with the system: stay in the tray if the user asked for that.
+                if started_by_system && prefs.start_minimized {
+                    let _ = win.hide();
+                }
+                // Close button: hide to the tray when asked to, and always while live
+                // (a stream is never cut by closing the window).
                 let (st, w) = (station.clone(), win.clone());
                 win.on_window_event(move |e| {
                     if let WindowEvent::CloseRequested { api, .. } = e
-                        && st.is_live()
+                        && (st.is_live() || st.config().app.close_to_tray)
                     {
                         api.prevent_close();
                         let _ = w.hide();
+                    }
+                });
+            }
+
+            if prefs.auto_live {
+                let st = station.clone();
+                std::thread::spawn(move || {
+                    // Give the audio monitor and now-playing a moment to start.
+                    std::thread::sleep(Duration::from_secs(2));
+                    match st.go_live() {
+                        Ok(()) => log::info!("went live automatically on start"),
+                        Err(e) => log::error!("automatic go live failed: {e:#}"),
                     }
                 });
             }
@@ -242,6 +307,8 @@ fn main() {
             list_midi_inputs,
             system_locale,
             open_folder,
+            app_folders,
+            open_project_page,
             test_connection
         ])
         .run(tauri::generate_context!())

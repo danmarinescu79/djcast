@@ -3,6 +3,9 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import { onMount } from 'svelte';
   import { t, LANGUAGES } from './lib/i18n.svelte.js';
+  import { getVersion } from '@tauri-apps/api/app';
+  import { isEnabled as autostartIsEnabled, enable as autostartEnable, disable as autostartDisable } from '@tauri-apps/plugin-autostart';
+  import { checkForUpdate, installUpdate } from './lib/updates.js';
 
   /** Folder picker; returns the chosen absolute path or null. */
   async function pickFolder(current, title) {
@@ -19,20 +22,30 @@
     }
   }
 
-  let { config, live, systemLocale = 'en', onSaved, onClose } = $props();
+  let { config, live, systemLocale = 'en', initialTab = 'general', onSaved, onClose } = $props();
 
   // Edit a deep copy taken when the screen opens; nothing changes until Save.
   // svelte-ignore state_referenced_locally
   let draft = $state({ language: 'auto', ...structuredClone($state.snapshot(config)) });
   if (!draft.language) draft.language = 'auto';
-  let tab = $state(new URLSearchParams(globalThis.location?.search || '').get('tab') || 'server');
+  draft.app = { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true, ...(draft.app || {}) };
+
+  // Start with the system is stored by the OS, not in the config file.
+  let autostart = $state(false);
+  let autostartInitial = false;
+  let version = $state('');
+  let folders = $state({ config: '', logs: '' });
+  // Update check: idle | checking | none | found | installing | error
+  let upd = $state({ state: 'idle', found: null, pct: 0, error: '' });
+  // svelte-ignore state_referenced_locally
+  let tab = $state(new URLSearchParams(globalThis.location?.search || '').get('tab') || initialTab);
   let devices = $state([]);
   let saving = $state(false);
   let message = $state({ text: '', ok: true });
   let testing = $state(false);
   let configPath = $state('');
 
-  const tabs = ['audio', 'server', 'processing', 'nowplaying', 'recording', 'general'];
+  const tabs = ['general', 'audio', 'server', 'processing', 'nowplaying', 'recording', 'about'];
 
   let midiPorts = $state([]);
 
@@ -104,7 +117,31 @@
     devices = await invoke('list_devices').catch(() => []);
     midiPorts = await invoke('list_midi_inputs').catch(() => []);
     configPath = await invoke('get_config_path');
+    version = await getVersion().catch(() => '');
+    folders = await invoke('app_folders').catch(() => folders);
+    autostart = autostartInitial = await autostartIsEnabled().catch(() => false);
   });
+
+  async function checkUpdates() {
+    upd = { state: 'checking', found: null, pct: 0, error: '' };
+    try {
+      const found = await checkForUpdate();
+      upd = { ...upd, state: found ? 'found' : 'none', found };
+    } catch (e) {
+      upd = { ...upd, state: 'error', error: String(e) };
+    }
+  }
+
+  async function install() {
+    upd = { ...upd, state: 'installing', pct: 0 };
+    try {
+      await installUpdate(upd.found, (pct) => (upd.pct = pct));
+    } catch (e) {
+      upd = { ...upd, state: 'error', error: String(e) };
+    }
+  }
+
+  const openPage = (path) => invoke('open_project_page', { path }).catch(() => {});
 
   // Windows can list two devices with the same name (e.g. one per monitor): show each name once.
   const deviceOptions = $derived([
@@ -128,6 +165,10 @@
       storeCurrent();
       draft.active_profile = current;
       const saved = await invoke('save_config', { config: draft });
+      if (autostart !== autostartInitial) {
+        await (autostart ? autostartEnable() : autostartDisable());
+        autostartInitial = autostart;
+      }
       message = {
         text: live ? t('settings.savedLive') : t('settings.saved', { servers: liveNames(saved) }),
         ok: true,
@@ -383,9 +424,65 @@
             <option value="auto">{t('general.languageAuto', { lang: systemLocale })}</option>
             {#each LANGUAGES as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
           </select>
+          <span class="hint">{t('general.languageNote')}</span>
         </div>
       </div>
-      <p class="note">{t('general.languageNote')}</p>
+
+      <h2>{t('general.startup')}</h2>
+      <div class="checks">
+        <label class="check"><input type="checkbox" bind:checked={autostart} /> {t('general.autostart')}</label>
+        <label class="check sub" class:dim={!autostart}>
+          <input type="checkbox" bind:checked={draft.app.start_minimized} disabled={!autostart} /> {t('general.startMinimized')}
+        </label>
+        <label class="check"><input type="checkbox" bind:checked={draft.app.close_to_tray} /> {t('general.closeToTray')}</label>
+        <span class="hint sub">{t('general.closeNote')}</span>
+        <label class="check"><input type="checkbox" bind:checked={draft.app.auto_live} /> {t('general.autoLive')}</label>
+        <span class="hint sub">{t('general.autoLiveNote')}</span>
+      </div>
+
+      <h2>{t('general.updates')}</h2>
+      <div class="checks">
+        <label class="check"><input type="checkbox" bind:checked={draft.app.check_updates} /> {t('general.checkUpdates')}</label>
+        <div class="update-row">
+          <button type="button" class="btn big" disabled={upd.state === 'checking' || upd.state === 'installing'} onclick={checkUpdates}>
+            {t('general.checkNow')}
+          </button>
+          <span class="msg" class:bad={upd.state === 'error'} role="status">
+            {#if upd.state === 'checking'}{t('general.checking')}
+            {:else if upd.state === 'none'}{t('general.upToDate', { v: version })}
+            {:else if upd.state === 'found'}{t('general.updateAvailable', { v: upd.found.version })}
+            {:else if upd.state === 'installing'}{t('general.installing', { pct: upd.pct })}
+            {:else if upd.state === 'error'}{t('general.updateError', { error: upd.error })}
+            {/if}
+          </span>
+        </div>
+        {#if upd.state === 'found' || upd.state === 'installing'}
+          <div class="notes">
+            <div class="notes-title">{t('general.whatsNew')} · {upd.found.version}</div>
+            <pre>{upd.found.notes || '—'}</pre>
+            <button type="button" class="primary" disabled={upd.state === 'installing' || live} title={live ? t('server.stopToTest') : ''} onclick={install}>
+              {t('general.install')}
+            </button>
+          </div>
+        {/if}
+        <span class="hint sub">{t('general.updatesNote')}</span>
+      </div>
+    {:else if tab === 'about'}
+      <h1>djcast</h1>
+      {#if version}<p class="about-version">{t('about.version', { v: version })}</p>{/if}
+      <p class="note">{t('about.tagline')}</p>
+      <p class="note">{t('about.license')}</p>
+      <div class="about-buttons">
+        <button type="button" class="btn big" onclick={() => openPage('')}>{t('about.github')}</button>
+        <button type="button" class="btn big" onclick={() => openPage('releases')}>{t('about.releases')}</button>
+        <button type="button" class="btn big" onclick={() => openPage('issues/new')}>{t('about.issue')}</button>
+      </div>
+      <div class="about-buttons">
+        <button type="button" class="btn big" onclick={() => openFolder(folders.logs)}>{t('about.logs')}</button>
+        <button type="button" class="btn big" onclick={() => openFolder(folders.config)}>{t('about.settingsFolder')}</button>
+      </div>
+      <span class="hint">{t('about.logsNote')}</span>
+      <p class="note disclaimer">{t('about.disclaimer')}</p>
     {/if}
 
     <div class="grow"></div>
@@ -396,14 +493,16 @@
         <button type="button" class="btn big" disabled={testing || live} title={live ? t('server.stopToTest') : ''} onclick={test}>{t('server.test')}</button>
       {/if}
       <button type="button" class="btn big" onclick={onClose}>{t('common.close')}</button>
-      <button type="button" class="primary" disabled={saving} onclick={save}>{t('common.save')}</button>
+      {#if tab !== 'about'}
+        <button type="button" class="primary" disabled={saving} onclick={save}>{t('common.save')}</button>
+      {/if}
     </footer>
   </section>
 </div>
 
 <style>
   .settings { flex-grow: 1; min-height: 0; display: flex; }
-  nav { width: 220px; padding: 20px 12px; border-right: 1px solid var(--line); background: var(--bar); display: flex; flex-direction: column; gap: 4px; }
+  nav { width: 220px; flex-shrink: 0; padding: 20px 12px; border-right: 1px solid var(--line); background: var(--bar); display: flex; flex-direction: column; gap: 4px; }
   .nav-title { font-weight: 700; font-size: 17px; padding: 0 10px 16px; }
   .tab { text-align: left; padding: 10px 12px; border-radius: 8px; border: none; background: transparent; color: var(--muted); font-size: 14px; }
   .tab:hover { color: var(--text); }
@@ -444,6 +543,18 @@
   }
   .eye:hover { color: var(--text); background: #22252c; }
   .sep-top { border-top: 1px solid var(--line); padding-top: 18px; }
+  h2 { margin: 8px 0 0; font-size: 15px; font-weight: 600; color: var(--text-2); border-top: 1px solid var(--line); padding-top: 18px; }
+  .checks { display: flex; flex-direction: column; gap: 10px; }
+  .checks .sub { margin-left: 28px; }
+  .dim { opacity: 0.55; }
+  .update-row { display: flex; align-items: center; gap: 12px; }
+  .notes { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+  .notes-title { font-weight: 600; }
+  .notes pre { margin: 0; white-space: pre-wrap; font: inherit; font-size: 13px; color: var(--text-2); max-height: 180px; overflow-y: auto; user-select: text; }
+  .notes .primary { align-self: flex-start; }
+  .about-version { margin: -8px 0 0; color: var(--muted); }
+  .about-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+  .disclaimer { font-size: 12px; margin-top: 8px; }
   .folder { display: flex; gap: 8px; }
   .folder input { flex: 1 1 auto; min-width: 0; }
   .folder .btn { flex-shrink: 0; }

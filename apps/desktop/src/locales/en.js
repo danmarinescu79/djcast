@@ -186,4 +186,42 @@ export default {
   'general.languageAuto': 'Automatic (system: {lang})',
   'general.languageNote':
     'Technical messages from servers and the system stay in English, so they are easy to search for or report.',
+
+  'tab.about': 'About',
+
+  'general.startup': 'Start-up and window',
+  'general.autostart': 'Start djcast when I sign in to my computer',
+  'general.startMinimized': 'When started that way, stay hidden in the tray',
+  'general.closeToTray': 'Closing the window keeps djcast running in the tray',
+  'general.closeNote': 'While you are live, closing the window always keeps the stream running.',
+  'general.autoLive': 'Go live automatically when djcast starts',
+  'general.autoLiveNote': 'For 24/7 stations. Streams to the servers ticked as live.',
+  'general.updates': 'Updates',
+  'general.checkUpdates': 'Check for updates when djcast starts',
+  'general.checkNow': 'Check now',
+  'general.checking': 'Checking…',
+  'general.upToDate': 'djcast {v} is up to date.',
+  'general.updateAvailable': 'Version {v} is available.',
+  'general.whatsNew': "What's new",
+  'general.install': 'Install and restart',
+  'general.installing': 'Downloading… {pct}%',
+  'general.updateError': 'Could not check for updates: {error}',
+  'general.updatesNote':
+    "Updates come from the project's GitHub releases and are verified with a signature before they are installed.",
+
+  'about.version': 'Version {v}',
+  'about.tagline': 'Audio streaming for DJs, with automatic now playing from rekordbox.',
+  'about.license': 'Free and open source, under the MIT or Apache-2.0 license.',
+  'about.github': 'Project page',
+  'about.releases': 'Release notes',
+  'about.issue': 'Report a problem',
+  'about.logs': 'Open the logs folder',
+  'about.settingsFolder': 'Open the settings folder',
+  'about.logsNote': 'When you report a problem, attach the latest djcast.log from the logs folder.',
+  'about.disclaimer': 'Not affiliated with AlphaTheta or Pioneer DJ. rekordbox is a trademark of AlphaTheta Corporation.',
+
+  'banner.update': 'djcast {v} is available.',
+  'banner.view': 'View',
+  'banner.whatsNew': "What's new in djcast {v}",
+  'banner.dismiss': 'Dismiss',
 };

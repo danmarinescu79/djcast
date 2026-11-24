@@ -63,7 +63,9 @@
 - [x] Internationalization: 13 languages (en, ro, de, es, fr, it, nl, pl, pt-BR, tr, ru, ja, zh) in the UI and tray, language follows the system or
       Settings → General; `npm run check-i18n` validates keys and placeholders
 - [ ] Native-speaker review of the translations (all except en/ro)
-- [ ] Start with Windows (optional, from settings)
+- [x] Settings → General: start with the computer, stay in the tray, close to tray, go live on start
+- [x] Updates: Tauri updater (signed, GitHub releases), check on start / now, what's new after update
+- [x] About tab; log file `logs/djcast.log` (rotated) next to the settings
 - [x] Passwords in the OS credential store (Windows Credential Manager / macOS Keychain),
       plain-text passwords migrated automatically, removed with their profile
 - [x] Windows installers: `npx tauri build` → .msi (WiX) and setup .exe (NSIS)

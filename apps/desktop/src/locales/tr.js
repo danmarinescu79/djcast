@@ -184,4 +184,42 @@ export default {
   'general.languageAuto': 'Otomatik (sistem: {lang})',
   'general.languageNote':
     'Sunuculardan ve sistemden gelen teknik mesajlar İngilizce kalır; böylece kolayca aranabilir veya bildirilebilir.',
+
+  'tab.about': 'Hakkında',
+
+  'general.startup': 'Başlangıç ve pencere',
+  'general.autostart': "Bilgisayarda oturum açtığımda djcast'i başlat",
+  'general.startMinimized': 'Bu şekilde başlatıldığında sistem tepsisinde gizli kal',
+  'general.closeToTray': "Pencereyi kapatmak djcast'i sistem tepsisinde çalışır durumda tutar",
+  'general.closeNote': 'Yayındayken pencereyi kapattığınızda yayın her zaman devam eder.',
+  'general.autoLive': 'djcast başladığında otomatik olarak yayına başla',
+  'general.autoLiveNote': '7/24 yayın yapan istasyonlar için. Canlı olarak işaretlenen sunuculara yayın yapar.',
+  'general.updates': 'Güncellemeler',
+  'general.checkUpdates': 'djcast başladığında güncellemeleri denetle',
+  'general.checkNow': 'Şimdi denetle',
+  'general.checking': 'Denetleniyor…',
+  'general.upToDate': 'djcast {v} güncel.',
+  'general.updateAvailable': '{v} sürümü kullanılabilir.',
+  'general.whatsNew': 'Yenilikler',
+  'general.install': 'Yükle ve yeniden başlat',
+  'general.installing': 'İndiriliyor… %{pct}',
+  'general.updateError': 'Güncellemeler denetlenemedi: {error}',
+  'general.updatesNote':
+    'Güncellemeler projenin GitHub sürümlerinden gelir ve yüklenmeden önce bir imzayla doğrulanır.',
+
+  'about.version': 'Sürüm {v}',
+  'about.tagline': "DJ'ler için ses yayını; rekordbox'tan otomatik “şimdi çalıyor” bilgisiyle.",
+  'about.license': 'Ücretsiz ve açık kaynak; MIT veya Apache-2.0 lisansı altında.',
+  'about.github': 'Proje sayfası',
+  'about.releases': 'Sürüm notları',
+  'about.issue': 'Sorun bildir',
+  'about.logs': 'Günlük klasörünü aç',
+  'about.settingsFolder': 'Ayarlar klasörünü aç',
+  'about.logsNote': 'Bir sorun bildirirken günlük klasöründeki en son djcast.log dosyasını ekleyin.',
+  'about.disclaimer': "AlphaTheta veya Pioneer DJ ile bağlantılı değildir. rekordbox, AlphaTheta Corporation'ın ticari markasıdır.",
+
+  'banner.update': 'djcast {v} kullanılabilir.',
+  'banner.view': 'Görüntüle',
+  'banner.whatsNew': 'djcast {v} sürümündeki yenilikler',
+  'banner.dismiss': 'Kapat',
 };

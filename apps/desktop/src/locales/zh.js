@@ -184,4 +184,42 @@ export default {
   'general.languageAuto': '自动（系统：{lang}）',
   'general.languageNote':
     '来自服务器和系统的技术信息保持英文，方便搜索或报告问题。',
+
+  'tab.about': '关于',
+
+  'general.startup': '启动和窗口',
+  'general.autostart': '登录电脑时启动 djcast',
+  'general.startMinimized': '以此方式启动时，隐藏在系统托盘中',
+  'general.closeToTray': '关闭窗口后，djcast 继续在系统托盘中运行',
+  'general.closeNote': '直播期间，关闭窗口始终不会中断推流。',
+  'general.autoLive': 'djcast 启动时自动开始直播',
+  'general.autoLiveNote': '适用于 24/7 电台。推流到勾选为直播的服务器。',
+  'general.updates': '更新',
+  'general.checkUpdates': 'djcast 启动时检查更新',
+  'general.checkNow': '立即检查',
+  'general.checking': '正在检查…',
+  'general.upToDate': 'djcast {v} 已是最新版本。',
+  'general.updateAvailable': '新版本 {v} 可用。',
+  'general.whatsNew': '新功能',
+  'general.install': '安装并重启',
+  'general.installing': '正在下载… {pct}%',
+  'general.updateError': '无法检查更新：{error}',
+  'general.updatesNote':
+    '更新来自本项目在 GitHub 上发布的版本，安装前会通过签名进行验证。',
+
+  'about.version': '版本 {v}',
+  'about.tagline': '面向 DJ 的音频推流软件，自动从 rekordbox 获取正在播放的曲目。',
+  'about.license': '免费开源，采用 MIT 或 Apache-2.0 许可证。',
+  'about.github': '项目主页',
+  'about.releases': '更新日志',
+  'about.issue': '报告问题',
+  'about.logs': '打开日志文件夹',
+  'about.settingsFolder': '打开设置文件夹',
+  'about.logsNote': '报告问题时，请附上日志文件夹中最新的 djcast.log。',
+  'about.disclaimer': '本软件与 AlphaTheta 或 Pioneer DJ 无任何关联。rekordbox 是 AlphaTheta Corporation 的商标。',
+
+  'banner.update': 'djcast {v} 现已推出。',
+  'banner.view': '查看',
+  'banner.whatsNew': 'djcast {v} 新功能',
+  'banner.dismiss': '忽略',
 };

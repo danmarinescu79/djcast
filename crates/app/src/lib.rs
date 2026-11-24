@@ -21,9 +21,32 @@ pub struct AppConfig {
     pub profiles: Vec<ServerProfile>,
     /// UI language: "auto" (follow the system), or a language code such as "en", "ro".
     pub language: String,
+    /// Desktop app behaviour (start-up, window, updates).
+    pub app: AppPrefs,
     /// The file this was loaded from still contains passwords in plain text.
     #[serde(skip)]
     pub plaintext_passwords_on_disk: bool,
+}
+
+/// Desktop app preferences (`[app]`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AppPrefs {
+    /// When started with the system (autostart), stay hidden in the tray.
+    pub start_minimized: bool,
+    /// The window's close button hides the app to the tray instead of quitting.
+    /// (While live it always hides, so a stream is never cut by accident.)
+    pub close_to_tray: bool,
+    /// Go live automatically when the app starts (24/7 stations).
+    pub auto_live: bool,
+    /// Check for updates when the app starts.
+    pub check_updates: bool,
+}
+
+impl Default for AppPrefs {
+    fn default() -> Self {
+        Self { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true }
+    }
 }
 
 /// A saved server destination.

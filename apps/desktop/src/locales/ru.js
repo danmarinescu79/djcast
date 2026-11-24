@@ -184,4 +184,42 @@ export default {
   'general.languageAuto': 'Автоматически (система: {lang})',
   'general.languageNote':
     'Технические сообщения серверов и системы остаются на английском, чтобы их было легко найти в поиске или отправить в отчёте об ошибке.',
+
+  'tab.about': 'О программе',
+
+  'general.startup': 'Запуск и окно',
+  'general.autostart': 'Запускать djcast при входе в систему',
+  'general.startMinimized': 'При таком запуске оставаться скрытым в трее',
+  'general.closeToTray': 'При закрытии окна djcast продолжает работать в трее',
+  'general.closeNote': 'Пока вы в эфире, закрытие окна никогда не останавливает трансляцию.',
+  'general.autoLive': 'Автоматически выходить в эфир при запуске djcast',
+  'general.autoLiveNote': 'Для круглосуточных станций. Трансляция идёт на серверы, отмеченные для эфира.',
+  'general.updates': 'Обновления',
+  'general.checkUpdates': 'Проверять обновления при запуске djcast',
+  'general.checkNow': 'Проверить',
+  'general.checking': 'Проверка…',
+  'general.upToDate': 'djcast {v} — последняя версия.',
+  'general.updateAvailable': 'Доступна версия {v}.',
+  'general.whatsNew': 'Что нового',
+  'general.install': 'Установить и перезапустить',
+  'general.installing': 'Загрузка… {pct}%',
+  'general.updateError': 'Не удалось проверить обновления: {error}',
+  'general.updatesNote':
+    'Обновления загружаются из релизов проекта на GitHub и перед установкой проверяются по цифровой подписи.',
+
+  'about.version': 'Версия {v}',
+  'about.tagline': 'Аудиотрансляции для диджеев с автоматическим «Сейчас играет» из rekordbox.',
+  'about.license': 'Бесплатная программа с открытым исходным кодом по лицензии MIT или Apache-2.0.',
+  'about.github': 'Страница проекта',
+  'about.releases': 'Список изменений',
+  'about.issue': 'Сообщить о проблеме',
+  'about.logs': 'Открыть папку с логами',
+  'about.settingsFolder': 'Открыть папку с настройками',
+  'about.logsNote': 'Сообщая о проблеме, приложите последний файл djcast.log из папки с логами.',
+  'about.disclaimer': 'Не связано с AlphaTheta или Pioneer DJ. rekordbox является товарным знаком AlphaTheta Corporation.',
+
+  'banner.update': 'Доступна версия djcast {v}.',
+  'banner.view': 'Подробнее',
+  'banner.whatsNew': 'Что нового в djcast {v}',
+  'banner.dismiss': 'Скрыть',
 };

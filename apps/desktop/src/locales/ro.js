@@ -184,4 +184,42 @@ export default {
   'general.languageAuto': 'Automat (sistem: {lang})',
   'general.languageNote':
     'Mesajele tehnice de la servere și din sistem rămân în engleză, ca să le poți căuta ușor sau raporta.',
+
+  'tab.about': 'Despre',
+
+  'general.startup': 'Pornire și fereastră',
+  'general.autostart': 'Pornește djcast când intru în cont pe calculator',
+  'general.startMinimized': 'Când pornește așa, rămâne ascuns în tray',
+  'general.closeToTray': 'Închiderea ferestrei lasă djcast să ruleze în tray',
+  'general.closeNote': 'Cât ești live, închiderea ferestrei lasă mereu transmisia pornită.',
+  'general.autoLive': 'Pornește transmisia automat când se deschide djcast',
+  'general.autoLiveNote': 'Pentru radiouri 24/7. Transmite pe serverele bifate ca live.',
+  'general.updates': 'Actualizări',
+  'general.checkUpdates': 'Caută actualizări când pornește djcast',
+  'general.checkNow': 'Verifică acum',
+  'general.checking': 'Se verifică…',
+  'general.upToDate': 'djcast {v} e la zi.',
+  'general.updateAvailable': 'Versiunea {v} e disponibilă.',
+  'general.whatsNew': 'Ce e nou',
+  'general.install': 'Instalează și repornește',
+  'general.installing': 'Se descarcă… {pct}%',
+  'general.updateError': 'Nu s-a putut verifica dacă există actualizări: {error}',
+  'general.updatesNote':
+    'Actualizările vin din release-urile proiectului de pe GitHub și sunt verificate cu o semnătură înainte de instalare.',
+
+  'about.version': 'Versiunea {v}',
+  'about.tagline': 'Streaming audio pentru DJ, cu „se aude acum” automat din rekordbox.',
+  'about.license': 'Gratuit și open source, sub licența MIT sau Apache-2.0.',
+  'about.github': 'Pagina proiectului',
+  'about.releases': 'Noutăți pe versiuni',
+  'about.issue': 'Raportează o problemă',
+  'about.logs': 'Deschide folderul cu log-uri',
+  'about.settingsFolder': 'Deschide folderul cu setări',
+  'about.logsNote': 'Când raportezi o problemă, atașează cel mai recent djcast.log din folderul cu log-uri.',
+  'about.disclaimer': 'Nu e afiliat cu AlphaTheta sau Pioneer DJ. rekordbox este o marcă AlphaTheta Corporation.',
+
+  'banner.update': 'djcast {v} e disponibil.',
+  'banner.view': 'Vezi',
+  'banner.whatsNew': 'Ce e nou în djcast {v}',
+  'banner.dismiss': 'Închide',
 };

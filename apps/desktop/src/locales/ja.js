@@ -184,4 +184,42 @@ export default {
   'general.languageAuto': '自動（システム: {lang}）',
   'general.languageNote':
     'サーバーやシステムからの技術的なメッセージは、検索や報告がしやすいように英語のまま表示されます。',
+
+  'tab.about': 'バージョン情報',
+
+  'general.startup': '起動とウィンドウ',
+  'general.autostart': 'コンピューターへのサインイン時に djcast を起動する',
+  'general.startMinimized': 'この方法で起動したときはタスクトレイに隠したままにする',
+  'general.closeToTray': 'ウィンドウを閉じても djcast をタスクトレイで実行し続ける',
+  'general.closeNote': '配信中は、ウィンドウを閉じても配信は常に続きます。',
+  'general.autoLive': 'djcast の起動時に自動で配信を開始する',
+  'general.autoLiveNote': '24 時間 365 日配信する局向けです。配信対象としてチェックしたサーバーに配信します。',
+  'general.updates': 'アップデート',
+  'general.checkUpdates': 'djcast の起動時にアップデートを確認する',
+  'general.checkNow': '今すぐ確認',
+  'general.checking': '確認中…',
+  'general.upToDate': 'djcast {v} は最新です。',
+  'general.updateAvailable': 'バージョン {v} が利用可能です。',
+  'general.whatsNew': '新機能',
+  'general.install': 'インストールして再起動',
+  'general.installing': 'ダウンロード中… {pct}%',
+  'general.updateError': 'アップデートを確認できませんでした: {error}',
+  'general.updatesNote':
+    'アップデートはプロジェクトの GitHub リリースから取得され、インストール前に署名で検証されます。',
+
+  'about.version': 'バージョン {v}',
+  'about.tagline': 'DJ 向けのオーディオ配信アプリです。再生中の曲を rekordbox から自動で取得します。',
+  'about.license': 'MIT または Apache-2.0 ライセンスの無料オープンソースソフトウェアです。',
+  'about.github': 'プロジェクトページ',
+  'about.releases': 'リリースノート',
+  'about.issue': '問題を報告',
+  'about.logs': 'ログフォルダーを開く',
+  'about.settingsFolder': '設定フォルダーを開く',
+  'about.logsNote': '問題を報告するときは、ログフォルダー内の最新の djcast.log を添付してください。',
+  'about.disclaimer': '本ソフトウェアは AlphaTheta および Pioneer DJ とは提携していません。rekordbox は AlphaTheta Corporation の商標です。',
+
+  'banner.update': 'djcast {v} が利用可能です。',
+  'banner.view': '表示',
+  'banner.whatsNew': 'djcast {v} の新機能',
+  'banner.dismiss': '閉じる',
 };

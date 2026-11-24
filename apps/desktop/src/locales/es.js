@@ -184,4 +184,42 @@ export default {
   'general.languageAuto': 'Automático (sistema: {lang})',
   'general.languageNote':
     'Los mensajes técnicos de los servidores y del sistema se quedan en inglés, para que sea fácil buscarlos o reportarlos.',
+
+  'tab.about': 'Acerca de',
+
+  'general.startup': 'Inicio y ventana',
+  'general.autostart': 'Iniciar djcast cuando inicie sesión en el equipo',
+  'general.startMinimized': 'Al iniciarse así, permanecer oculto en la bandeja del sistema',
+  'general.closeToTray': 'Al cerrar la ventana, djcast sigue funcionando en la bandeja del sistema',
+  'general.closeNote': 'Mientras estés en vivo, cerrar la ventana siempre mantiene la emisión en marcha.',
+  'general.autoLive': 'Salir en vivo automáticamente al iniciar djcast',
+  'general.autoLiveNote': 'Para emisoras 24/7. Emite a los servidores marcados como en vivo.',
+  'general.updates': 'Actualizaciones',
+  'general.checkUpdates': 'Buscar actualizaciones al iniciar djcast',
+  'general.checkNow': 'Buscar ahora',
+  'general.checking': 'Buscando…',
+  'general.upToDate': 'djcast {v} está actualizado.',
+  'general.updateAvailable': 'La versión {v} está disponible.',
+  'general.whatsNew': 'Novedades',
+  'general.install': 'Instalar y reiniciar',
+  'general.installing': 'Descargando… {pct}%',
+  'general.updateError': 'No se pudo buscar actualizaciones: {error}',
+  'general.updatesNote':
+    'Las actualizaciones vienen de las versiones publicadas del proyecto en GitHub y se verifican con una firma antes de instalarse.',
+
+  'about.version': 'Versión {v}',
+  'about.tagline': 'Streaming de audio para DJ, con «sonando ahora» automático desde rekordbox.',
+  'about.license': 'Gratuito y de código abierto, bajo la licencia MIT o Apache-2.0.',
+  'about.github': 'Página del proyecto',
+  'about.releases': 'Notas de la versión',
+  'about.issue': 'Informar de un problema',
+  'about.logs': 'Abrir la carpeta de registros',
+  'about.settingsFolder': 'Abrir la carpeta de ajustes',
+  'about.logsNote': 'Cuando informes de un problema, adjunta el djcast.log más reciente de la carpeta de registros.',
+  'about.disclaimer': 'Sin afiliación con AlphaTheta ni Pioneer DJ. rekordbox es una marca comercial de AlphaTheta Corporation.',
+
+  'banner.update': 'djcast {v} está disponible.',
+  'banner.view': 'Ver',
+  'banner.whatsNew': 'Novedades de djcast {v}',
+  'banner.dismiss': 'Descartar',
 };

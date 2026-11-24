@@ -74,6 +74,8 @@ To add a language:
 - [rekordbox database key](docs/rekordbox-key.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
+- [Releasing](docs/releasing.md)
+- [Changelog](CHANGELOG.md)
 
 ## Disclaimer
 This project is not affiliated with, endorsed by, or connected to AlphaTheta Corporation or Pioneer DJ.
