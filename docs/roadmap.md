@@ -15,7 +15,8 @@
 - [x] Poll `djmdSongHistory` only when master.db / WAL change
 - [x] Wire source → `Engine::set_title`, text files for OBS, timestamped tracklist
 - [x] CLI: `rekordbox set-key | info | history | watch`
-- [ ] Live test while rekordbox is running (file sharing, WAL updates)
+- [x] Live test while rekordbox 7.2.20 is running: files readable while open, new history
+      arrives only in `master.db-wal` and is picked up correctly
 
 ## Stage 3: instant now playing
 - [ ] Read rekordbox process memory (per-version offsets in an updatable file)
