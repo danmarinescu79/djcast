@@ -417,6 +417,6 @@
   .msg { font-size: 13px; color: var(--ok); user-select: text; }
   .msg.bad { color: var(--on-air-text); }
   .grow { flex-grow: 1; }
-  .btn.big { height: 40px; padding: 0 16px; font-size: 14px; border-radius: 8px; }
+  .btn.big { height: 40px; padding: 0 16px; white-space: nowrap; flex-shrink: 0; font-size: 14px; border-radius: 8px; }
   .primary { height: 40px; padding: 0 18px; background: var(--text); color: var(--bg); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; }
 </style>

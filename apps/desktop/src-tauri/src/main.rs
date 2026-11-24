@@ -132,8 +132,8 @@ fn open_folder(path: String) -> CmdResult<()> {
 }
 
 #[tauri::command]
-fn list_midi_inputs() -> Vec<String> {
-    djcast_nowplaying::live::midi_inputs()
+async fn list_midi_inputs() -> CmdResult<Vec<String>> {
+    blocking(|| Ok(djcast_nowplaying::live::midi_inputs())).await
 }
 
 #[derive(Serialize)]
@@ -144,12 +144,15 @@ struct Device {
 }
 
 #[tauri::command]
-fn list_devices() -> CmdResult<Vec<Device>> {
-    Ok(djcast_core::audio::list_devices()
-        .map_err(err)?
-        .into_iter()
-        .map(|d| Device { name: d.name, input: d.is_input, output: d.is_output })
-        .collect())
+async fn list_devices() -> CmdResult<Vec<Device>> {
+    blocking(|| {
+        Ok(djcast_core::audio::list_devices()
+            .map_err(err)?
+            .into_iter()
+            .map(|d| Device { name: d.name, input: d.is_input, output: d.is_output })
+            .collect())
+    })
+    .await
 }
 
 fn main() {
