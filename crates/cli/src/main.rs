@@ -163,10 +163,24 @@ fn meter_cmd(device: String, input: bool, seconds: Option<f64>, preset: &str, mu
     }
     let start = std::time::Instant::now();
     let mut max_peak = 0f32;
+    // Per-band gain reduction over the whole run: sum (for the average), deepest, samples.
+    let (mut band_sum, mut band_min, mut band_n) = ([0f32; 4], [0f32; 4], 0u32);
+    let mut lufs_sum = (0f32, 0u32);
     loop {
         std::thread::sleep(Duration::from_millis(100));
         let (l, r) = levels.get();
         max_peak = max_peak.max(l).max(r);
+        let snap = stats.snapshot();
+        if snap.out_lufs.is_finite() && snap.out_lufs > -60.0 {
+            lufs_sum = (lufs_sum.0 + snap.out_lufs, lufs_sum.1 + 1);
+            if let Some(b) = snap.bands_db {
+                for i in 0..4 {
+                    band_sum[i] += b[i];
+                    band_min[i] = band_min[i].min(b[i]);
+                }
+                band_n += 1;
+            }
+        }
         eprint!("\rL {} R {} | {}\x1b[K", meter(l), meter(r), loudness(&stats.snapshot()));
         if seconds.is_some_and(|s| start.elapsed().as_secs_f64() >= s) {
             break;
@@ -181,6 +195,16 @@ fn meter_cmd(device: String, input: bool, seconds: Option<f64>, preset: &str, mu
         if max_peak < 1e-4 { " — SILENCE" } else { "" },
         loudness(&stats.snapshot())
     );
+    if lufs_sum.1 > 0 {
+        println!("average output loudness {:.1} LUFS", lufs_sum.0 / lufs_sum.1 as f32);
+    }
+    if band_n > 0 {
+        let avg = band_sum.map(|s| s / band_n as f32);
+        println!(
+            "multiband reduction, average (deepest): bass {:.1} ({:.1})  low mids {:.1} ({:.1})  high mids {:.1} ({:.1})  highs {:.1} ({:.1}) dB",
+            avg[0], band_min[0], avg[1], band_min[1], avg[2], band_min[2], avg[3], band_min[3]
+        );
+    }
     Ok(())
 }
 
