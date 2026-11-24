@@ -29,10 +29,11 @@ fn get_config(app: State<'_, AppState>) -> AppConfig {
 }
 
 #[tauri::command]
-fn save_config(app: State<'_, AppState>, config: AppConfig) -> CmdResult<()> {
+fn save_config(app: State<'_, AppState>, mut config: AppConfig) -> CmdResult<AppConfig> {
+    config.normalize();
     config.save(&app.config_path).map_err(err)?;
-    app.station.set_config(config);
-    Ok(())
+    app.station.set_config(config.clone());
+    Ok(config)
 }
 
 #[tauri::command]

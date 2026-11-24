@@ -39,6 +39,65 @@
 
   let midiPorts = $state([]);
 
+  // ---- server profiles: the form edits `draft.server`; profiles keep their own copy ----
+  let current = $state(draft.active_profile || draft.profiles?.[0]?.name || 'Default');
+  let renaming = $state(false);
+  let renameValue = $state('');
+  let showPass = $state(false);
+
+  function storeCurrent() {
+    const p = draft.profiles.find((x) => x.name === current);
+    if (p) {
+      p.server = structuredClone($state.snapshot(draft.server));
+      p.bitrate = Number(draft.encoder.bitrate);
+    }
+  }
+  function loadProfile(name) {
+    const p = draft.profiles.find((x) => x.name === name);
+    if (!p) return;
+    current = name;
+    draft.server = structuredClone($state.snapshot(p.server));
+    draft.encoder.bitrate = p.bitrate;
+    showPass = false;
+  }
+  function selectProfile(name) {
+    storeCurrent();
+    loadProfile(name);
+  }
+  function uniqueName(base) {
+    let n = 1;
+    let name = base;
+    while (draft.profiles.some((p) => p.name === name)) name = `${base} ${++n}`;
+    return name;
+  }
+  function newProfile() {
+    storeCurrent();
+    const name = uniqueName('New server');
+    const server = { ...structuredClone($state.snapshot(draft.server)), host: '', password: '', mount: '/live' };
+    draft.profiles.push({ name, server, bitrate: Number(draft.encoder.bitrate) });
+    loadProfile(name);
+    startRename();
+  }
+  function startRename() {
+    renameValue = current;
+    renaming = true;
+  }
+  function finishRename(e) {
+    e?.preventDefault();
+    const name = renameValue.trim();
+    if (name && name !== current && !draft.profiles.some((p) => p.name === name)) {
+      const p = draft.profiles.find((x) => x.name === current);
+      p.name = name;
+      current = name;
+    }
+    renaming = false;
+  }
+  function deleteProfile() {
+    if (draft.profiles.length < 2) return;
+    draft.profiles = draft.profiles.filter((p) => p.name !== current);
+    loadProfile(draft.profiles[0].name);
+  }
+
   onMount(async () => {
     devices = await invoke('list_devices').catch(() => []);
     midiPorts = await invoke('list_midi_inputs').catch(() => []);
@@ -61,9 +120,17 @@
       draft.encoder.bitrate = Number(draft.encoder.bitrate);
       draft.nowplaying.confirm_secs = Number(draft.nowplaying.confirm_secs);
       draft.processing.target_lufs = Number(draft.processing.target_lufs);
-      await invoke('save_config', { config: draft });
-      message = { text: live ? 'Saved. Audio and server changes apply the next time you go live.' : 'Saved.', ok: true };
-      onSaved(structuredClone($state.snapshot(draft)));
+      if (renaming) finishRename();
+      storeCurrent();
+      draft.active_profile = current;
+      const saved = await invoke('save_config', { config: draft });
+      message = {
+        text: live
+          ? `Saved. "${current}" and audio changes apply the next time you go live.`
+          : `Saved. Going live uses "${current}".`,
+        ok: true,
+      };
+      onSaved(saved);
     } catch (e) {
       message = { text: String(e), ok: false };
     } finally {
@@ -140,7 +207,27 @@
         output (for example Realtek Digital Output) and capture that output here.
       </p>
     {:else if tab === 'server'}
-      <h1>Server</h1>
+      <div class="profile-bar">
+        <h1>Server</h1>
+        <span class="grow"></span>
+        {#if renaming}
+          <form class="rename" onsubmit={finishRename}>
+            <label for="pname" class="sr">Profile name</label>
+            <input id="pname" bind:value={renameValue} />
+            <button type="submit" class="btn big">OK</button>
+          </form>
+        {:else}
+          <label for="profile">Profile</label>
+          <select id="profile" class="profile-select" value={current} onchange={(e) => selectProfile(e.currentTarget.value)}>
+            {#each draft.profiles as p (p.name)}
+              <option value={p.name}>{p.name}{p.name === draft.active_profile ? ' (in use)' : ''}</option>
+            {/each}
+          </select>
+          <button type="button" class="btn big" onclick={newProfile}>New</button>
+          <button type="button" class="btn big" onclick={startRename}>Rename</button>
+          <button type="button" class="btn big" disabled={draft.profiles.length < 2} onclick={deleteProfile}>Delete</button>
+        {/if}
+      </div>
       <div class="grid">
         <div class="field">
           <label for="proto">Server type</label>
@@ -158,7 +245,25 @@
           <div class="field"><label for="mount">Mount point</label><input id="mount" bind:value={draft.server.mount} /></div>
         </div>
         <div class="field"><label for="user">User</label><input id="user" bind:value={draft.server.user} /></div>
-        <div class="field"><label for="pass">Password</label><input id="pass" type="password" bind:value={draft.server.password} /></div>
+        <div class="field">
+          <label for="pass">Password</label>
+          <div class="pass">
+            <input id="pass" type={showPass ? 'text' : 'password'} bind:value={draft.server.password} autocomplete="off" spellcheck="false" />
+            <button
+              type="button"
+              class="eye"
+              aria-label={showPass ? 'Hide password' : 'Show password'}
+              aria-pressed={showPass}
+              onclick={() => (showPass = !showPass)}
+            >
+              {#if showPass}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><path d="M1 1l22 22"></path></svg>
+              {:else}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              {/if}
+            </button>
+          </div>
+        </div>
       </div>
       <div class="grid sep">
         <div class="field"><label for="sname">Station name</label><input id="sname" bind:value={draft.server.name} /></div>
@@ -274,6 +379,19 @@
   .check, .radio { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
   .radios { display: flex; flex-direction: column; gap: 12px; }
   input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-color: var(--info); }
+  .profile-bar { display: flex; align-items: center; gap: 10px; }
+  .profile-select { width: 220px !important; }
+  .rename { display: flex; gap: 8px; align-items: center; }
+  .rename input { width: 220px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .pass { position: relative; }
+  .pass input { padding-right: 44px; }
+  .eye {
+    position: absolute; right: 4px; top: 4px; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 6px; color: var(--muted);
+  }
+  .eye:hover { color: var(--text); background: #22252c; }
   .folder { display: flex; gap: 8px; }
   .folder input { flex: 1 1 auto; min-width: 0; }
   .folder .btn { flex-shrink: 0; }
