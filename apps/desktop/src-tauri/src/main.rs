@@ -7,7 +7,9 @@ use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
-use tauri::{Emitter, State};
+use tauri::{Emitter, Manager, State, WindowEvent};
+
+mod tray;
 
 /// Status pushes to the UI per second.
 const STATUS_HZ: u64 = 20;
@@ -28,12 +30,36 @@ fn get_config(app: State<'_, AppState>) -> AppConfig {
     app.station.config()
 }
 
+/// Run blocking work (network, audio devices, file IO) off the UI thread.
+async fn blocking<T: Send + 'static>(f: impl FnOnce() -> CmdResult<T> + Send + 'static) -> CmdResult<T> {
+    tauri::async_runtime::spawn_blocking(f).await.map_err(|e| e.to_string())?
+}
+
+/// Check the fields every server type needs before connecting or saving.
+fn validate_server(s: &djcast_core::config::ServerConfig) -> CmdResult<()> {
+    if s.host.trim().is_empty() {
+        return Err("Enter the server address.".into());
+    }
+    if s.port == 0 {
+        return Err("Enter the server port.".into());
+    }
+    if s.password.is_empty() {
+        return Err("Enter the password.".into());
+    }
+    Ok(())
+}
+
 #[tauri::command]
-fn save_config(app: State<'_, AppState>, mut config: AppConfig) -> CmdResult<AppConfig> {
+async fn save_config(app: State<'_, AppState>, mut config: AppConfig) -> CmdResult<AppConfig> {
     config.normalize();
-    config.save(&app.config_path).map_err(err)?;
-    app.station.set_config(config.clone());
-    Ok(config)
+    validate_server(&config.stream.server).map_err(|e| format!("Profile \"{}\": {e}", config.active_profile))?;
+    let (station, path) = (app.station.clone(), app.config_path.clone());
+    blocking(move || {
+        config.save(&path).map_err(err)?;
+        station.set_config(config.clone());
+        Ok(config)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -42,13 +68,20 @@ fn get_config_path(app: State<'_, AppState>) -> String {
 }
 
 #[tauri::command]
-fn go_live(app: State<'_, AppState>) -> CmdResult<()> {
-    app.station.go_live().map_err(err)
+async fn go_live(app: State<'_, AppState>) -> CmdResult<()> {
+    validate_server(&app.station.config().stream.server)?;
+    let station = app.station.clone();
+    blocking(move || station.go_live().map_err(err)).await
 }
 
 #[tauri::command]
-fn stop(app: State<'_, AppState>) {
-    app.station.stop();
+async fn stop(app: State<'_, AppState>) -> CmdResult<()> {
+    let station = app.station.clone();
+    blocking(move || {
+        station.stop();
+        Ok(())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -63,12 +96,23 @@ fn status(app: State<'_, AppState>) -> StationStatus {
 
 /// Open a source connection with the given settings and close it again.
 #[tauri::command]
-fn test_connection(config: AppConfig) -> CmdResult<String> {
+async fn test_connection(config: AppConfig) -> CmdResult<String> {
+    use djcast_core::config::Protocol;
     use djcast_core::icecast::{AudioInfo, SourceConnection};
-    let info = AudioInfo { sample_rate: 44_100, bitrate: config.stream.encoder.bitrate, channels: 2 };
-    SourceConnection::connect(&config.stream.server, "audio/mpeg", info).map_err(err)?;
-    let s = &config.stream.server;
-    Ok(format!("{}:{}{} accepted the login", s.host, s.port, s.mount))
+    let s = config.stream.server.clone();
+    validate_server(&s)?;
+    let bitrate = config.stream.encoder.bitrate;
+    blocking(move || {
+        let info = AudioInfo { sample_rate: 44_100, bitrate, channels: 2 };
+        SourceConnection::connect(&s, "audio/mpeg", info).map_err(err)?;
+        let where_ = match s.protocol {
+            Protocol::Icecast => s.mount.clone(),
+            Protocol::Shoutcast2 => format!(" (stream {})", s.stream_id),
+            Protocol::Shoutcast1 => String::new(),
+        };
+        Ok(format!("{}:{}{where_} accepted the login", s.host, s.port))
+    })
+    .await
 }
 
 /// Open a folder in Explorer / Finder. Relative paths are next to the config file
@@ -130,10 +174,31 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState { station: station.clone(), config_path })
         .setup(move |app| {
+            let tray = tray::build(app, station.clone())?;
+
+            // Closing the window while live hides it to the tray instead of cutting the stream.
+            if let Some(win) = app.get_webview_window("main") {
+                let (st, w) = (station.clone(), win.clone());
+                win.on_window_event(move |e| {
+                    if let WindowEvent::CloseRequested { api, .. } = e
+                        && st.is_live()
+                    {
+                        api.prevent_close();
+                        let _ = w.hide();
+                    }
+                });
+            }
+
             let handle = app.handle().clone();
             std::thread::Builder::new().name("status-events".into()).spawn(move || {
+                let mut tick = 0u64;
                 loop {
-                    let _ = handle.emit("status", station.status());
+                    let status = station.status();
+                    if tick.is_multiple_of(STATUS_HZ) {
+                        tray.update(&status);
+                    }
+                    let _ = handle.emit("status", status);
+                    tick += 1;
                     std::thread::sleep(Duration::from_millis(1000 / STATUS_HZ));
                 }
             })?;
