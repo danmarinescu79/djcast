@@ -1,19 +1,20 @@
 # Changelog
 
-## Unreleased
-- Sharing tab: Discord webhook messages when you go live, on every track and when you stop
-  (with the tracklist); editable templates; test message; webhook kept in the credential store
-- Tracklist: Save… as a text file; a .cue sheet next to each recording
-- Formats per server profile: MP3, AAC (96–192 kbps, the encoder built into Windows) and
-  Opus (Icecast only; titles travel inside the stream). Servers with the same format share
-  one encoder; recordings use the main server's format (.mp3, .aac or .opus)
-- Capture one program only (e.g. rekordbox): browser and system sounds stay out of the stream
-  (Windows 10 2004+; the program's sound must go through Windows, not only ASIO)
-- Secure Icecast connections (TLS / HTTPS), certificate checked by Windows
+## 0.3.0
+- Formats per server: MP3, AAC (96–192 kbps, the encoder built into Windows) and Opus
+  (Icecast only; titles travel inside the stream). Servers with the same format share one
+  encoder; recordings use the main server's format (.mp3, .aac or .opus)
+- Capture only one program, e.g. rekordbox: browser and system sounds stay out of the stream
+  (Windows 10 2004+; works with a controller on ASIO when PC MASTER OUT goes to a Windows output)
 - Other DJ controllers: learn the channel faders and crossfader by moving them (7- or 14-bit),
-  reversed crossfader, crossfader assign per channel
+  reversed crossfader, crossfader side per channel
+- Secure Icecast connections (TLS / HTTPS), certificate checked by Windows
 - Tone controls: bass and presence, before the loudness processing
-- `djcast meter --program rekordbox` to check the program capture from the command line
+- Light, dark or "like Windows" appearance (Settings → General)
+- Sharing tab: Discord messages when you go live, on every track and when you stop (with the
+  tracklist); editable templates; webhook kept in the credential store
+- Tracklist: Save… as a text file; a .cue sheet next to each recording
+- Command line: `djcast meter --program rekordbox` to check the program capture
 
 ## 0.2.0
 - Settings: General first, with start-up options (start with the computer, stay in the tray,
