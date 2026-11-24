@@ -18,6 +18,16 @@
 
   const liveLabel = $derived(!status.live ? t('live.goLive') : status.connected ? t('live.onAir') : t('live.connecting'));
 
+  async function saveTracklist() {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', '-');
+    const path = await save({ defaultPath: `djcast tracklist ${stamp}.txt`, filters: [{ name: 'Text', extensions: ['txt'] }] });
+    if (typeof path === 'string') {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('save_tracklist', { path });
+    }
+  }
+
   async function copyTracklist() {
     const text = status.tracklist.map((t) => `${t.time} ${t.title}`).join('\n');
     await navigator.clipboard.writeText(text);
@@ -115,9 +125,12 @@
     <div class="panel tracklist">
       <div class="tl-head">
         <span class="label">{t('tracklist.title')}</span>
-        <button type="button" class="link" disabled={!status.tracklist.length} onclick={copyTracklist}>
-          {copied ? t('tracklist.copied') : t('tracklist.copy')}
-        </button>
+        <span class="tl-actions">
+          <button type="button" class="link" disabled={!status.tracklist.length} onclick={saveTracklist}>{t('tracklist.save')}</button>
+          <button type="button" class="link" disabled={!status.tracklist.length} onclick={copyTracklist}>
+            {copied ? t('tracklist.copied') : t('tracklist.copy')}
+          </button>
+        </span>
       </div>
       <div class="tl-rows">
         {#each status.tracklist as t, i (i)}
@@ -217,6 +230,7 @@
 
   .tracklist { flex-grow: 1; min-height: 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
   .tl-head { display: flex; justify-content: space-between; align-items: center; }
+  .tl-actions { display: flex; gap: 16px; }
   .link { background: none; border: none; color: var(--info); font-size: 12px; padding: 0; }
   .tl-rows { overflow-y: auto; min-height: 0; }
   .tl-row { display: flex; gap: 14px; font-size: 13px; padding: 5px 0; border-top: 1px solid #22252c; user-select: text; }

@@ -80,6 +80,6 @@
 - [ ] Opus/Ogg (in-stream metadata), AAC
 - [ ] Pro DJ Link (CDJs) — low priority: needs CDJ hardware to test
 - [ ] macOS (loopback, builds, code signing)
-- [ ] Tracklist export (Mixcloud/SoundCloud), webhooks (Discord)
+- [x] Tracklist: copy / save as text, CUE sheet next to recordings; Discord webhook posts (go live, each track, stop with tracklist), editable templates
 - [x] CI (GitHub Actions, Windows) and automatic signed releases on `v*` tags, protected `release` environment
 - [ ] CI and release builds for macOS

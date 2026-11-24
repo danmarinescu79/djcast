@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- Sharing tab: Discord webhook messages when you go live, on every track and when you stop
+  (with the tracklist); editable templates; test message; webhook kept in the credential store
+- Tracklist: Save… as a text file; a .cue sheet next to each recording
+
 ## 0.2.0
 - Settings: General first, with start-up options (start with the computer, stay in the tray,
   close to the tray, go live automatically) and updates (check on start, check now, install

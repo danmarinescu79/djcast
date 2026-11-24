@@ -2,6 +2,7 @@
 
 pub mod secrets;
 pub mod service;
+pub mod share;
 
 use anyhow::{Context, Result};
 use djcast_core::Config;
@@ -23,6 +24,8 @@ pub struct AppConfig {
     pub language: String,
     /// Desktop app behaviour (start-up, window, updates).
     pub app: AppPrefs,
+    /// Discord messages and the public listen address.
+    pub share: share::ShareConfig,
     /// The file this was loaded from still contains passwords in plain text.
     #[serde(skip)]
     pub plaintext_passwords_on_disk: bool,
@@ -73,6 +76,12 @@ impl AppConfig {
         let mut cfg: Self = toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
         cfg.plaintext_passwords_on_disk = !cfg.stream.server.password.is_empty()
             || cfg.profiles.iter().any(|p| !p.server.password.is_empty());
+        cfg.plaintext_passwords_on_disk |= !cfg.share.discord_webhook.is_empty();
+        if cfg.share.discord_webhook.is_empty()
+            && let Some(w) = secrets::get_named(secrets::DISCORD_WEBHOOK)
+        {
+            cfg.share.discord_webhook = w;
+        }
         // Passwords not in the file come from the OS credential store.
         for p in &mut cfg.profiles {
             if p.server.password.is_empty()
@@ -157,6 +166,15 @@ impl AppConfig {
                         "could not store the password of \"{}\" in the credential store ({e}); keeping it in the config file",
                         p.name
                     ),
+                }
+            }
+            let hook = out.share.discord_webhook.trim().to_string();
+            if hook.is_empty() {
+                secrets::delete_named(secrets::DISCORD_WEBHOOK);
+            } else {
+                match secrets::set_named(secrets::DISCORD_WEBHOOK, &hook) {
+                    Ok(()) => out.share.discord_webhook.clear(),
+                    Err(e) => log::warn!("could not store the Discord webhook in the credential store ({e})"),
                 }
             }
             // `[server]` mirrors the active profile.

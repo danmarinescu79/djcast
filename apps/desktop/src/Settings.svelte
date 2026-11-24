@@ -29,6 +29,26 @@
   let draft = $state({ language: 'auto', ...structuredClone($state.snapshot(config)) });
   if (!draft.language) draft.language = 'auto';
   draft.app = { start_minimized: true, close_to_tray: false, auto_live: false, check_updates: true, ...(draft.app || {}) };
+  draft.share = {
+    discord_webhook: '', listen_url: '', on_live: true, on_track: false, on_stop: true,
+    live_message: '🔴 **{station}** is live! {track}\n{url}', track_message: '🎵 {track}',
+    stop_message: '⏹ **{station}** is off air. Tracklist:\n{tracklist}', ...(draft.share || {}),
+  };
+  let showHook = $state(false);
+  let discordMsg = $state({ text: '', ok: true });
+  let sendingTest = $state(false);
+  async function testDiscord() {
+    sendingTest = true;
+    discordMsg = { text: t('settings.connecting'), ok: true };
+    try {
+      await invoke('test_discord', { share: $state.snapshot(draft.share) });
+      discordMsg = { text: t('share.testSent'), ok: true };
+    } catch (e) {
+      discordMsg = { text: String(e), ok: false };
+    } finally {
+      sendingTest = false;
+    }
+  }
 
   // Start with the system is stored by the OS, not in the config file.
   let autostart = $state(false);
@@ -45,7 +65,7 @@
   let testing = $state(false);
   let configPath = $state('');
 
-  const tabs = ['general', 'audio', 'server', 'processing', 'nowplaying', 'recording', 'about'];
+  const tabs = ['general', 'audio', 'server', 'processing', 'nowplaying', 'recording', 'share', 'about'];
 
   let midiPorts = $state([]);
 
@@ -415,6 +435,40 @@
             <button type="button" class="btn big" onclick={() => openFolder(draft.record.dir || 'recordings')}>{t('common.open')}</button>
           </div><span class="hint">{t('common.relativeHint', { dir: baseDir })}</span></div>
       </div>
+    {:else if tab === 'share'}
+      <h1>{t('tab.share')}</h1>
+      <p class="note">{t('share.intro')}</p>
+      <div class="grid">
+        <div class="field">
+          <label for="hook">{t('share.webhook')}</label>
+          <div class="pass">
+            <input id="hook" type={showHook ? 'text' : 'password'} bind:value={draft.share.discord_webhook} placeholder="https://discord.com/api/webhooks/…" autocomplete="off" spellcheck="false" />
+            <button type="button" class="eye" aria-label={showHook ? t('server.hidePassword') : t('server.showPassword')} aria-pressed={showHook} onclick={() => (showHook = !showHook)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+          <span class="hint">{t('share.webhookHint')}</span>
+        </div>
+        <div class="field">
+          <label for="listen">{t('share.listenUrl')}</label>
+          <input id="listen" bind:value={draft.share.listen_url} placeholder={t('share.listenUrlAuto')} />
+          <span class="hint">{t('share.listenUrlHint')}</span>
+        </div>
+      </div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" bind:checked={draft.share.on_live} /> {t('share.onLive')}</label>
+        {#if draft.share.on_live}<textarea class="tpl" rows="2" aria-label={t('share.onLive')} bind:value={draft.share.live_message}></textarea>{/if}
+        <label class="check"><input type="checkbox" bind:checked={draft.share.on_track} /> {t('share.onTrack')}</label>
+        {#if draft.share.on_track}<textarea class="tpl" rows="1" aria-label={t('share.onTrack')} bind:value={draft.share.track_message}></textarea>{/if}
+        <label class="check"><input type="checkbox" bind:checked={draft.share.on_stop} /> {t('share.onStop')}</label>
+        {#if draft.share.on_stop}<textarea class="tpl" rows="2" aria-label={t('share.onStop')} bind:value={draft.share.stop_message}></textarea>{/if}
+        <span class="hint">{t('share.placeholders')}</span>
+      </div>
+      <div class="update-row">
+        <button type="button" class="btn big" disabled={sendingTest} onclick={testDiscord}>{t('share.test')}</button>
+        <span class="msg" class:bad={!discordMsg.ok} role="status">{discordMsg.text}</span>
+      </div>
+      <p class="note">{t('share.cueNote')}</p>
     {:else if tab === 'general'}
       <h1>{t('tab.general')}</h1>
       <div class="grid">
@@ -546,6 +600,11 @@
   .sep-top { border-top: 1px solid var(--line); padding-top: 18px; }
   h2 { margin: 8px 0 0; font-size: 15px; font-weight: 600; color: var(--text-2); border-top: 1px solid var(--line); padding-top: 18px; }
   .checks { display: flex; flex-direction: column; gap: 10px; }
+  .tpl {
+    margin-left: 28px; max-width: 640px; padding: 8px 10px; resize: vertical;
+    background: var(--panel); color: var(--text); border: 1px solid var(--line-strong); border-radius: 8px;
+    font: inherit; font-size: 13px;
+  }
   .checks .sub { margin-left: 28px; }
   .dim { opacity: 0.55; }
   .update-row { display: flex; align-items: center; gap: 12px; }

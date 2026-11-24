@@ -165,6 +165,23 @@ async fn test_connection(config: AppConfig) -> CmdResult<String> {
     .await
 }
 
+/// Post a test message to the Discord webhook in `share` (not saved yet).
+#[tauri::command]
+async fn test_discord(app: State<'_, AppState>, share: djcast_app::share::ShareConfig) -> CmdResult<()> {
+    if !share.discord_enabled() {
+        return Err("Enter a Discord webhook address (https://discord.com/api/webhooks/…).".into());
+    }
+    let station = app.station.clone();
+    blocking(move || station.test_discord(&share).map_err(err)).await
+}
+
+/// Write the session tracklist to a file the user picked.
+#[tauri::command]
+async fn save_tracklist(app: State<'_, AppState>, path: String) -> CmdResult<()> {
+    let text = app.station.tracklist_text();
+    blocking(move || std::fs::write(&path, text + "\n").map_err(|e| format!("{path}: {e}"))).await
+}
+
 /// Open a folder in Explorer / Finder. Relative paths are next to the config file
 /// (the app's working folder); the folder is created if missing.
 #[tauri::command]
@@ -309,6 +326,8 @@ fn main() {
             open_folder,
             app_folders,
             open_project_page,
+            test_discord,
+            save_tracklist,
             test_connection
         ])
         .run(tauri::generate_context!())

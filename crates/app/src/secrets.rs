@@ -4,6 +4,9 @@
 
 const SERVICE: &str = "djcast";
 
+/// Account name of the Discord webhook URL.
+pub const DISCORD_WEBHOOK: &str = "share:discord-webhook";
+
 fn account(profile: &str) -> String {
     format!("server-profile:{profile}")
 }
@@ -14,7 +17,24 @@ pub fn available() -> bool {
 }
 
 pub fn set(profile: &str, password: &str) -> keyring::Result<()> {
-    keyring::Entry::new(SERVICE, &account(profile))?.set_password(password)
+    set_named(&account(profile), password)
+}
+
+pub fn set_named(name: &str, value: &str) -> keyring::Result<()> {
+    keyring::Entry::new(SERVICE, name)?.set_password(value)
+}
+
+pub fn get_named(name: &str) -> Option<String> {
+    if !available() {
+        return None;
+    }
+    keyring::Entry::new(SERVICE, name).and_then(|e| e.get_password()).ok()
+}
+
+pub fn delete_named(name: &str) {
+    if available() {
+        let _ = keyring::Entry::new(SERVICE, name).and_then(|e| e.delete_credential());
+    }
 }
 
 /// The stored password, or `None` if there is none (or the store is unavailable).

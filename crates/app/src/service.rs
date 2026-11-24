@@ -69,8 +69,39 @@ pub struct TrackStatus {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct TracklistEntry {
+    /// "hh:mm:ss" since going live.
     pub time: String,
+    /// "Artist - Title".
     pub title: String,
+    #[serde(skip)]
+    pub secs: u64,
+    #[serde(skip)]
+    pub artist: String,
+    #[serde(skip)]
+    pub track_title: String,
+}
+
+impl TracklistEntry {
+    fn new(secs: u64, t: &Track) -> Self {
+        Self {
+            time: format!("{:02}:{:02}:{:02}", secs / 3600, secs / 60 % 60, secs % 60),
+            title: t.display(),
+            secs,
+            artist: t.artist.clone(),
+            track_title: t.title.clone(),
+        }
+    }
+}
+
+/// State shared between the station and the now-playing poller.
+#[derive(Clone)]
+struct Ctx {
+    config: Arc<Mutex<AppConfig>>,
+    engine: Arc<Mutex<Option<Engine>>>,
+    session_start: Arc<Mutex<Option<std::time::Instant>>>,
+    files: Arc<Mutex<Option<NowPlayingFiles>>>,
+    np: Arc<Mutex<NowPlayingShared>>,
+    recording: Arc<Mutex<Option<std::path::PathBuf>>>,
 }
 
 /// Captures and processes the input while offline, for meters only.
@@ -105,13 +136,9 @@ struct NowPlayingShared {
 }
 
 pub struct Station {
-    config: Mutex<AppConfig>,
-    engine: Arc<Mutex<Option<Engine>>>,
-    session_start: Arc<Mutex<Option<std::time::Instant>>>,
-    files: Arc<Mutex<Option<NowPlayingFiles>>>,
+    ctx: Ctx,
     monitor: Mutex<Option<Monitor>>,
     monitor_error: Mutex<Option<String>>,
-    np: Arc<Mutex<NowPlayingShared>>,
     np_stop: Mutex<Arc<AtomicBool>>,
     np_source_name: Mutex<String>,
 }
@@ -119,13 +146,16 @@ pub struct Station {
 impl Station {
     pub fn new(config: AppConfig) -> Arc<Self> {
         let station = Arc::new(Self {
-            config: Mutex::new(config),
-            engine: Arc::new(Mutex::new(None)),
-            session_start: Arc::new(Mutex::new(None)),
-            files: Arc::new(Mutex::new(None)),
+            ctx: Ctx {
+                config: Arc::new(Mutex::new(config)),
+                engine: Arc::new(Mutex::new(None)),
+                session_start: Arc::new(Mutex::new(None)),
+                files: Arc::new(Mutex::new(None)),
+                np: Arc::new(Mutex::new(NowPlayingShared::default())),
+                recording: Arc::new(Mutex::new(None)),
+            },
             monitor: Mutex::new(None),
             monitor_error: Mutex::new(None),
-            np: Arc::new(Mutex::new(NowPlayingShared::default())),
             np_stop: Mutex::new(Arc::new(AtomicBool::new(false))),
             np_source_name: Mutex::new("none".into()),
         });
@@ -135,13 +165,13 @@ impl Station {
     }
 
     pub fn config(&self) -> AppConfig {
-        self.config.lock().unwrap().clone()
+        self.ctx.config.lock().unwrap().clone()
     }
 
     /// Apply new settings. Takes effect immediately for meters and now playing;
     /// streaming settings apply on the next Go Live.
     pub fn set_config(&self, cfg: AppConfig) {
-        *self.config.lock().unwrap() = cfg;
+        *self.ctx.config.lock().unwrap() = cfg;
         if !self.is_live() {
             self.restart_monitor();
         }
@@ -149,7 +179,7 @@ impl Station {
     }
 
     pub fn is_live(&self) -> bool {
-        self.engine.lock().unwrap().is_some()
+        self.ctx.engine.lock().unwrap().is_some()
     }
 
     pub fn go_live(&self) -> Result<()> {
@@ -170,7 +200,7 @@ impl Station {
             "" => None,
             dir => NowPlayingFiles::new(dir).map_err(|e| log::warn!("now playing files: {e:#}")).ok(),
         };
-        let current = self.np.lock().unwrap().track.clone();
+        let current = self.ctx.np.lock().unwrap().track.clone();
         if let Some(t) = &current {
             engine.set_title(t.display());
             if let Some(f) = &files {
@@ -178,38 +208,64 @@ impl Station {
             }
         }
         {
-            let mut np = self.np.lock().unwrap();
+            let mut np = self.ctx.np.lock().unwrap();
             np.tracklist.clear();
-            if let Some(t) = current {
-                np.tracklist.push(TracklistEntry { time: "00:00:00".into(), title: t.display() });
+            if let Some(t) = &current {
+                np.tracklist.push(TracklistEntry::new(0, t));
             }
         }
-        *self.files.lock().unwrap() = files;
-        *self.session_start.lock().unwrap() = Some(std::time::Instant::now());
-        *self.engine.lock().unwrap() = Some(engine);
+        *self.ctx.recording.lock().unwrap() = engine.status().recording;
+        *self.ctx.files.lock().unwrap() = files;
+        *self.ctx.session_start.lock().unwrap() = Some(std::time::Instant::now());
+        *self.ctx.engine.lock().unwrap() = Some(engine);
+        write_cue(&self.ctx);
+        if cfg.share.on_live && cfg.share.discord_enabled() {
+            let vars = message_vars(&self.ctx, &cfg);
+            crate::share::post_discord_async(cfg.share.discord_webhook.clone(), crate::share::render(&cfg.share.live_message, &vars));
+        }
         Ok(())
     }
 
     pub fn stop(&self) {
-        let engine = self.engine.lock().unwrap().take();
+        let engine = self.ctx.engine.lock().unwrap().take();
         if let Some(e) = engine {
             e.stop();
         }
-        self.files.lock().unwrap().take();
-        self.session_start.lock().unwrap().take();
+        write_cue(&self.ctx);
+        let cfg = self.config();
+        if cfg.share.on_stop && cfg.share.discord_enabled() {
+            let vars = message_vars(&self.ctx, &cfg);
+            crate::share::post_discord_async(cfg.share.discord_webhook.clone(), crate::share::render(&cfg.share.stop_message, &vars));
+        }
+        self.ctx.files.lock().unwrap().take();
+        self.ctx.session_start.lock().unwrap().take();
+        self.ctx.recording.lock().unwrap().take();
         self.restart_monitor();
+    }
+
+    /// Send a test message with the given settings (blocking).
+    pub fn test_discord(&self, share: &crate::share::ShareConfig) -> Result<()> {
+        let mut cfg = self.config();
+        cfg.share = share.clone();
+        let vars = message_vars(&self.ctx, &cfg);
+        let text = format!("✅ djcast test message\n{}", crate::share::render(&share.live_message, &vars));
+        crate::share::post_discord(&share.discord_webhook, &text)
+    }
+
+    /// The session tracklist as text ("hh:mm:ss Artist - Title" per line).
+    pub fn tracklist_text(&self) -> String {
+        tracklist_text(&self.ctx)
     }
 
     /// Send a title by hand (overrides detection until the next detected change).
     pub fn set_manual_title(&self, title: &str) {
         let t = Track { artist: String::new(), title: title.trim().into(), album: None, deck: None };
-        let start = *self.session_start.lock().unwrap();
-        on_track(&t, &self.engine, &self.files, &self.np, &start);
+        on_track(&self.ctx, &t);
     }
 
     pub fn status(&self) -> StationStatus {
-        let cfg = self.config.lock().unwrap().clone();
-        let engine = self.engine.lock().unwrap();
+        let cfg = self.ctx.config.lock().unwrap().clone();
+        let engine = self.ctx.engine.lock().unwrap();
         let (st, levels, dsp): (EngineStatus, (f32, f32), DspSnapshot) = match engine.as_ref() {
             Some(e) => (e.status(), e.levels(), e.processing()),
             None => {
@@ -223,7 +279,7 @@ impl Station {
         };
         let live = engine.is_some();
         drop(engine);
-        let np = self.np.lock().unwrap();
+        let np = self.ctx.np.lock().unwrap();
         let finite = |v: f32| v.is_finite().then_some(v);
         StationStatus {
             live,
@@ -300,21 +356,20 @@ impl Station {
                 return;
             }
             Err(e) => {
-                self.np.lock().unwrap().error = Some(format!("{e:#}"));
+                self.ctx.np.lock().unwrap().error = Some(format!("{e:#}"));
                 return;
             }
         };
         *self.np_source_name.lock().unwrap() = source.name().into();
         let interval = Duration::from_secs_f64(cfg.poll_interval_secs.max(0.5));
-        let (engine, files, np, session) =
-            (self.engine.clone(), self.files.clone(), self.np.clone(), self.session_start.clone());
+        let ctx = self.ctx.clone();
         let _ = std::thread::Builder::new().name("nowplaying".into()).spawn(move || {
             let mut last: Option<Track> = None;
             while !stop.load(Ordering::SeqCst) {
                 let result = source.poll();
                 let status = source.live_status();
                 {
-                    let mut s = np.lock().unwrap();
+                    let mut s = ctx.np.lock().unwrap();
                     s.status = status;
                     s.error = result.as_ref().err().map(|e| format!("{e:#}"));
                 }
@@ -322,8 +377,7 @@ impl Station {
                     && Some(&t) != last.as_ref()
                 {
                     last = Some(t.clone());
-                    let start = *session.lock().unwrap();
-                    on_track(&t, &engine, &files, &np, &start);
+                    on_track(&ctx, &t);
                 }
                 std::thread::sleep(interval);
             }
@@ -332,28 +386,79 @@ impl Station {
 
 }
 
-fn on_track(
-    t: &Track,
-    engine: &Mutex<Option<Engine>>,
-    files: &Mutex<Option<NowPlayingFiles>>,
-    np: &Mutex<NowPlayingShared>,
-    session_start: &Option<std::time::Instant>,
-) {
-    if let Some(e) = engine.lock().unwrap().as_ref() {
-        e.set_title(t.display());
-    }
-    if let Some(f) = files.lock().unwrap().as_ref()
+fn on_track(ctx: &Ctx, t: &Track) {
+    let live = match ctx.engine.lock().unwrap().as_ref() {
+        Some(e) => {
+            e.set_title(t.display());
+            true
+        }
+        None => false,
+    };
+    if let Some(f) = ctx.files.lock().unwrap().as_ref()
         && let Err(e) = f.update(t)
     {
         log::warn!("now playing files: {e:#}");
     }
-    let mut s = np.lock().unwrap();
-    s.track = Some(t.clone());
-    if let Some(start) = session_start {
-        let secs = start.elapsed().as_secs();
-        s.tracklist.push(TracklistEntry {
-            time: format!("{:02}:{:02}:{:02}", secs / 3600, secs / 60 % 60, secs % 60),
-            title: t.display(),
-        });
+    {
+        let mut s = ctx.np.lock().unwrap();
+        s.track = Some(t.clone());
+        if let Some(start) = *ctx.session_start.lock().unwrap() {
+            s.tracklist.push(TracklistEntry::new(start.elapsed().as_secs(), t));
+        }
+    }
+    if live {
+        write_cue(ctx);
+        let cfg = ctx.config.lock().unwrap().clone();
+        if cfg.share.on_track && cfg.share.discord_enabled() {
+            let vars = message_vars(ctx, &cfg);
+            crate::share::post_discord_async(cfg.share.discord_webhook.clone(), crate::share::render(&cfg.share.track_message, &vars));
+        }
+    }
+}
+
+fn tracklist_text(ctx: &Ctx) -> String {
+    ctx.np.lock().unwrap().tracklist.iter().map(|e| format!("{} {}", e.time, e.title)).collect::<Vec<_>>().join("\n")
+}
+
+/// Public listen address: the configured one, else derived from the main server.
+fn listen_url(cfg: &AppConfig) -> String {
+    if !cfg.share.listen_url.trim().is_empty() {
+        return cfg.share.listen_url.trim().to_string();
+    }
+    let Some(out) = cfg.live_outputs().into_iter().next() else { return String::new() };
+    let s = out.server;
+    match s.protocol {
+        djcast_core::config::Protocol::Icecast => {
+            let mount = if s.mount.starts_with('/') { s.mount.clone() } else { format!("/{}", s.mount) };
+            format!("http://{}:{}{}", s.host, s.port, mount)
+        }
+        _ => format!("http://{}:{}/", s.host, s.port),
+    }
+}
+
+fn message_vars(ctx: &Ctx, cfg: &AppConfig) -> crate::share::MessageVars {
+    let main = cfg.live_outputs().into_iter().next();
+    crate::share::MessageVars {
+        station: main.map(|o| o.server.name).filter(|n| !n.trim().is_empty()).unwrap_or_else(|| "djcast".into()),
+        url: listen_url(cfg),
+        track: ctx.np.lock().unwrap().track.as_ref().map(|t| t.display()).unwrap_or_default(),
+        tracklist: tracklist_text(ctx),
+    }
+}
+
+/// Keep a CUE sheet next to the session recording, updated on every track change.
+fn write_cue(ctx: &Ctx) {
+    let Some(rec) = ctx.recording.lock().unwrap().clone() else { return };
+    let tracks: Vec<crate::share::CueTrack> = ctx
+        .np
+        .lock()
+        .unwrap()
+        .tracklist
+        .iter()
+        .map(|e| crate::share::CueTrack { secs: e.secs, artist: e.artist.clone(), title: e.track_title.clone() })
+        .collect();
+    let title = rec.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "djcast session".into());
+    if let Err(e) = std::fs::write(rec.with_extension("cue"), crate::share::cue_sheet(&rec, &title, &tracks)) {
+        log::warn!("CUE sheet: {e}");
     }
 }
