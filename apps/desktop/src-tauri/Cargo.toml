@@ -11,6 +11,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 djcast-app.workspace = true
 djcast-core.workspace = true
+djcast-nowplaying.workspace = true
 anyhow.workspace = true
 log.workspace = true
 serde.workspace = true

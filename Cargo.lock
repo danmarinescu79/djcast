@@ -976,6 +976,7 @@ dependencies = [
  "anyhow",
  "djcast-app",
  "djcast-core",
+ "djcast-nowplaying",
  "env_logger",
  "log",
  "serde",

@@ -21,14 +21,21 @@
     ['recording', 'Recording'],
   ];
 
+  let midiPorts = $state([]);
+
   onMount(async () => {
     devices = await invoke('list_devices').catch(() => []);
+    midiPorts = await invoke('list_midi_inputs').catch(() => []);
     configPath = await invoke('get_config_path');
   });
 
-  const deviceOptions = $derived(
-    devices.filter((d) => (draft.audio.mode === 'loopback' ? d.output : d.input)).map((d) => d.name)
-  );
+  // Windows can list two devices with the same name (e.g. one per monitor): show each name once.
+  const deviceOptions = $derived([
+    ...new Set(devices.filter((d) => (draft.audio.mode === 'loopback' ? d.output : d.input)).map((d) => d.name)),
+  ]);
+  const midiOptions = $derived([...new Set(midiPorts)]);
+  const midiSpecial = ['auto', 'none', ''];
+  const baseDir = $derived(configPath.replace(/[\\/][^\\/]*$/, ''));
 
   async function save() {
     saving = true;
@@ -177,19 +184,27 @@
           <input id="confirm" type="range" min="0" max="15" step="0.5" bind:value={draft.nowplaying.confirm_secs} />
         </div>
         <div class="field">
-          <label for="midi">Controller MIDI input</label>
-          <input id="midi" bind:value={draft.nowplaying.midi_input} placeholder="auto" />
+          <label for="midi">Controller MIDI input (faders and crossfader)</label>
+          <select id="midi" bind:value={draft.nowplaying.midi_input}>
+            <option value="auto">Automatic (first Pioneer DDJ found)</option>
+            <option value="none">Off — use deck play state only</option>
+            {#each midiOptions as name (name)}<option value={name}>{name}</option>{/each}
+            {#if !midiSpecial.includes(draft.nowplaying.midi_input) && !midiOptions.includes(draft.nowplaying.midi_input)}
+              <option value={draft.nowplaying.midi_input}>{draft.nowplaying.midi_input} (not connected)</option>
+            {/if}
+          </select>
         </div>
         <div class="field">
           <label for="out">Folder for OBS text files and tracklists</label>
           <input id="out" bind:value={draft.nowplaying.output_dir} placeholder="empty = off" />
+          <span class="hint">A name without a drive letter is created next to the settings file: {baseDir}</span>
         </div>
       </div>
     {:else if tab === 'recording'}
       <h1>Recording</h1>
       <label class="check"><input type="checkbox" bind:checked={draft.record.enabled} /> Record every session to an MP3 file</label>
       <div class="grid">
-        <div class="field"><label for="rdir">Folder</label><input id="rdir" bind:value={draft.record.dir} placeholder="recordings" /></div>
+        <div class="field"><label for="rdir">Folder</label><input id="rdir" bind:value={draft.record.dir} placeholder="recordings" /><span class="hint">A name without a drive letter is created in {baseDir}</span></div>
       </div>
     {/if}
 
@@ -229,6 +244,7 @@
   .check, .radio { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
   .radios { display: flex; flex-direction: column; gap: 12px; }
   input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-color: var(--info); }
+  .hint { font-size: 12px; color: var(--muted); user-select: text; overflow-wrap: anywhere; }
   .note { margin: 0; font-size: 13px; color: var(--muted); max-width: 640px; }
   footer { display: flex; align-items: center; gap: 12px; }
   .msg { font-size: 13px; color: var(--ok); user-select: text; }

@@ -251,6 +251,16 @@ fn spawn_scanner(shared: Arc<Mutex<Shared>>) -> Result<()> {
     Ok(())
 }
 
+/// Names of the MIDI inputs currently available (for a settings picker).
+pub fn midi_inputs() -> Vec<String> {
+    let Ok(input) = midir::MidiInput::new("djcast-list") else {
+        return Vec::new();
+    };
+    let mut names: Vec<String> = input.ports().iter().filter_map(|p| input.port_name(p).ok()).collect();
+    names.dedup();
+    names
+}
+
 fn open_midi(wanted: &str, mixer: Arc<Mutex<MixerState>>) -> Option<midir::MidiInputConnection<()>> {
     let wanted = wanted.trim();
     if wanted.is_empty() || wanted.eq_ignore_ascii_case("none") {

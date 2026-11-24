@@ -70,6 +70,11 @@ fn test_connection(config: AppConfig) -> CmdResult<String> {
     Ok(format!("{}:{}{} accepted the login", s.host, s.port, s.mount))
 }
 
+#[tauri::command]
+fn list_midi_inputs() -> Vec<String> {
+    djcast_nowplaying::live::midi_inputs()
+}
+
 #[derive(Serialize)]
 struct Device {
     name: String,
@@ -125,6 +130,7 @@ fn main() {
             set_title,
             status,
             list_devices,
+            list_midi_inputs,
             test_connection
         ])
         .run(tauri::generate_context!())
