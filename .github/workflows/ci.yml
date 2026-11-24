@@ -1,9 +1,9 @@
 name: CI
 
+# Checks contributions; installers are only built by the release workflow (v* tags).
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 # No secrets are used here; pull requests from forks run with a read-only token.
 permissions:
