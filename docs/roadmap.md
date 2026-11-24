@@ -26,7 +26,8 @@
       crossfader assign; MIDI port shared with rekordbox (Windows 11 multi-client MIDI)
 - [x] "On-air deck" logic: equal-power crossfader, hysteresis, confirmation delay
 - [x] Sources `rekordbox-live` and `auto` (live, falling back to the history)
-- [ ] Live test during a real mix; tune defaults
+- [x] Live test with DDJ-1000 + rekordbox 7.2.20: fader moves switch the title after the
+      4 s confirmation; short cuts and equal levels keep the current deck
 - [ ] macOS: read the rekordbox window through the Accessibility API
 - [ ] Configurable MIDI mappings for other controllers
 
