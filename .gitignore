@@ -1,6 +1,8 @@
 /target
 recordings/
 nowplaying/
+# ...but not the now-playing crate
+!/crates/nowplaying/
 # local config may contain server passwords
 /djcast.toml
 /apps/desktop/node_modules
