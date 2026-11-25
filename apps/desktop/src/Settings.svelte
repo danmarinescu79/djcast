@@ -279,7 +279,18 @@
   }
 
   const presets = ['off', 'gentle', 'radio', 'loud', 'custom'];
-  const sources = ['auto', 'rekordbox-live', 'rekordbox-db', 'none'];
+  const sources = ['auto', 'rekordbox-live', 'rekordbox-db', 'text-file', 'none'];
+  // Faders, crossfader and the switch delay only matter for the instant rekordbox source.
+  const usesMidi = $derived(['auto', 'rekordbox-live'].includes(draft.nowplaying.source));
+
+  async function pickTextFile() {
+    const chosen = await open({
+      title: t('np.textFile'),
+      defaultPath: draft.nowplaying.text_file || undefined,
+      filters: [{ name: t('np.textFiles'), extensions: ['txt', 'log', 'm3u', 'm3u8', 'csv'] }],
+    });
+    if (typeof chosen === 'string') draft.nowplaying.text_file = chosen;
+  }
 </script>
 
 <div class="settings">
@@ -488,7 +499,18 @@
           <label class="radio"><input type="radio" name="source" value={id} bind:group={draft.nowplaying.source} /> {t(`np.source.${id}`)}</label>
         {/each}
       </div>
+      {#if draft.nowplaying.source === 'text-file'}
+        <div class="field sep">
+          <label for="textfile">{t('np.textFile')}</label>
+          <div class="folder">
+            <input id="textfile" bind:value={draft.nowplaying.text_file} placeholder="C:\…\tracklist.txt" />
+            <button type="button" class="btn big" onclick={pickTextFile}>{t('common.browse')}</button>
+          </div>
+          <span class="hint">{t('np.textFileHint')}</span>
+        </div>
+      {/if}
       <div class="grid sep">
+        {#if usesMidi}
         <div class="field">
           <label for="confirm">{t('np.confirm', { v: draft.nowplaying.confirm_secs })}</label>
           <input id="confirm" type="range" min="0" max="15" step="0.5" bind:value={draft.nowplaying.confirm_secs} />
@@ -511,6 +533,7 @@
             <option value="custom">{t('np.mappingCustom')}</option>
           </select>
         </div>
+        {/if}
         <div class="field">
           <label for="out">{t('np.folder')}</label>
           <div class="folder">
@@ -524,7 +547,7 @@
           <span class="hint">{t('common.relativeHint', { dir: baseDir })}</span>
         </div>
       </div>
-      {#if draft.nowplaying.midi_input !== 'none'}
+      {#if usesMidi && draft.nowplaying.midi_input !== 'none'}
         {#if draft.nowplaying.midi_mapping === 'custom'}
           <div class="sep-top block">
             <p class="note">{t('np.mappingIntro')}</p>

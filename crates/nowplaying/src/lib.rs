@@ -4,11 +4,13 @@
 //! - `rekordbox-db`   – play history in rekordbox `master.db` (stable, ~1 min delay)
 //! - `rekordbox-live` – deck contents from the rekordbox window + mixer state from MIDI (instant)
 //! - `auto`           – `rekordbox-live`, falling back to `rekordbox-db` when it is unavailable
+//! - `text-file`      – the last line of a file another program writes (VirtualDJ, …)
 //! - planned: `prodjlink` – CDJs / DJM over the network
 
 pub mod live;
 pub mod output;
 pub mod rekordbox;
+pub mod textfile;
 
 use live::mixer::{Assign, MappingPreset, MidiMap};
 use serde::{Deserialize, Serialize};
@@ -39,6 +41,8 @@ pub struct NowPlayingConfig {
     pub midi_custom: MidiMap,
     /// Folder for OBS text files and the tracklist. Empty = disabled.
     pub output_dir: String,
+    /// File followed by the `text-file` source (its last line is the current track).
+    pub text_file: String,
 }
 
 impl Default for NowPlayingConfig {
@@ -54,6 +58,7 @@ impl Default for NowPlayingConfig {
             midi_mapping: MappingPreset::PioneerDdj,
             midi_custom: MidiMap::default(),
             output_dir: "nowplaying".into(),
+            text_file: String::new(),
         }
     }
 }
@@ -66,6 +71,8 @@ pub enum SourceKind {
     RekordboxDb,
     RekordboxLive,
     Auto,
+    /// The last line of a text file written by another DJ program.
+    TextFile,
 }
 
 /// Build the configured source (None if `source = "none"`).
@@ -74,6 +81,7 @@ pub fn create_source(cfg: &NowPlayingConfig) -> anyhow::Result<Option<Box<dyn So
         SourceKind::None => None,
         SourceKind::RekordboxDb => Some(Box::new(db_source(cfg)?)),
         SourceKind::RekordboxLive => Some(Box::new(live_source(cfg)?)),
+        SourceKind::TextFile => Some(Box::new(textfile::TextFileSource::new(cfg.text_file.trim())?)),
         SourceKind::Auto => {
             let db = match db_source(cfg) {
                 Ok(db) => Some(db),

@@ -92,6 +92,10 @@
 - [x] Tracklist: copy / save as text, CUE sheet next to recordings; Discord webhook posts (go live, each track, stop with tracklist), editable templates
 - [x] CI (GitHub Actions, Windows) and automatic signed releases on `v*` tags, protected `release` environment
 - [ ] CI and release builds for macOS
+- [x] Now playing from a text file another program keeps up to date (VirtualDJ tracklist and
+      similar): last line, leading time ignored, UTF-8 / UTF-16
+- [ ] Now playing from Serato DJ (live session history in `_Serato_/History/Sessions`)
+- [ ] Now playing from Traktor (its broadcast metadata, received by a local Icecast endpoint)
 
 ## Backlog
 - [ ] Download and traffic history: a daily workflow that saves release download counts

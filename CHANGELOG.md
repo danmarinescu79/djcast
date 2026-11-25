@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- Now playing from a text file: follows a file another DJ program keeps up to date (such as
+  the VirtualDJ tracklist), so titles work beyond rekordbox. The last line is the current
+  track; a time at its start is ignored. A file left over from an earlier set is not announced
+- The switch delay, controller and crossfader settings only show for the rekordbox sources
+
 ## 0.3.1
 - Now playing no longer repeats titles: a title is sent only when its text changes, and a
   short pause in reading rekordbox (common while it is busy) keeps the current track for up to
