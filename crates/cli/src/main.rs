@@ -1,9 +1,8 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 use djcast_app::AppConfig;
 use djcast_core::{Engine, audio, icecast};
 use djcast_nowplaying::output::NowPlayingFiles;
-use djcast_nowplaying::rekordbox::{self, MasterDb, history};
 use djcast_nowplaying::{NowPlayingConfig, Track};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -30,6 +29,9 @@ enum Cmd {
         /// Capture an input device instead of loopback of an output device.
         #[arg(long)]
         input: bool,
+        /// With --input: first channel of the stereo pair (e.g. 11 for 11–12). 0 = automatic.
+        #[arg(long, default_value_t = 0, requires = "input")]
+        channel: u16,
         /// Capture one program only (part of its name, e.g. "rekordbox"); Windows 10 2004+.
         #[arg(long, conflicts_with_all = ["device", "input"])]
         program: Option<String>,
@@ -71,20 +73,11 @@ enum Cmd {
 
 #[derive(Subcommand)]
 enum RekordboxCmd {
-    /// Store the master.db key in your user config folder (see docs/rekordbox-key.md).
-    SetKey { key: String },
-    /// Show where master.db and the key file are.
-    Info,
-    /// Print the most recent tracks from the play history.
-    History {
-        #[arg(short = 'n', long, default_value_t = 10)]
-        count: usize,
-    },
     /// Print now-playing changes without streaming.
     Watch {
         #[arg(short, long, default_value = "djcast.toml")]
         config: PathBuf,
-        /// Override the configured source: db, live, auto or file (uses nowplaying.text_file).
+        /// Override the configured source: live or file (uses nowplaying.text_file).
         #[arg(short, long)]
         source: Option<String>,
         /// Print deck and mixer state every second.
@@ -110,8 +103,8 @@ fn main() -> Result<()> {
         .init();
     match Cli::parse().cmd {
         Cmd::Devices => devices(),
-        Cmd::Meter { device, input, program, seconds, preset, multiband } => {
-            meter_cmd(device, input, program, seconds, &preset, multiband)
+        Cmd::Meter { device, input, channel, program, seconds, preset, multiband } => {
+            meter_cmd(device, input, channel, program, seconds, &preset, multiband)
         }
         Cmd::Init { path } => init(&path),
         Cmd::Stream { config, title } => stream(&config, title),
@@ -121,22 +114,34 @@ fn main() -> Result<()> {
 }
 
 fn devices() -> Result<()> {
-    println!("{:<6} {:<6} DEVICE", "IN", "OUT");
+    println!("{:<6} {:<6} {:<5} DEVICE", "IN", "OUT", "CH");
     for d in audio::list_devices()? {
         let flag = |yes: bool, def: bool| match (yes, def) {
             (true, true) => "yes*",
             (true, false) => "yes",
             _ => "-",
         };
-        println!("{:<6} {:<6} {}", flag(d.is_input, d.is_default_input), flag(d.is_output, d.is_default_output), d.name);
+        let ch = if d.input_channels > 0 { d.input_channels.to_string() } else { "-".into() };
+        let auto = audio::auto_first_channel(&d.name, d.input_channels);
+        let note = if auto > 1 { format!("  (master on inputs {auto}–{})", auto + 1) } else { String::new() };
+        println!(
+            "{:<6} {:<6} {:<5} {}{note}",
+            flag(d.is_input, d.is_default_input),
+            flag(d.is_output, d.is_default_output),
+            ch,
+            d.name
+        );
     }
-    println!("\n* = default. OUT devices can be captured with mode = \"loopback\", IN devices with mode = \"input\".");
+    println!("\n* = default. CH = input channels.");
+    println!("OUT devices can be captured with mode = \"loopback\" (macOS 14.6+ on a Mac), IN devices with");
+    println!("mode = \"input\"; pick a pair other than 1–2 with first_channel (or `meter --input --channel N`).");
     Ok(())
 }
 
 fn meter_cmd(
     device: String,
     input: bool,
+    channel: u16,
     program: Option<String>,
     seconds: Option<f64>,
     preset: &str,
@@ -145,11 +150,12 @@ fn meter_cmd(
     use djcast_core::config::{AudioConfig, CaptureMode};
     use djcast_core::dsp::{DspStats, ProcessingConfig, Processor};
     let cfg = match program {
-        Some(name) => AudioConfig { device: name, mode: CaptureMode::Process, gain: 1.0 },
+        Some(name) => AudioConfig { device: name, mode: CaptureMode::Process, ..Default::default() },
         None => AudioConfig {
             device,
             mode: if input { CaptureMode::Input } else { CaptureMode::Loopback },
-            gain: 1.0,
+            first_channel: channel,
+            ..Default::default()
         },
     };
     let processing = ProcessingConfig {
@@ -238,40 +244,14 @@ fn load(path: &Path) -> Result<AppConfig> {
 
 fn rekordbox_cmd(cmd: RekordboxCmd) -> Result<()> {
     match cmd {
-        RekordboxCmd::SetKey { key } => {
-            let path = rekordbox::save_key(&key)?;
-            // Verify it actually opens the database.
-            let mut db = MasterDb::new(rekordbox::find_master_db()?, key.trim().to_string());
-            db.open().context("the key was saved but could not unlock master.db")?;
-            println!("key saved to {} and verified", path.display());
-        }
-        RekordboxCmd::Info => {
-            match rekordbox::find_master_db() {
-                Ok(p) => println!("master.db: {}", p.display()),
-                Err(e) => println!("master.db: not found ({e})"),
-            }
-            if let Some(p) = rekordbox::default_key_path() {
-                println!("key file:  {} ({})", p.display(), if p.exists() { "present" } else { "missing" });
-            }
-        }
-        RekordboxCmd::History { count } => {
-            let mut db = MasterDb::new(rekordbox::find_master_db()?, rekordbox::load_key(None)?);
-            let conn = db.open()?;
-            for e in history::recent(&conn, count)?.into_iter().rev() {
-                let t = Track { artist: e.artist, title: e.title, album: e.album, deck: None };
-                println!("{}  {}", e.created_at, t.display());
-            }
-        }
         RekordboxCmd::Watch { config, source, verbose } => {
             use djcast_nowplaying::SourceKind;
             let mut np = if config.exists() { load(&config)?.nowplaying } else { NowPlayingConfig::default() };
             np.source = match source.as_deref() {
-                Some("db") => SourceKind::RekordboxDb,
                 Some("live") => SourceKind::RekordboxLive,
-                Some("auto") => SourceKind::Auto,
                 Some("file") => SourceKind::TextFile,
-                Some(other) => anyhow::bail!("unknown source '{other}' (use db, live, auto or file)"),
-                None if np.source == SourceKind::None => SourceKind::Auto,
+                Some(other) => anyhow::bail!("unknown source '{other}' (use live or file)"),
+                None if np.source == SourceKind::None => SourceKind::RekordboxLive,
                 None => np.source,
             };
             let (tx, rx) = mpsc::channel();

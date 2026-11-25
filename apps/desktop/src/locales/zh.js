@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': '重试中',
   'stats.connectingShort': '连接中',
   'stats.input': '输入',
-  'stats.loopback': '环回捕获',
+  'stats.capture.loopback': "环回捕获",
+  'stats.capture.input': "输入捕获",
+  'stats.capture.process': "程序捕获",
 
   'tracklist.title': '曲目列表 · 本次会话',
   'tracklist.copy': '复制用于 Mixcloud',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': '开始直播后，曲目会显示在这里。',
 
   'source.manual': '手动标题',
-  'source.history': 'rekordbox 历史记录',
   'source.live': '实时识别',
 
   'preset.off': '关',
@@ -118,6 +119,17 @@ export default {
   'audio.input': '某个输入（线路输入、混音台 USB、虚拟声卡线）',
   'audio.device': '设备',
   'audio.gain': '输入增益（{v}×）',
+  'audio.channels': "声道",
+  'audio.channelsAuto': "自动（{pair}）",
+  'audio.macNote': "如果控制器通过 USB 发送主输出（例如 DDJ-1000），请在“某个输入”中选择它：会自动选择正确的声道。没有这类控制器时，请捕获 rekordbox 播放所用的输出（macOS 14.6 或更高版本）。",
+  'audio.hintSilent': "声道 {cur} 没有声音，但 {sug} 有信号。",
+  'audio.hintUse': "使用 {sug}",
+  'audio.hintNextLive': "下次开播时生效。",
+  'audio.detect': "检测",
+  'audio.detecting': "正在聆听…",
+  'audio.detectHint': "播放一首曲目，然后点击“检测”：会选择有声音的声道对。",
+  'audio.detectFound': "在 {pair} 上检测到声音（{db} dBFS），已选择。保存后生效。",
+  'audio.detectNone': "所有声道都没有声音。请推起推子播放曲目后重试。",
   'audio.asioNote':
     '如果 rekordbox 使用 ASIO，请在 rekordbox 的音频偏好设置中打开 PC MASTER OUT，将其发送到一个空闲的输出（例如 Realtek Digital Output），然后在此处捕获该输出。',
 
@@ -163,10 +175,10 @@ export default {
     '声音更密实、更均衡，就像 FM 电台和大型网络电台：强劲的底鼓不再压低人声和踩镲。仅在选择“关”以外的预设时生效。',
   'processing.target': '目标响度（{v} LUFS）',
 
+  'np.permissionNeeded': "要显示曲目，请允许 djcast 读取 rekordbox 窗口，然后重新启动 djcast。",
+  'np.openAccessibility': "打开辅助功能设置",
   'np.source': '来源',
-  'np.source.auto': '自动 — 即时识别，失败时使用历史记录',
   'np.source.rekordbox-live': 'rekordbox，即时（窗口 + 控制器 MIDI）',
-  'np.source.rekordbox-db': 'rekordbox 历史记录（延迟约 1 分钟）',
   'np.source.text-file': '文本文件 — VirtualDJ 等软件',
   'np.textFile': '正在播放文件',
   'np.textFiles': '文本文件',
@@ -211,6 +223,12 @@ export default {
   'general.updatesNote':
     '更新来自本项目在 GitHub 上发布的版本，安装前会通过签名进行验证。',
 
+  'report.button': "配置报告",
+  'report.collecting': "正在聆听…",
+  'report.copy': "复制",
+  'report.copied': "已复制",
+  'report.open': "打开报告表单",
+  'report.hint': "在其他控制器或系统上测试？请先播放一首曲目，再生成报告：其中列出你的设备、哪些输入声道有声音、MIDI，以及 djcast 从 rekordbox 读取到的内容——不含密码、服务器地址或曲目名称。发送前可以先查看。",
   'about.version': '版本 {v}',
   'about.tagline': '面向 DJ 的音频推流软件，自动从 rekordbox 获取正在播放的曲目。',
   'about.license': '免费开源，采用 MIT 或 Apache-2.0 许可证。',
@@ -244,7 +262,7 @@ export default {
   'tracklist.save': '保存…',
 
   'server.bitrate': '码率',
-  'format.aacHint': '同样码率下 AAC 比 MP3 音质更好。使用 Windows 自带的编码器。部分游戏和旧播放器需要 MP3。',
+  'format.aacHint': '同样码率下 AAC 比 MP3 音质更好。使用系统自带的编码器。部分游戏和旧播放器需要 MP3。',
   'format.opusHint': 'Opus 每 kbps 音质最佳，并在流内传送曲名。仅限 Icecast；部分游戏和旧播放器需要 MP3。',
   'format.opusShoutcast': 'Shoutcast 服务器不支持 Opus——请选择 MP3 或 AAC，或改用 Icecast 服务器。',
   'format.opusTitles': '曲名在流内传送：播放器会显示，但服务器状态页仅在 Icecast 2.5 及更新版本中显示（Icecast-KH 不显示）。',
@@ -278,7 +296,7 @@ export default {
   'audio.processNote': '只直播该程序的声音 — 浏览器、通知和其他声音不会混入。需要 Windows 10 (2004) 或更新版本，且程序的声音必须经过 Windows：只输出到 ASIO 驱动的音频无法捕获。控制器使用 ASIO 的 rekordbox，只要将 PC MASTER OUT 设置为 Windows 输出即可。',
 
   'general.theme': '外观',
-  'general.themeSystem': '跟随 Windows',
+  'general.themeSystem': "跟随系统",
   'general.themeDark': '深色',
   'general.themeLight': '浅色',
 };

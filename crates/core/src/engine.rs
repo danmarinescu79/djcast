@@ -258,6 +258,11 @@ impl Engine {
         self.levels.get()
     }
 
+    /// The captured input channels are silent while another pair has sound.
+    pub fn channel_hint(&self) -> Option<audio::ChannelHint> {
+        self.levels.channel_hint()
+    }
+
     /// Loudness and processing meters (input/output LUFS, AGC gain, limiter reduction).
     pub fn processing(&self) -> DspSnapshot {
         self.dsp_stats.snapshot()

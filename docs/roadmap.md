@@ -9,7 +9,9 @@
 - [x] CLI: `devices`, `init`, `stream`, `meta`
 - [x] Tested against a real server (Icecast 2.4.0-kh15): audio, metadata, auto title changes
 
-## Stage 2: now playing from `master.db` ✅
+## Stage 2: now playing from `master.db` ✅ (removed in 0.4)
+Removed because the decks read from the window give the same titles instantly, without the
+encrypted database or a key the user has to find. Kept here for the record.
 - [x] Auto-detect DB path (`rekordboxAgent/storage/options.json` → `db-path`)
 - [x] Pure-Rust SQLCipher 4 decryption in memory (+ committed WAL frames), no OpenSSL
 - [x] Poll `djmdSongHistory` only when master.db / WAL change
@@ -25,10 +27,12 @@
 - [x] MIDI mixer (Pioneer DDJ mapping, verified on DDJ-1000): channel faders, crossfader,
       crossfader assign; MIDI port shared with rekordbox (Windows 11 multi-client MIDI)
 - [x] "On-air deck" logic: equal-power crossfader, hysteresis, confirmation delay
-- [x] Sources `rekordbox-live` and `auto` (live, falling back to the history)
+- [x] Sources `rekordbox-live` and `auto` (live, falling back to the history; `auto` became an
+      alias of `rekordbox-live` when the history was removed)
 - [x] Live test with DDJ-1000 + rekordbox 7.2.20: fader moves switch the title after the
       4 s confirmation; short cuts and equal levels keep the current deck
-- [ ] macOS: read the rekordbox window through the Accessibility API
+- [x] macOS: read the rekordbox window through the Accessibility API (same deck panels as on
+      Windows; verified with rekordbox 7.2.20, DDJ-1000 MIDI shared with rekordbox via CoreMIDI)
 - [x] Configurable MIDI mappings for other controllers: "learn" faders and crossfader
       (7/14-bit, reversed crossfader), crossfader assign per channel
 
@@ -86,9 +90,12 @@
       independent connections, reconnects, titles and stats per server
 - [x] Formats per server: MP3, AAC-LC (Windows Media Foundation, ADTS) and Opus in Ogg
       (resampled to 48 kHz; titles as chained Ogg streams; Icecast only); one encoder per format
-- [ ] AAC on macOS (AudioToolbox)
+- [x] AAC on macOS (AudioToolbox AudioConverter, constant bitrate, ADTS headers added by djcast)
 - [ ] Pro DJ Link (CDJs) — low priority: needs CDJ hardware to test
-- [ ] macOS (loopback, builds, code signing)
+- [ ] macOS (builds, code signing)
+- [x] macOS loopback (cpal Core Audio taps, macOS 14.6+) and multichannel inputs: choose the
+      stereo pair (DDJ-1000 master on 11–12, picked automatically), Detect button, hint when
+      the captured pair is silent while another has sound
 - [x] Tracklist: copy / save as text, CUE sheet next to recordings; Discord webhook posts (go live, each track, stop with tracklist), editable templates
 - [x] CI (GitHub Actions, Windows) and automatic signed releases on `v*` tags, protected `release` environment
 - [ ] CI and release builds for macOS

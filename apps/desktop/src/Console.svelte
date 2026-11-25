@@ -1,12 +1,14 @@
 <script>
   import { invoke } from '@tauri-apps/api/core';
+  // The webview's own clipboard API is blocked on macOS; the plugin writes natively.
+  import { writeText } from '@tauri-apps/plugin-clipboard-manager';
   import { save } from '@tauri-apps/plugin-dialog';
   import { clock, bytes, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
   import { deckSlots, sourceLabel as srcLabel } from './lib/decks.js';
   import { t } from './lib/i18n.svelte.js';
 
-  let { status, busy, actionError, onToggleLive, onSendTitle } = $props();
+  let { status, busy, actionError, onToggleLive, onSendTitle, onUseChannels } = $props();
 
   let manualTitle = $state('');
   let copied = $state(false);
@@ -30,7 +32,7 @@
 
   async function copyTracklist() {
     const text = status.tracklist.map((t) => `${t.time} ${t.title}`).join('\n');
-    await navigator.clipboard.writeText(text);
+    await writeText(text);
     copied = true;
     setTimeout(() => (copied = false), 1500);
   }
@@ -82,7 +84,16 @@
     <div class="panel input">
       <div class="k">{t('stats.input')}</div>
       <div>{status.device || t('common.systemDefault')}</div>
-      <div class="k">{t('stats.loopback')}</div>
+      <div class="k">{t(`stats.capture.${status.capture_mode}`)}</div>
+      {#if status.channel_hint}
+        {@const cur = `${status.channel_hint.current}–${status.channel_hint.current + 1}`}
+        {@const sug = `${status.channel_hint.suggested}–${status.channel_hint.suggested + 1}`}
+        <div class="channel-hint" role="status">
+          <span class="warn-text">{t('audio.hintSilent', { cur, sug })}</span>
+          <button type="button" class="btn" onclick={() => onUseChannels(status.channel_hint.suggested)}>{t('audio.hintUse', { sug })}</button>
+          {#if status.live}<span class="hint">{t('audio.hintNextLive')}</span>{/if}
+        </div>
+      {/if}
     </div>
   </section>
 
@@ -95,7 +106,12 @@
       </div>
       <div class="title">{status.track?.title || t('now.waiting')}</div>
       <div class="artist">{status.track?.artist || ''}</div>
-      {#if status.nowplaying_error && !status.decks?.using_fallback}
+      {#if status.decks?.permission_needed}
+        <div class="permission" role="status">
+          <span class="warn-text">{t('np.permissionNeeded')}</span>
+          <button type="button" class="btn" onclick={() => invoke('open_accessibility_settings')}>{t('np.openAccessibility')}</button>
+        </div>
+      {:else if status.nowplaying_error}
         <div class="hint">{status.nowplaying_error}</div>
       {/if}
       <form class="manual" onsubmit={submitTitle}>
@@ -251,4 +267,6 @@
   .blue-text { color: var(--info); }
   .mb { align-items: center; }
   .warn-text { color: var(--warn); }
+  .permission { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; }
+  .channel-hint { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 8px; font-size: 12px; }
 </style>

@@ -1,15 +1,22 @@
 //! Instant now-playing for rekordbox: deck contents from the UI, mixer state from MIDI.
 //!
-//! - A background thread reads rekordbox's window (UI Automation on Windows) twice a
-//!   second and tracks, per deck, the loaded track and whether its time is running.
+//! - A background thread reads rekordbox's window (UI Automation on Windows, the
+//!   Accessibility API on macOS) twice a second and tracks, per deck, the loaded track and whether its time is running.
 //! - An optional MIDI listener follows channel faders, crossfader and assign switches.
 //! - [`onair::OnAir`] picks the deck the audience hears (hysteresis + confirmation).
 
 pub mod decks;
 pub mod mixer;
 pub mod onair;
+#[cfg(target_os = "macos")]
+mod ax;
 #[cfg(windows)]
 mod uia;
+
+#[cfg(target_os = "macos")]
+use ax::Scanner;
+#[cfg(windows)]
+use uia::Scanner;
 
 use crate::{Source, Track};
 use anyhow::{Result, anyhow};
@@ -49,7 +56,22 @@ struct Shared {
     decks: HashMap<u8, DeckState>,
     last_ok: Option<Instant>,
     error: Option<String>,
+    /// The last read failed because the OS permission to read other apps' windows is missing.
+    permission_needed: bool,
 }
+
+/// Reading the rekordbox window needs a permission the user has not given yet (macOS
+/// Accessibility). Scanners return it so the UI can lead the user to the right setting.
+#[derive(Debug)]
+pub struct PermissionNeeded(pub &'static str);
+
+impl std::fmt::Display for PermissionNeeded {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
+impl std::error::Error for PermissionNeeded {}
 
 impl DeckState {
     fn playing(&self, now: Instant) -> bool {
@@ -107,8 +129,8 @@ impl RekordboxLiveSource {
             faders: mixer.faders,
             crossfader: mixer.crossfader,
             midi: self._midi.is_some(),
-            using_fallback: false,
             error: shared.error.clone(),
+            permission_needed: shared.permission_needed,
         }
     }
 
@@ -212,10 +234,10 @@ fn merge(shared: &mut Shared, views: Vec<DeckView>, now: Instant) {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 fn spawn_scanner(shared: Arc<Mutex<Shared>>) -> Result<()> {
     std::thread::Builder::new().name("rekordbox-ui".into()).spawn(move || {
-        let mut scanner = match uia::Scanner::new() {
+        let mut scanner = match Scanner::new() {
             Ok(s) => s,
             Err(e) => {
                 shared.lock().unwrap().error = Some(format!("{e:#}"));
@@ -240,9 +262,13 @@ fn spawn_scanner(shared: Arc<Mutex<Shared>>) -> Result<()> {
                             merge(&mut s, views, now);
                             s.last_ok = Some(now);
                             s.error = None;
+                            s.permission_needed = false;
                         }
                     }
-                    Err(e) => s.error = Some(format!("{e:#}")),
+                    Err(e) => {
+                        s.permission_needed = e.downcast_ref::<PermissionNeeded>().is_some();
+                        s.error = Some(format!("{e:#}"));
+                    }
                 }
             }
             std::thread::sleep(SCAN_INTERVAL);
@@ -251,7 +277,7 @@ fn spawn_scanner(shared: Arc<Mutex<Shared>>) -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 fn spawn_scanner(shared: Arc<Mutex<Shared>>) -> Result<()> {
     shared.lock().unwrap().error = Some("reading the rekordbox window is not supported on this OS yet".into());
     Ok(())

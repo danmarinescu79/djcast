@@ -74,7 +74,9 @@ export default {
   'stats.retryingShort': 'retrying',
   'stats.connectingShort': 'connecting',
   'stats.input': 'Input',
-  'stats.loopback': 'Loopback capture',
+  'stats.capture.loopback': "Loopback capture",
+  'stats.capture.input': "Input capture",
+  'stats.capture.process': "Program capture",
 
   'tracklist.title': 'Tracklist · this session',
   'tracklist.copy': 'Copy for Mixcloud',
@@ -82,7 +84,6 @@ export default {
   'tracklist.empty': 'Tracks appear here once you are live.',
 
   'source.manual': 'manual titles',
-  'source.history': 'rekordbox history',
   'source.live': 'live detection',
 
   'preset.off': 'Off',
@@ -120,6 +121,17 @@ export default {
   'audio.input': 'An input (line-in, mixer USB, virtual cable)',
   'audio.device': 'Device',
   'audio.gain': 'Input gain ({v}×)',
+  'audio.channels': "Channels",
+  'audio.channelsAuto': "Automatic ({pair})",
+  'audio.macNote': "With a controller that sends its master over USB (such as the DDJ-1000), choose it under “An input”: the right channels are picked automatically. Without one, capture the output rekordbox plays to (macOS 14.6 or newer).",
+  'audio.hintSilent': "No sound on channels {cur}, but {sug} has sound.",
+  'audio.hintUse': "Use {sug}",
+  'audio.hintNextLive': "Applies the next time you go live.",
+  'audio.detect': "Detect",
+  'audio.detecting': "Listening…",
+  'audio.detectHint': "Play a track, then press Detect: the pair with sound is selected.",
+  'audio.detectFound': "Sound found on {pair} ({db} dBFS) — selected. Save to keep it.",
+  'audio.detectNone': "No sound on any channel. Play a track with the fader up and try again.",
   'audio.asioNote':
     "With rekordbox on ASIO, turn on PC MASTER OUT in rekordbox's audio preferences, send it to a spare output (for example Realtek Digital Output) and capture that output here.",
 
@@ -165,10 +177,10 @@ export default {
     'Denser and more even, like FM and big internet stations: a heavy kick no longer pushes down the vocals and hi-hats. Applies when a preset other than Off is chosen.',
   'processing.target': 'Target loudness ({v} LUFS)',
 
+  'np.permissionNeeded': "To show the tracks, allow djcast to read the rekordbox window, then restart djcast.",
+  'np.openAccessibility': "Open Accessibility settings",
   'np.source': 'Source',
-  'np.source.auto': 'Automatic — instant, falls back to the history',
   'np.source.rekordbox-live': 'rekordbox, instant (window + controller MIDI)',
-  'np.source.rekordbox-db': 'rekordbox history (about 1 minute late)',
   'np.source.text-file': 'Text file — VirtualDJ and other programs',
   'np.textFile': 'Now-playing file',
   'np.textFiles': 'Text files',
@@ -213,6 +225,12 @@ export default {
   'general.updatesNote':
     "Updates come from the project's GitHub releases and are verified with a signature before they are installed.",
 
+  'report.button': "Setup report",
+  'report.collecting': "Listening…",
+  'report.copy': "Copy",
+  'report.copied': "Copied",
+  'report.open': "Open the report form",
+  'report.hint': "Testing on another controller or system? Play a track, then collect a report: it lists your devices, which input channels have sound, MIDI and what djcast reads from rekordbox — no passwords, server addresses or track names. You can read it before sending.",
   'about.version': 'Version {v}',
   'about.tagline': 'Audio streaming for DJs, with automatic now playing from rekordbox.',
   'about.license': 'Free and open source, under the MIT or Apache-2.0 license.',
@@ -246,7 +264,7 @@ export default {
   'tracklist.save': 'Save…',
 
   'server.bitrate': 'Bitrate',
-  'format.aacHint': 'AAC sounds better than MP3 at the same bitrate. Uses the encoder built into Windows. Some games and older players need MP3.',
+  'format.aacHint': 'AAC sounds better than MP3 at the same bitrate. Uses the encoder built into the system. Some games and older players need MP3.',
   'format.opusHint': 'Opus gives the best sound per kbps and carries titles inside the stream. Icecast only; some games and older players need MP3.',
   'format.opusShoutcast': 'Shoutcast servers do not take Opus — choose MP3 or AAC, or an Icecast server.',
   'format.opusTitles': 'Titles travel inside the stream: players show them, but the server status page only on Icecast 2.5 or newer (not on Icecast-KH).',
@@ -281,7 +299,7 @@ export default {
   'audio.processNote': 'Only that program is streamed — browser, notifications and other sounds stay out. Needs Windows 10 (2004) or newer, and the program’s sound must go through Windows: audio that goes only to an ASIO driver is not seen. rekordbox with a controller on ASIO works when PC MASTER OUT is set to a Windows output.',
 
   'general.theme': 'Appearance',
-  'general.themeSystem': 'Like Windows',
+  'general.themeSystem': "Like the system",
   'general.themeDark': 'Dark',
   'general.themeLight': 'Light',
 };

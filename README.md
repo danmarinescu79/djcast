@@ -3,48 +3,57 @@
 Audio streaming for DJs, in the spirit of BUTT, with automatic "now playing" detection from rekordbox.
 Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
 
-> **Status:** early development. Streaming and now playing from the rekordbox history work; instant detection is next. See the [roadmap](docs/roadmap.md).
+> **Status:** early development. Streaming and instant now playing from rekordbox work on Windows; macOS is in progress. See the [roadmap](docs/roadmap.md).
 > The name "djcast" is provisional.
 
 ## Features
 - Capture what your DJ software plays (WASAPI loopback, no virtual cable needed) or any input device
 - MP3, AAC and Opus, chosen per server: MP3 (LAME, 32–320 kbps) for every player,
-  AAC-LC (Windows' own encoder, 96–192 kbps) and Opus in Ogg (Icecast, titles inside the stream)
+  AAC-LC (the encoder built into Windows or macOS, 96–192 kbps) and Opus in Ogg (Icecast, titles inside the stream)
 - Icecast 2 streaming (HTTP PUT with fallback to the legacy SOURCE method)
 - Now-playing metadata, re-sent automatically after reconnects
 - Automatic reconnect, silence padding so the server never drops you
 - Optional local recording of your set
 - Desktop app (Tauri): console and decks views, mini window, tray icon, server profiles
   (Icecast, Shoutcast v1/v2), passwords kept in Windows Credential Manager / macOS Keychain
-- Now playing from the rekordbox 6/7 play history (read-only, decrypted in memory)
+- Instant now playing from rekordbox: the decks as shown in its window, plus your channel
+  faders and crossfader over MIDI to pick the deck that is on air (no database key needed)
+- Now playing from a text file another DJ program keeps up to date (VirtualDJ and others)
 - `nowplaying.txt` / `artist.txt` / `title.txt` for OBS, plus a timestamped tracklist per session
 
 ## Download
 Website: https://danmarinescu79.github.io/djcast/
 
-Windows installers are on the [releases page](https://github.com/danmarinescu79/djcast/releases/latest)
-(`djcast_<version>_x64-setup.exe`, or the `.msi`). The app updates itself from there.
+Installers are on the [releases page](https://github.com/danmarinescu79/djcast/releases/latest).
+The app updates itself from there.
 
-The installers are not code-signed yet, so Windows SmartScreen may say *Windows protected
-your PC* on first run: choose *More info → Run anyway*. They are built only by GitHub Actions
-from this repository, and the app verifies the signature of every update it installs (see the
-[code signing policy](docs/code-signing-policy.md)).
+- **Windows 10/11 (64-bit):** `djcast_<version>_x64-setup.exe`, or the `.msi`. The installers
+  are not code-signed yet, so Windows SmartScreen may say *Windows protected your PC* on first
+  run: choose *More info → Run anyway*.
+- **macOS 13 or newer (Apple Silicon and Intel):** `djcast_<version>_universal.dmg`. Open it,
+  drag djcast to Applications, and allow it under System Settings → Privacy & Security →
+  Accessibility when it asks (that is how it reads the decks). The app is signed with an Apple
+  Developer ID and notarized.
+
+Everything is built only by GitHub Actions from this repository, and the app verifies the
+signature of every update it installs (see the [code signing policy](docs/code-signing-policy.md)).
 
 ## Build
 
-Requires Rust (`rustup`). On Windows, also the Visual Studio Build Tools (MSVC).
+Requires Rust (`rustup`) and CMake (for Opus). On Windows, also the Visual Studio Build Tools
+(MSVC); on macOS, Xcode (`brew install cmake` for CMake).
 
 ```sh
 cargo build --release
 ```
 
-Desktop app (needs Node.js too):
+Desktop app (needs Node.js 22 too):
 
 ```sh
 cd apps/desktop
 npm install
 npx tauri dev     # run in development
-npx tauri build   # installers in target/release/bundle (msi, nsis)
+npx tauri build   # installers in target/release/bundle (Windows: msi, nsis; macOS: app, dmg)
 ```
 
 ## Usage
@@ -55,8 +64,6 @@ djcast init                      # create djcast.toml with defaults
 djcast stream -t "Intro"         # start streaming
 djcast meta "Artist - Title"     # send a title manually
 
-djcast rekordbox set-key <KEY>   # one-time setup, see docs/rekordbox-key.md
-djcast rekordbox history         # recent tracks from the rekordbox history
 djcast rekordbox watch           # print tracks as rekordbox plays them (no streaming)
 ```
 
@@ -83,7 +90,6 @@ To add a language:
 
 ## Documentation
 - [Now-playing research](docs/research-now-playing.md)
-- [rekordbox database key](docs/rekordbox-key.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Releasing](docs/releasing.md)
@@ -122,7 +128,7 @@ If you build on djcast, a link back to the project is appreciated (see `NOTICE`)
 
 The MP3 encoder links [LAME](https://lame.sourceforge.io/) (LGPL-2.0) via the `mp3lame-encoder` crate.
 Opus uses [libopus](https://opus-codec.org/) (BSD-3-Clause). AAC uses the encoder that comes with the
-operating system (Media Foundation on Windows); djcast ships no AAC code.
+operating system (Media Foundation on Windows, AudioToolbox on macOS); djcast ships no AAC code.
 
 ### Contribution
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this work,

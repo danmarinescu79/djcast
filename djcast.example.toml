@@ -7,6 +7,9 @@ device = ""
 # "input"    = capture an input (line-in, USB mixer input, virtual cable)
 mode = "loopback"
 gain = 1.0
+# With mode = "input": first channel of the stereo pair, for inputs with more than two channels
+# (e.g. 11 = channels 11–12, where the DDJ-1000 sends its master). 0 = automatic.
+first_channel = 0
 
 [processing]
 # Loudness processing before encoding (AGC + look-ahead limiter), like Winamp DSP / Stereo Tool.
@@ -48,10 +51,9 @@ dir = "recordings"
 
 [nowplaying]
 # "none"           = titles only from manual input
-# "rekordbox-db"   = rekordbox play history (stable; tracks appear ~1 min after they start)
-# "rekordbox-live" = instant: decks read from the rekordbox window (Windows) + mixer via MIDI
-# "auto"           = rekordbox-live, falling back to rekordbox-db when live is unavailable
-source = "auto"
+# "rekordbox-live" = instant: decks read from the rekordbox window + mixer via MIDI
+# "text-file"      = last line of a file another DJ program keeps up to date (see text_file)
+source = "rekordbox-live"
 poll_interval_secs = 1.0
 # Controller MIDI input for faders/crossfader: "auto" (first "DDJ" port), a port name, or "none"
 midi_input = "auto"
@@ -59,10 +61,6 @@ midi_input = "auto"
 confirm_secs = 4.0
 # Crossfader assign per channel until the switches are moved: "a", "thru" or "b"
 crossfader_assign = ["thru", "thru", "thru", "thru"]
-# Empty = use the key saved with `djcast rekordbox set-key` (see docs/rekordbox-key.md)
-rekordbox_key = ""
-# Empty = auto-detect
-rekordbox_db = ""
 # Folder for nowplaying.txt / artist.txt / title.txt (for OBS) and the session tracklist.
 # Empty = disabled.
 output_dir = "nowplaying"

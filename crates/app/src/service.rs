@@ -3,7 +3,7 @@
 
 use crate::AppConfig;
 use anyhow::Result;
-use djcast_core::audio::{self, Capture, Levels};
+use djcast_core::audio::{self, Capture, ChannelHint, Levels};
 use djcast_core::dsp::{DspSnapshot, DspStats, Processor};
 use djcast_core::{Engine, EngineStatus};
 use djcast_nowplaying::output::NowPlayingFiles;
@@ -21,10 +21,14 @@ pub struct StationStatus {
     pub connected_secs: u64,
     pub bytes_sent: u64,
     pub device: String,
+    /// How the device is captured: "loopback", "input" or "process".
+    pub capture_mode: djcast_core::config::CaptureMode,
     pub sample_rate: u32,
     pub recording: bool,
     pub level_l: f32,
     pub level_r: f32,
+    /// The captured input channels are silent while another pair has sound.
+    pub channel_hint: Option<ChannelHint>,
     pub loudness: LoudnessStatus,
     pub track: Option<TrackStatus>,
     pub tracklist: Vec<TracklistEntry>,
@@ -267,17 +271,18 @@ impl Station {
     pub fn status(&self) -> StationStatus {
         let cfg = self.ctx.config.lock().unwrap().clone();
         let engine = self.ctx.engine.lock().unwrap();
-        let (st, levels, dsp): (EngineStatus, (f32, f32), DspSnapshot) = match engine.as_ref() {
-            Some(e) => (e.status(), e.levels(), e.processing()),
-            None => {
-                let mon = self.monitor.lock().unwrap();
-                let (levels, dsp) = match mon.as_ref() {
-                    Some(m) => (m.levels.get(), m.stats.snapshot()),
-                    None => ((0.0, 0.0), DspStats::default().snapshot()),
-                };
-                (EngineStatus::default(), levels, dsp)
-            }
-        };
+        let (st, levels, dsp, channel_hint): (EngineStatus, (f32, f32), DspSnapshot, Option<ChannelHint>) =
+            match engine.as_ref() {
+                Some(e) => (e.status(), e.levels(), e.processing(), e.channel_hint()),
+                None => {
+                    let mon = self.monitor.lock().unwrap();
+                    let (levels, dsp, hint) = match mon.as_ref() {
+                        Some(m) => (m.levels.get(), m.stats.snapshot(), m.levels.channel_hint()),
+                        None => ((0.0, 0.0), DspStats::default().snapshot(), None),
+                    };
+                    (EngineStatus::default(), levels, dsp, hint)
+                }
+            };
         let live = engine.is_some();
         drop(engine);
         let np = self.ctx.np.lock().unwrap();
@@ -287,11 +292,13 @@ impl Station {
             connected: st.connected,
             connected_secs: st.connected_since.map(|t| t.elapsed().as_secs()).unwrap_or(0),
             bytes_sent: st.bytes_sent,
+            capture_mode: cfg.stream.audio.mode,
             device: if st.device.is_empty() { cfg.stream.audio.device.clone() } else { st.device.clone() },
             sample_rate: st.sample_rate,
             recording: st.recording.is_some(),
             level_l: levels.0,
             level_r: levels.1,
+            channel_hint,
             loudness: LoudnessStatus {
                 preset: format!("{:?}", cfg.stream.processing.preset).to_lowercase(),
                 target_lufs: cfg.stream.processing.target(),

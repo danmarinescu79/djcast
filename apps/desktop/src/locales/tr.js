@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': 'yeniden deneniyor',
   'stats.connectingShort': 'bağlanıyor',
   'stats.input': 'Giriş',
-  'stats.loopback': 'Loopback yakalama',
+  'stats.capture.loopback': "Loopback yakalama",
+  'stats.capture.input': "Giriş yakalama",
+  'stats.capture.process': "Program yakalama",
 
   'tracklist.title': 'Parça listesi · bu oturum',
   'tracklist.copy': 'Mixcloud için kopyala',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': 'Yayına başladığınızda parçalar burada görünür.',
 
   'source.manual': 'elle girilen başlıklar',
-  'source.history': 'rekordbox geçmişi',
   'source.live': 'canlı algılama',
 
   'preset.off': 'Kapalı',
@@ -118,6 +119,17 @@ export default {
   'audio.input': 'Bir giriş (line-in, mixer USB, sanal kablo)',
   'audio.device': 'Aygıt',
   'audio.gain': 'Giriş kazancı ({v}×)',
+  'audio.channels': "Kanallar",
+  'audio.channelsAuto': "Otomatik ({pair})",
+  'audio.macNote': "Master’ını USB üzerinden gönderen bir kontrolcüyle (ör. DDJ-1000) onu “Bir giriş” altında seçin: doğru kanallar otomatik seçilir. Yoksa rekordbox’un çaldığı çıkışı yakalayın (macOS 14.6 veya üstü).",
+  'audio.hintSilent': "{cur} kanallarında ses yok, ama {sug} sinyal alıyor.",
+  'audio.hintUse': "{sug} kullan",
+  'audio.hintNextLive': "Bir sonraki yayında uygulanır.",
+  'audio.detect': "Algıla",
+  'audio.detecting': "Dinleniyor…",
+  'audio.detectHint': "Bir parça çalın, sonra Algıla’ya basın: sesi olan çift seçilir.",
+  'audio.detectFound': "{pair} üzerinde ses bulundu ({db} dBFS) — seçildi. Korumak için kaydedin.",
+  'audio.detectNone': "Hiçbir kanalda ses yok. Fader açıkken bir parça çalıp tekrar deneyin.",
   'audio.asioNote':
     "rekordbox ASIO ile çalışıyorsa, rekordbox'ın ses tercihlerinde PC MASTER OUT'u açın, boş bir çıkışa (örneğin Realtek Digital Output) yönlendirin ve o çıkışı burada yakalayın.",
 
@@ -163,10 +175,10 @@ export default {
     "FM ve büyük internet istasyonları gibi daha yoğun ve dengeli: güçlü bir kick artık vokalleri ve hi-hat'leri bastırmaz. Kapalı dışında bir ön ayar seçildiğinde uygulanır.",
   'processing.target': 'Hedef ses yüksekliği ({v} LUFS)',
 
+  'np.permissionNeeded': "Parçaların görünmesi için djcast’in rekordbox penceresini okumasına izin verin, sonra djcast’i yeniden başlatın.",
+  'np.openAccessibility': "Erişilebilirlik ayarlarını aç",
   'np.source': 'Kaynak',
-  'np.source.auto': 'Otomatik — anında, gerekirse geçmişe döner',
   'np.source.rekordbox-live': 'rekordbox, anında (pencere + kontrolcü MIDI)',
-  'np.source.rekordbox-db': 'rekordbox geçmişi (yaklaşık 1 dakika gecikmeli)',
   'np.source.text-file': 'Metin dosyası — VirtualDJ ve diğer programlar',
   'np.textFile': 'Çalan parça dosyası',
   'np.textFiles': 'Metin dosyaları',
@@ -211,6 +223,12 @@ export default {
   'general.updatesNote':
     'Güncellemeler projenin GitHub sürümlerinden gelir ve yüklenmeden önce bir imzayla doğrulanır.',
 
+  'report.button': "Kurulum raporu",
+  'report.collecting': "Dinleniyor…",
+  'report.copy': "Kopyala",
+  'report.copied': "Kopyalandı",
+  'report.open': "Rapor formunu aç",
+  'report.hint': "Başka bir kontrolcü veya sistemde mi deniyorsunuz? Bir parça çalın, sonra raporu oluşturun: cihazlarınızı, hangi giriş kanallarında ses olduğunu, MIDI’yi ve djcast’in rekordbox’tan okuduklarını listeler — şifre, sunucu adresi veya parça adı içermez. Göndermeden önce okuyabilirsiniz.",
   'about.version': 'Sürüm {v}',
   'about.tagline': "DJ'ler için ses yayını; rekordbox'tan otomatik “şimdi çalıyor” bilgisiyle.",
   'about.license': 'Ücretsiz ve açık kaynak; MIT veya Apache-2.0 lisansı altında.',
@@ -244,7 +262,7 @@ export default {
   'tracklist.save': 'Kaydet…',
 
   'server.bitrate': 'Bit hızı',
-  'format.aacHint': 'AAC aynı bit hızında MP3\'ten daha iyi ses verir. Windows\'un yerleşik kodlayıcısını kullanır. Bazı oyunlar ve eski oynatıcılar MP3 ister.',
+  'format.aacHint': 'AAC aynı bit hızında MP3\'ten daha iyi ses verir. Sistemin yerleşik kodlayıcısını kullanır. Bazı oyunlar ve eski oynatıcılar MP3 ister.',
   'format.opusHint': 'Opus kbps başına en iyi sesi verir ve parça adlarını yayının içinde taşır. Yalnızca Icecast; bazı oyunlar ve eski oynatıcılar MP3 ister.',
   'format.opusShoutcast': 'Shoutcast sunucuları Opus kabul etmez — MP3 veya AAC ya da bir Icecast sunucusu seçin.',
   'format.opusTitles': 'Parça adları yayının içinde gider: oynatıcılar gösterir, ancak sunucunun durum sayfası yalnızca Icecast 2.5 ve sonrasında gösterir (Icecast-KH’de değil).',
@@ -278,7 +296,7 @@ export default {
   'audio.processNote': 'Yalnızca o program yayınlanır — tarayıcı, bildirimler ve diğer sesler dışarıda kalır. Windows 10 (2004) veya daha yenisi gerekir ve programın sesi Windows üzerinden geçmelidir: yalnızca bir ASIO sürücüsüne giden ses görülmez. ASIO’daki bir kontrolcüyle rekordbox, PC MASTER OUT bir Windows çıkışına ayarlıysa çalışır.',
 
   'general.theme': 'Görünüm',
-  'general.themeSystem': 'Windows gibi',
+  'general.themeSystem': "Sistem gibi",
   'general.themeDark': 'Koyu',
   'general.themeLight': 'Açık',
 };

@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': '再試行中',
   'stats.connectingShort': '接続中',
   'stats.input': '入力',
-  'stats.loopback': 'ループバック キャプチャ',
+  'stats.capture.loopback': "ループバックキャプチャ",
+  'stats.capture.input': "入力キャプチャ",
+  'stats.capture.process': "プログラムキャプチャ",
 
   'tracklist.title': 'トラックリスト · このセッション',
   'tracklist.copy': 'Mixcloud 用にコピー',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': '配信を開始すると、ここにトラックが表示されます。',
 
   'source.manual': '手動タイトル',
-  'source.history': 'rekordbox 履歴',
   'source.live': 'リアルタイム検出',
 
   'preset.off': 'オフ',
@@ -118,6 +119,17 @@ export default {
   'audio.input': '入力デバイス（ライン入力、ミキサーの USB、仮想ケーブル）',
   'audio.device': 'デバイス',
   'audio.gain': '入力ゲイン（{v}×）',
+  'audio.channels': "チャンネル",
+  'audio.channelsAuto': "自動（{pair}）",
+  'audio.macNote': "マスターを USB で送るコントローラー（DDJ-1000 など）は「入力デバイス」で選択してください。適切なチャンネルが自動で選ばれます。ない場合は rekordbox が再生している出力をキャプチャします（macOS 14.6 以降）。",
+  'audio.hintSilent': "チャンネル {cur} に音がありませんが、{sug} に信号があります。",
+  'audio.hintUse': "{sug} を使う",
+  'audio.hintNextLive': "次回のライブ開始時に適用されます。",
+  'audio.detect': "検出",
+  'audio.detecting': "聴いています…",
+  'audio.detectHint': "曲を再生してから「検出」を押すと、音のあるペアが選ばれます。",
+  'audio.detectFound': "{pair} で音を検出しました（{db} dBFS）。選択済みです。保存すると維持されます。",
+  'audio.detectNone': "どのチャンネルにも音がありません。フェーダーを上げて曲を再生し、もう一度お試しください。",
   'audio.asioNote':
     'rekordbox で ASIO を使用している場合は、rekordbox のオーディオ環境設定で PC MASTER OUT をオンにし、空いている出力（例: Realtek Digital Output）に送って、その出力をここでキャプチャしてください。',
 
@@ -163,10 +175,10 @@ export default {
     'FM 局や大手ネットラジオのように、密度が高く均一なサウンドになります。強いキックでボーカルやハイハットが沈みません。「オフ」以外のプリセットを選んだときに適用されます。',
   'processing.target': 'ターゲットラウドネス（{v} LUFS）',
 
+  'np.permissionNeeded': "曲を表示するには、djcast に rekordbox のウインドウの読み取りを許可し、djcast を再起動してください。",
+  'np.openAccessibility': "アクセシビリティ設定を開く",
   'np.source': 'ソース',
-  'np.source.auto': '自動 — 即時検出、できない場合は履歴を使用',
   'np.source.rekordbox-live': 'rekordbox、即時（ウィンドウ + コントローラーの MIDI）',
-  'np.source.rekordbox-db': 'rekordbox 履歴（約 1 分遅れ）',
   'np.source.text-file': 'テキストファイル — VirtualDJ などのソフト',
   'np.textFile': '再生中の曲のファイル',
   'np.textFiles': 'テキストファイル',
@@ -211,6 +223,12 @@ export default {
   'general.updatesNote':
     'アップデートはプロジェクトの GitHub リリースから取得され、インストール前に署名で検証されます。',
 
+  'report.button': "セットアップレポート",
+  'report.collecting': "聴いています…",
+  'report.copy': "コピー",
+  'report.copied': "コピーしました",
+  'report.open': "レポートフォームを開く",
+  'report.hint': "別のコントローラーやシステムでテストしていますか？曲を再生してからレポートを作成してください。デバイス、音のある入力チャンネル、MIDI、djcast が rekordbox から読み取った内容をまとめます。パスワード、サーバーアドレス、曲名は含まれません。送信前に内容を確認できます。",
   'about.version': 'バージョン {v}',
   'about.tagline': 'DJ 向けのオーディオ配信アプリです。再生中の曲を rekordbox から自動で取得します。',
   'about.license': 'MIT または Apache-2.0 ライセンスの無料オープンソースソフトウェアです。',
@@ -244,7 +262,7 @@ export default {
   'tracklist.save': '保存…',
 
   'server.bitrate': 'ビットレート',
-  'format.aacHint': 'AAC は同じビットレートの MP3 より高音質です。Windows 内蔵のエンコーダーを使います。一部のゲームや古いプレーヤーには MP3 が必要です。',
+  'format.aacHint': 'AAC は同じビットレートの MP3 より高音質です。システム内蔵のエンコーダーを使います。一部のゲームや古いプレーヤーには MP3 が必要です。',
   'format.opusHint': 'Opus は kbps あたり最高の音質で、曲名をストリーム内で送ります。Icecast のみ。一部のゲームや古いプレーヤーには MP3 が必要です。',
   'format.opusShoutcast': 'Shoutcast サーバーは Opus に対応していません。MP3 か AAC、または Icecast サーバーを選んでください。',
   'format.opusTitles': '曲名はストリーム内で送られます。プレーヤーには表示されますが、サーバーのステータスページに表示されるのは Icecast 2.5 以降のみです（Icecast-KH では表示されません）。',
@@ -278,7 +296,7 @@ export default {
   'audio.processNote': 'そのプログラムの音だけが配信され、ブラウザー、通知、その他の音は入りません。Windows 10 (2004) 以降が必要で、プログラムの音が Windows を経由している必要があります。ASIO ドライバーにのみ出力される音声は認識されません。コントローラーを ASIO で使う rekordbox は、PC MASTER OUT を Windows の出力に設定すれば動作します。',
 
   'general.theme': '外観',
-  'general.themeSystem': 'Windows に合わせる',
+  'general.themeSystem': "システムに合わせる",
   'general.themeDark': 'ダーク',
   'general.themeLight': 'ライト',
 };

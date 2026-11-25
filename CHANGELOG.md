@@ -1,10 +1,32 @@
 # Changelog
 
 ## Unreleased
+- macOS: instant now playing from the rekordbox window (Accessibility API) and the controller's
+  faders over MIDI, like on Windows; djcast asks for the Accessibility permission it needs
+- macOS: AAC with the encoder built into macOS (AudioToolbox), constant bitrate, same ADTS
+  stream as on Windows
+- macOS: when djcast may not read the rekordbox window yet, the console says so and opens the
+  Accessibility settings
+- Settings → About → Setup report: lists the devices, which input channels have sound, MIDI and
+  what djcast reads from rekordbox (no passwords, servers or track names), to copy or send
+  through the new "Setup report" form on GitHub
+- Appearance "Like the system" instead of "Like Windows"; on a Mac, program capture (Windows
+  only) is hidden
 - Now playing from a text file: follows a file another DJ program keeps up to date (such as
   the VirtualDJ tracklist), so titles work beyond rekordbox. The last line is the current
   track; a time at its start is ignored. A file left over from an earlier set is not announced
 - The switch delay, controller and crossfader settings only show for the rekordbox sources
+- Inputs with more than two channels (such as a DJ controller's USB input): choose which pair
+  to capture (Settings → Audio → Channels). The DDJ-1000's master (11–12) is picked
+  automatically, or press Detect while a track plays. When the chosen pair stays silent while
+  another one has sound, the console says so and offers to switch. `djcast devices` shows the
+  channel count, `meter --input --channel N` tests a pair
+- The console shows how the input is captured (loopback, input or program) instead of always
+  "Loopback capture"
+- Removed the rekordbox play history source and its database key: the instant source gives
+  the same titles without it. Settings using "Automatic" or "rekordbox history" switch to
+  "rekordbox, instant". The `rekordbox set-key`, `info` and `history` commands are gone; a
+  key file saved earlier (`rekordbox-db.key` in the djcast settings folder) can be deleted
 
 ## 0.3.1
 - Now playing no longer repeats titles: a title is sent only when its text changes, and a

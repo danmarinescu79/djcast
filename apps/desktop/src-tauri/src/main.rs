@@ -10,6 +10,7 @@ use std::time::Duration;
 use tauri::{Emitter, Manager, State, WindowEvent};
 
 mod logging;
+mod report;
 mod tray;
 
 /// Argument the autostart entry passes, so a system start can be told from a manual one.
@@ -42,6 +43,21 @@ fn app_folders(app: State<'_, AppState>) -> Folders {
 }
 
 /// Open a page of the project's GitHub repository in the default browser.
+/// Open the system page where the user allows djcast to read the rekordbox window.
+#[tauri::command]
+fn open_accessibility_settings() -> CmdResult<()> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    Err("not needed on this system".into())
+}
+
 #[tauri::command]
 fn open_project_page(path: String) -> CmdResult<()> {
     // Only our own repository: the UI never passes arbitrary URLs.
@@ -50,12 +66,17 @@ fn open_project_page(path: String) -> CmdResult<()> {
         return Err("invalid path".into());
     }
     let url = if path.is_empty() { REPO_URL.to_string() } else { format!("{REPO_URL}/{path}") };
+    open_url(&url)
+}
+
+/// Open a URL we built ourselves in the default browser.
+fn open_url(url: &str) -> CmdResult<()> {
     #[cfg(target_os = "windows")]
-    let r = std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler", &url]).spawn();
+    let r = std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler", url]).spawn();
     #[cfg(target_os = "macos")]
-    let r = std::process::Command::new("open").arg(&url).spawn();
+    let r = std::process::Command::new("open").arg(url).spawn();
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    let r = std::process::Command::new("xdg-open").arg(&url).spawn();
+    let r = std::process::Command::new("xdg-open").arg(url).spawn();
     r.map(|_| ()).map_err(|e| e.to_string())
 }
 
@@ -226,6 +247,40 @@ struct Device {
     name: String,
     input: bool,
     output: bool,
+    /// Input channels (0 if not an input).
+    channels: u16,
+    /// First channel picked by the automatic setting.
+    auto_channel: u16,
+}
+
+#[derive(Serialize)]
+struct ChannelDetection {
+    levels: Vec<djcast_core::audio::PairLevel>,
+    /// Pair with sound to select, if any.
+    best: Option<u16>,
+}
+
+/// Listen to every stereo pair of an input for a few seconds while music plays.
+#[tauri::command]
+async fn detect_channels(device: String) -> CmdResult<ChannelDetection> {
+    blocking(move || {
+        let levels = djcast_core::audio::measure_input_pairs(&device, Duration::from_secs(3)).map_err(err)?;
+        Ok(ChannelDetection { best: djcast_core::audio::best_pair(&levels), levels })
+    })
+    .await
+}
+
+/// Collect the setup report (takes a few seconds: it listens to the input).
+#[tauri::command]
+async fn setup_report(app: State<'_, AppState>) -> CmdResult<String> {
+    let station = app.station.clone();
+    blocking(move || Ok(report::build(&station))).await
+}
+
+/// Open the GitHub "Setup report" form with the report filled in.
+#[tauri::command]
+fn open_setup_report_form(report: String) -> CmdResult<()> {
+    open_url(&report::form_url(REPO_URL, &report))
 }
 
 #[tauri::command]
@@ -234,7 +289,13 @@ async fn list_devices() -> CmdResult<Vec<Device>> {
         Ok(djcast_core::audio::list_devices()
             .map_err(err)?
             .into_iter()
-            .map(|d| Device { name: d.name, input: d.is_input, output: d.is_output })
+            .map(|d| Device {
+                auto_channel: djcast_core::audio::auto_first_channel(&d.name, d.input_channels),
+                channels: d.input_channels,
+                name: d.name,
+                input: d.is_input,
+                output: d.is_output,
+            })
             .collect())
     })
     .await
@@ -269,6 +330,7 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_autostart::init(
@@ -333,6 +395,10 @@ fn main() {
             set_title,
             status,
             list_devices,
+            detect_channels,
+            setup_report,
+            open_setup_report_form,
+            open_accessibility_settings,
             list_midi_inputs,
             system_locale,
             open_folder,

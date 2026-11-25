@@ -17,7 +17,7 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 crossbeam-channel = "0.5"
 
-# Crypto (database decryption) and the MP3 encoder are far too slow unoptimized;
+# Crypto (TLS) and the encoders are far too slow unoptimized;
 # optimize dependencies even in debug builds.
 [profile.dev.package."*"]
 opt-level = 3

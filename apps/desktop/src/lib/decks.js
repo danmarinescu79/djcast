@@ -38,7 +38,6 @@ export function deckSlots(status) {
 
 export function sourceLabel(status) {
   if (status.nowplaying_source === 'none') return t('source.manual');
-  if (status.decks?.using_fallback) return t('source.history');
   if (status.decks) return t('source.live');
   return status.nowplaying_source;
 }
