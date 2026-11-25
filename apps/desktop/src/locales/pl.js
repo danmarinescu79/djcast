@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': 'ponawianie',
   'stats.connectingShort': 'łączenie',
   'stats.input': 'Wejście',
-  'stats.loopback': 'Przechwytywanie loopback',
+  'stats.capture.loopback': "Przechwytywanie loopback",
+  'stats.capture.input': "Przechwytywanie wejścia",
+  'stats.capture.process': "Przechwytywanie programu",
 
   'tracklist.title': 'Tracklista · ta sesja',
   'tracklist.copy': 'Kopiuj dla Mixcloud',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': 'Utwory pojawią się tutaj, gdy zaczniesz nadawać.',
 
   'source.manual': 'tytuły ręczne',
-  'source.history': 'historia rekordbox',
   'source.live': 'wykrywanie na żywo',
 
   'preset.off': 'Wyłączony',
@@ -118,6 +119,17 @@ export default {
   'audio.input': 'Wejście (line-in, USB miksera, kabel wirtualny)',
   'audio.device': 'Urządzenie',
   'audio.gain': 'Wzmocnienie wejścia ({v}×)',
+  'audio.channels': "Kanały",
+  'audio.channelsAuto': "Automatycznie ({pair})",
+  'audio.macNote': "Z kontrolerem, który wysyła master przez USB (np. DDJ-1000), wybierz go w „Wejście”: właściwe kanały zostaną wybrane automatycznie. Bez niego nagrywaj wyjście, na którym gra rekordbox (macOS 14.6 lub nowszy).",
+  'audio.hintSilent': "Brak dźwięku na kanałach {cur}, ale {sug} ma sygnał.",
+  'audio.hintUse': "Użyj {sug}",
+  'audio.hintNextLive': "Zostanie zastosowane przy następnym wejściu na żywo.",
+  'audio.detect': "Wykryj",
+  'audio.detecting': "Nasłuchiwanie…",
+  'audio.detectHint': "Odtwórz utwór, a potem naciśnij Wykryj: zostanie wybrana para z dźwiękiem.",
+  'audio.detectFound': "Dźwięk na {pair} ({db} dBFS) — wybrano. Zapisz, aby zachować.",
+  'audio.detectNone': "Żaden kanał nie ma dźwięku. Odtwórz utwór z podniesionym suwakiem i spróbuj ponownie.",
   'audio.asioNote':
     'Gdy rekordbox działa na ASIO, włącz PC MASTER OUT w preferencjach audio rekordbox, skieruj go na wolne wyjście (np. Realtek Digital Output) i przechwyć tutaj to wyjście.',
 
@@ -163,10 +175,10 @@ export default {
     'Gęstsze i bardziej wyrównane brzmienie, jak w stacjach FM i dużych radiach internetowych: mocna stopa nie ścisza już wokali i hi-hatów. Działa, gdy wybrany jest preset inny niż Wyłączony.',
   'processing.target': 'Docelowa głośność ({v} LUFS)',
 
+  'np.permissionNeeded': "Aby pokazać utwory, pozwól djcast odczytywać okno rekordbox, a potem uruchom djcast ponownie.",
+  'np.openAccessibility': "Otwórz ustawienia dostępności",
   'np.source': 'Źródło',
-  'np.source.auto': 'Automatycznie — natychmiast, z historią jako rezerwą',
   'np.source.rekordbox-live': 'rekordbox, natychmiast (okno + MIDI kontrolera)',
-  'np.source.rekordbox-db': 'Historia rekordbox (ok. 1 minuty opóźnienia)',
   'np.source.text-file': 'Plik tekstowy — VirtualDJ i inne programy',
   'np.textFile': 'Plik z bieżącym utworem',
   'np.textFiles': 'Pliki tekstowe',
@@ -244,7 +256,7 @@ export default {
   'tracklist.save': 'Zapisz…',
 
   'server.bitrate': 'Bitrate',
-  'format.aacHint': 'AAC brzmi lepiej niż MP3 przy tym samym bitrate. Używa kodera wbudowanego w Windows. Niektóre gry i starsze odtwarzacze wymagają MP3.',
+  'format.aacHint': 'AAC brzmi lepiej niż MP3 przy tym samym bitrate. Używa kodera wbudowanego w system. Niektóre gry i starsze odtwarzacze wymagają MP3.',
   'format.opusHint': 'Opus daje najlepszy dźwięk na kbps i przesyła tytuły wewnątrz strumienia. Tylko Icecast; niektóre gry i starsze odtwarzacze wymagają MP3.',
   'format.opusShoutcast': 'Serwery Shoutcast nie przyjmują Opus — wybierz MP3 lub AAC albo serwer Icecast.',
   'format.opusTitles': 'Tytuły są przesyłane wewnątrz strumienia: odtwarzacze je pokazują, ale strona statusu serwera dopiero od Icecast 2.5 (nie na Icecast-KH).',
@@ -278,7 +290,7 @@ export default {
   'audio.processNote': 'Streamowany jest tylko ten program — przeglądarka, powiadomienia i inne dźwięki zostają poza transmisją. Wymaga Windows 10 (2004) lub nowszego, a dźwięk programu musi przechodzić przez Windows: audio wysyłane tylko do sterownika ASIO nie jest widoczne. rekordbox z kontrolerem na ASIO działa, gdy PC MASTER OUT jest ustawione na wyjście Windows.',
 
   'general.theme': 'Wygląd',
-  'general.themeSystem': 'Jak w Windows',
+  'general.themeSystem': "Jak w systemie",
   'general.themeDark': 'Ciemny',
   'general.themeLight': 'Jasny',
 };

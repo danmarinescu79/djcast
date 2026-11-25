@@ -25,11 +25,15 @@ pub struct AudioConfig {
     pub mode: CaptureMode,
     /// Linear gain applied before encoding (1.0 = unchanged).
     pub gain: f32,
+    /// With `mode = "input"`: first channel (1-based) of the stereo pair to capture, for
+    /// devices with more than two inputs (the DDJ-1000 sends its master on 11–12).
+    /// 0 = automatic: a known pair for known devices, else 1–2.
+    pub first_channel: u16,
 }
 
 impl Default for AudioConfig {
     fn default() -> Self {
-        Self { device: String::new(), mode: CaptureMode::Loopback, gain: 1.0 }
+        Self { device: String::new(), mode: CaptureMode::Loopback, gain: 1.0, first_channel: 0 }
     }
 }
 

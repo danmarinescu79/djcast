@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': 'opnieuw proberen',
   'stats.connectingShort': 'verbinden',
   'stats.input': 'Invoer',
-  'stats.loopback': 'Loopback-opname',
+  'stats.capture.loopback': "Loopback-opname",
+  'stats.capture.input': "Ingangsopname",
+  'stats.capture.process': "Programma-opname",
 
   'tracklist.title': 'Tracklist · deze sessie',
   'tracklist.copy': 'Kopiëren voor Mixcloud',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': 'Tracks verschijnen hier zodra je live bent.',
 
   'source.manual': 'handmatige titels',
-  'source.history': 'rekordbox-geschiedenis',
   'source.live': 'live-detectie',
 
   'preset.off': 'Uit',
@@ -118,6 +119,17 @@ export default {
   'audio.input': 'Een ingang (line-in, mixer-USB, virtuele kabel)',
   'audio.device': 'Apparaat',
   'audio.gain': 'Ingangsversterking ({v}×)',
+  'audio.channels': "Kanalen",
+  'audio.channelsAuto': "Automatisch ({pair})",
+  'audio.macNote': "Met een controller die zijn master via USB stuurt (zoals de DDJ-1000), kies je die bij ‘Een ingang’: de juiste kanalen worden automatisch gekozen. Zonder zo’n controller neem je de uitgang op waarop rekordbox speelt (macOS 14.6 of nieuwer).",
+  'audio.hintSilent': "Geen geluid op kanalen {cur}, maar {sug} heeft signaal.",
+  'audio.hintUse': "{sug} gebruiken",
+  'audio.hintNextLive': "Geldt de volgende keer dat je live gaat.",
+  'audio.detect': "Detecteren",
+  'audio.detecting': "Luisteren…",
+  'audio.detectHint': "Speel een track af en druk op Detecteren: het paar met geluid wordt gekozen.",
+  'audio.detectFound': "Geluid gevonden op {pair} ({db} dBFS) — geselecteerd. Sla op om het te bewaren.",
+  'audio.detectNone': "Geen enkel kanaal heeft geluid. Speel een track af met de fader open en probeer het opnieuw.",
   'audio.asioNote':
     'Gebruikt rekordbox ASIO, zet dan PC MASTER OUT aan in de audiovoorkeuren van rekordbox, stuur het naar een vrije uitgang (bijvoorbeeld Realtek Digital Output) en neem die uitgang hier op.',
 
@@ -163,10 +175,10 @@ export default {
     'Voller en gelijkmatiger, zoals FM- en grote internetzenders: een zware kick drukt de vocals en hi-hats niet meer weg. Geldt als een andere preset dan Uit is gekozen.',
   'processing.target': 'Doelluidheid ({v} LUFS)',
 
+  'np.permissionNeeded': "Sta djcast toe het rekordbox-venster te lezen en start djcast opnieuw om de tracks te tonen.",
+  'np.openAccessibility': "Toegankelijkheidsinstellingen openen",
   'np.source': 'Bron',
-  'np.source.auto': 'Automatisch — direct, valt terug op de geschiedenis',
   'np.source.rekordbox-live': 'rekordbox, direct (venster + controller-MIDI)',
-  'np.source.rekordbox-db': 'rekordbox-geschiedenis (ongeveer 1 minuut vertraging)',
   'np.source.text-file': 'Tekstbestand — VirtualDJ en andere programma’s',
   'np.textFile': 'Now-playing-bestand',
   'np.textFiles': 'Tekstbestanden',
@@ -244,7 +256,7 @@ export default {
   'tracklist.save': 'Opslaan…',
 
   'server.bitrate': 'Bitrate',
-  'format.aacHint': 'AAC klinkt beter dan MP3 bij dezelfde bitrate. Gebruikt de encoder die in Windows zit. Sommige games en oudere spelers hebben MP3 nodig.',
+  'format.aacHint': 'AAC klinkt beter dan MP3 bij dezelfde bitrate. Gebruikt de encoder die in het systeem zit. Sommige games en oudere spelers hebben MP3 nodig.',
   'format.opusHint': 'Opus geeft het beste geluid per kbps en stuurt titels mee in de stream. Alleen Icecast; sommige games en oudere spelers hebben MP3 nodig.',
   'format.opusShoutcast': 'Shoutcast-servers accepteren geen Opus — kies MP3 of AAC, of een Icecast-server.',
   'format.opusTitles': 'Titels gaan mee in de stream: spelers tonen ze, maar de statuspagina van de server pas vanaf Icecast 2.5 (niet op Icecast-KH).',
@@ -278,7 +290,7 @@ export default {
   'audio.processNote': 'Alleen dat programma wordt gestreamd — browser, meldingen en andere geluiden blijven erbuiten. Vereist Windows 10 (2004) of nieuwer, en het geluid van het programma moet via Windows gaan: audio die alleen naar een ASIO-driver gaat, wordt niet gezien. rekordbox met een controller op ASIO werkt als PC MASTER OUT op een Windows-uitgang staat.',
 
   'general.theme': 'Weergave',
-  'general.themeSystem': 'Zoals Windows',
+  'general.themeSystem': "Zoals het systeem",
   'general.themeDark': 'Donker',
   'general.themeLight': 'Licht',
 };

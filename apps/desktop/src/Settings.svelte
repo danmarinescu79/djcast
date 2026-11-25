@@ -214,6 +214,33 @@
   const deviceOptions = $derived([
     ...new Set(devices.filter((d) => (draft.audio.mode === 'loopback' ? d.output : d.input)).map((d) => d.name)),
   ]);
+  const isMac = navigator.userAgent.includes('Mac');
+  // Inputs with more than two channels (e.g. a DJ controller): which stereo pair to capture.
+  const inputDevice = $derived(devices.find((d) => d.input && d.name === draft.audio.device));
+  const channelPairs = $derived(
+    Array.from({ length: Math.floor((inputDevice?.channels ?? 0) / 2) }, (_, i) => 2 * i + 1),
+  );
+  const pairLabel = (first) => `${first}–${first + 1}`;
+
+  // "Detect": listen to every pair for a few seconds while music plays, select the one with sound.
+  let detect = $state({ busy: false, result: '' });
+  async function detectChannels() {
+    detect = { busy: true, result: '' };
+    try {
+      const r = await invoke('detect_channels', { device: draft.audio.device });
+      if (r.best) {
+        draft.audio.first_channel = r.best;
+        const peak = r.levels.find((l) => l.first === r.best).peak_db;
+        detect.result = t('audio.detectFound', { pair: pairLabel(r.best), db: Math.round(peak) });
+      } else {
+        detect.result = t('audio.detectNone');
+      }
+    } catch (e) {
+      detect.result = String(e);
+    } finally {
+      detect.busy = false;
+    }
+  }
   const midiOptions = $derived([...new Set(midiPorts)]);
   const midiSpecial = ['auto', 'none', ''];
   const liveCount = $derived(draft.profiles.filter((p) => p.live).length);
@@ -279,9 +306,9 @@
   }
 
   const presets = ['off', 'gentle', 'radio', 'loud', 'custom'];
-  const sources = ['auto', 'rekordbox-live', 'rekordbox-db', 'text-file', 'none'];
+  const sources = ['rekordbox-live', 'text-file', 'none'];
   // Faders, crossfader and the switch delay only matter for the instant rekordbox source.
-  const usesMidi = $derived(['auto', 'rekordbox-live'].includes(draft.nowplaying.source));
+  const usesMidi = $derived(draft.nowplaying.source === 'rekordbox-live');
 
   async function pickTextFile() {
     const chosen = await open({
@@ -311,7 +338,7 @@
           <label for="mode">{t('audio.capture')}</label>
           <select id="mode" value={draft.audio.mode} onchange={(e) => setMode(e.currentTarget.value)}>
             <option value="loopback">{t('audio.loopback')}</option>
-            <option value="process">{t('audio.process')}</option>
+            {#if !isMac || draft.audio.mode === 'process'}<option value="process">{t('audio.process')}</option>{/if}
             <option value="input">{t('audio.input')}</option>
           </select>
         </div>
@@ -324,7 +351,7 @@
         {:else}
           <div class="field">
             <label for="device">{t('audio.device')}</label>
-            <select id="device" bind:value={draft.audio.device}>
+            <select id="device" bind:value={draft.audio.device} onchange={() => (draft.audio.first_channel = 0)}>
               <option value="">{t('common.systemDefault')}</option>
               {#each deviceOptions as name (name)}<option value={name}>{name}</option>{/each}
               {#if draft.audio.device && !deviceOptions.includes(draft.audio.device)}
@@ -332,13 +359,32 @@
               {/if}
             </select>
           </div>
+          {#if draft.audio.mode === 'input' && inputDevice?.channels > 2}
+            <div class="field">
+              <label for="channels">{t('audio.channels')}</label>
+              <div class="folder">
+                <select id="channels" bind:value={draft.audio.first_channel}>
+                  <option value={0}>{t('audio.channelsAuto', { pair: pairLabel(inputDevice.auto_channel) })}</option>
+                  {#each channelPairs as first (first)}<option value={first}>{pairLabel(first)}</option>{/each}
+                </select>
+                <button type="button" class="btn big" onclick={detectChannels} disabled={detect.busy}>
+                  {detect.busy ? t('audio.detecting') : t('audio.detect')}
+                </button>
+              </div>
+              {#if detect.result}
+                <span class="hint" role="status">{detect.result}</span>
+              {:else}
+                <span class="hint">{t('audio.detectHint')}</span>
+              {/if}
+            </div>
+          {/if}
         {/if}
         <div class="field">
           <label for="gain">{t('audio.gain', { v: Number(draft.audio.gain).toFixed(2) })}</label>
           <input id="gain" type="range" min="0.25" max="4" step="0.05" bind:value={draft.audio.gain} />
         </div>
       </div>
-      <p class="note">{draft.audio.mode === 'process' ? t('audio.processNote') : t('audio.asioNote')}</p>
+      <p class="note">{draft.audio.mode === 'process' ? t('audio.processNote') : isMac ? t('audio.macNote') : t('audio.asioNote')}</p>
     {:else if tab === 'server'}
       <div class="profile-bar">
         <h1>{t('tab.server')}</h1>
@@ -795,7 +841,7 @@
   .disclaimer { font-size: 12px; margin-top: 8px; }
   .copyright { font-size: 12px; margin-top: -8px; }
   .folder { display: flex; gap: 8px; }
-  .folder input { flex: 1 1 auto; min-width: 0; }
+  .folder input, .folder select { flex: 1 1 auto; min-width: 0; }
   .folder .btn { flex-shrink: 0; }
   .hint { font-size: 12px; color: var(--muted); user-select: text; overflow-wrap: anywhere; }
   .hint.warn { color: var(--on-air-text); }

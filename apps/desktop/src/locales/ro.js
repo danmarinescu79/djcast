@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': 'reîncearcă',
   'stats.connectingShort': 'se conectează',
   'stats.input': 'Intrare',
-  'stats.loopback': 'Captură loopback',
+  'stats.capture.loopback': "Captură loopback",
+  'stats.capture.input': "Captură de pe intrare",
+  'stats.capture.process': "Captură program",
 
   'tracklist.title': 'Tracklist · sesiunea curentă',
   'tracklist.copy': 'Copiază pentru Mixcloud',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': 'Piesele apar aici după ce pornești transmisia.',
 
   'source.manual': 'titluri manuale',
-  'source.history': 'istoric rekordbox',
   'source.live': 'detecție live',
 
   'preset.off': 'Oprit',
@@ -118,6 +119,17 @@ export default {
   'audio.input': 'O intrare (line-in, USB de la mixer, cablu virtual)',
   'audio.device': 'Dispozitiv',
   'audio.gain': 'Câștig la intrare ({v}×)',
+  'audio.channels': "Canale",
+  'audio.channelsAuto': "Automat ({pair})",
+  'audio.macNote': "Cu o consolă care trimite master-ul prin USB (de exemplu DDJ-1000), alege-o la „O intrare”: canalele potrivite sunt alese automat. Fără una, capturează ieșirea pe care cântă rekordbox (macOS 14.6 sau mai nou).",
+  'audio.hintSilent': "Pe canalele {cur} nu e sunet, dar {sug} are semnal.",
+  'audio.hintUse': "Folosește {sug}",
+  'audio.hintNextLive': "Se aplică la următorul Go Live.",
+  'audio.detect': "Detectează",
+  'audio.detecting': "Ascult…",
+  'audio.detectHint': "Pornește o melodie, apoi apasă Detectează: se alege perechea cu sunet.",
+  'audio.detectFound': "Sunet pe {pair} ({db} dBFS) — selectat. Salvează ca să rămână.",
+  'audio.detectNone': "Niciun canal nu are sunet. Pornește o melodie cu faderul sus și încearcă din nou.",
   'audio.asioNote':
     'Cu rekordbox pe ASIO, pornește PC MASTER OUT din preferințele audio ale rekordbox, trimite-l pe o ieșire liberă (de exemplu Realtek Digital Output) și captează aici acea ieșire.',
 
@@ -163,10 +175,10 @@ export default {
     'Mai dens și mai uniform, ca stațiile FM și marile radiouri online: un kick puternic nu mai coboară vocile și hi-hat-urile. Se aplică doar cu o presetare diferită de Oprit.',
   'processing.target': 'Loudness țintă ({v} LUFS)',
 
+  'np.permissionNeeded': "Ca să apară piesele, permite-i lui djcast să citească fereastra rekordbox, apoi repornește djcast.",
+  'np.openAccessibility': "Deschide setările Accessibility",
   'np.source': 'Sursă',
-  'np.source.auto': 'Automat — instant, cu istoricul ca rezervă',
   'np.source.rekordbox-live': 'rekordbox, instant (fereastră + MIDI de la controller)',
-  'np.source.rekordbox-db': 'Istoric rekordbox (cu ~1 minut întârziere)',
   'np.source.text-file': 'Fișier text — VirtualDJ și alte programe',
   'np.textFile': 'Fișier cu piesa curentă',
   'np.textFiles': 'Fișiere text',
@@ -244,7 +256,7 @@ export default {
   'tracklist.save': 'Salvează…',
 
   'server.bitrate': 'Bitrate',
-  'format.aacHint': 'AAC sună mai bine decât MP3 la același bitrate. Folosește encoderul inclus în Windows. Unele jocuri și playere mai vechi au nevoie de MP3.',
+  'format.aacHint': 'AAC sună mai bine decât MP3 la același bitrate. Folosește encoderul inclus în sistem. Unele jocuri și playere mai vechi au nevoie de MP3.',
   'format.opusHint': 'Opus are cel mai bun sunet per kbps și trimite titlurile în interiorul stream-ului. Doar Icecast; unele jocuri și playere mai vechi au nevoie de MP3.',
   'format.opusShoutcast': 'Serverele Shoutcast nu acceptă Opus — alege MP3 sau AAC, ori un server Icecast.',
   'format.opusTitles': 'Titlurile merg în interiorul stream-ului: playerele le afișează, dar pagina de status a serverului doar pe Icecast 2.5 sau mai nou (nu pe Icecast-KH).',
@@ -279,7 +291,7 @@ export default {
   'audio.processNote': 'Se transmite doar acel program — browserul, notificările și alte sunete rămân pe dinafară. Necesită Windows 10 (2004) sau mai nou, iar sunetul programului trebuie să treacă prin Windows: ce merge doar într-un driver ASIO nu se vede. rekordbox cu controller pe ASIO merge când PC MASTER OUT e setat pe o ieșire Windows.',
 
   'general.theme': 'Aspect',
-  'general.themeSystem': 'Ca Windows',
+  'general.themeSystem': "Ca sistemul",
   'general.themeDark': 'Întunecat',
   'general.themeLight': 'Luminos',
 };

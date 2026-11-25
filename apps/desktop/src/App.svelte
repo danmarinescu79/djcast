@@ -91,6 +91,12 @@
     }
   }
 
+  // From the console's "wrong channels" hint: capture another pair of the input.
+  async function useChannels(first) {
+    const c = $state.snapshot(config);
+    config = await invoke('save_config', { config: { ...c, audio: { ...c.audio, first_channel: first } } });
+  }
+
   async function sendTitle(title) {
     if (title.trim()) await invoke('set_title', { title });
   }
@@ -176,7 +182,7 @@
       {#if actionError}<p class="banner" role="alert">{actionError}</p>{/if}
       <Decks {status} />
     {:else if status && config}
-      <Console {status} {busy} {actionError} onToggleLive={toggleLive} onSendTitle={sendTitle} />
+      <Console {status} {busy} {actionError} onToggleLive={toggleLive} onSendTitle={sendTitle} onUseChannels={useChannels} />
     {:else}
       <div class="loading">{t('app.starting')}</div>
     {/if}

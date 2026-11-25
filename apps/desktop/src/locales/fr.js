@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': 'nouvel essai',
   'stats.connectingShort': 'connexion',
   'stats.input': 'Entrée',
-  'stats.loopback': 'Capture loopback',
+  'stats.capture.loopback': "Capture loopback",
+  'stats.capture.input': "Capture d’entrée",
+  'stats.capture.process': "Capture de programme",
 
   'tracklist.title': 'Tracklist · cette session',
   'tracklist.copy': 'Copier pour Mixcloud',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': 'Les morceaux apparaissent ici une fois que vous êtes en direct.',
 
   'source.manual': 'titres manuels',
-  'source.history': 'historique rekordbox',
   'source.live': 'détection en direct',
 
   'preset.off': 'Désactivé',
@@ -118,6 +119,17 @@ export default {
   'audio.input': 'Une entrée (line-in, USB de la table de mixage, câble virtuel)',
   'audio.device': 'Périphérique',
   'audio.gain': 'Gain d’entrée ({v}×)',
+  'audio.channels': "Canaux",
+  'audio.channelsAuto': "Automatique ({pair})",
+  'audio.macNote': "Avec un contrôleur qui envoie son master par USB (comme le DDJ-1000), choisissez-le sous « Une entrée » : les bons canaux sont choisis automatiquement. Sinon, capturez la sortie sur laquelle joue rekordbox (macOS 14.6 ou plus récent).",
+  'audio.hintSilent': "Pas de son sur les canaux {cur}, mais {sug} a du signal.",
+  'audio.hintUse': "Utiliser {sug}",
+  'audio.hintNextLive': "S’applique au prochain passage à l’antenne.",
+  'audio.detect': "Détecter",
+  'audio.detecting': "Écoute…",
+  'audio.detectHint': "Lancez un morceau, puis appuyez sur Détecter : la paire avec du son est choisie.",
+  'audio.detectFound': "Son trouvé sur {pair} ({db} dBFS) — sélectionné. Enregistrez pour le garder.",
+  'audio.detectNone': "Aucun canal n’a de son. Lancez un morceau, fader ouvert, et réessayez.",
   'audio.asioNote':
     'Avec rekordbox en ASIO, activez PC MASTER OUT dans les préférences audio de rekordbox, envoyez-le vers une sortie libre (par exemple Realtek Digital Output) et capturez cette sortie ici.',
 
@@ -163,10 +175,10 @@ export default {
     'Plus dense et plus homogène, comme la FM et les grandes radios internet : un kick puissant n’écrase plus les voix et les hi-hats. S’applique quand un preset autre que Désactivé est choisi.',
   'processing.target': 'Niveau cible ({v} LUFS)',
 
+  'np.permissionNeeded': "Pour afficher les morceaux, autorisez djcast à lire la fenêtre de rekordbox, puis redémarrez djcast.",
+  'np.openAccessibility': "Ouvrir les réglages d’accessibilité",
   'np.source': 'Source',
-  'np.source.auto': 'Automatique — instantané, se rabat sur l’historique',
   'np.source.rekordbox-live': 'rekordbox, instantané (fenêtre + MIDI du contrôleur)',
-  'np.source.rekordbox-db': 'Historique rekordbox (environ 1 minute de retard)',
   'np.source.text-file': 'Fichier texte — VirtualDJ et autres logiciels',
   'np.textFile': 'Fichier du morceau en cours',
   'np.textFiles': 'Fichiers texte',
@@ -244,7 +256,7 @@ export default {
   'tracklist.save': 'Enregistrer…',
 
   'server.bitrate': 'Débit',
-  'format.aacHint': 'L\'AAC sonne mieux que le MP3 au même débit. Utilise l\'encodeur intégré à Windows. Certains jeux et anciens lecteurs exigent du MP3.',
+  'format.aacHint': 'L\'AAC sonne mieux que le MP3 au même débit. Utilise l\'encodeur intégré au système. Certains jeux et anciens lecteurs exigent du MP3.',
   'format.opusHint': 'Opus offre le meilleur son par kbps et transporte les titres dans le flux. Icecast uniquement ; certains jeux et anciens lecteurs exigent du MP3.',
   'format.opusShoutcast': 'Les serveurs Shoutcast n\'acceptent pas Opus — choisissez MP3 ou AAC, ou un serveur Icecast.',
   'format.opusTitles': 'Les titres voyagent dans le flux : les lecteurs les affichent, mais la page d\'état du serveur seulement à partir d\'Icecast 2.5 (pas sur Icecast-KH).',
@@ -278,7 +290,7 @@ export default {
   'audio.processNote': 'Seul ce programme est diffusé — navigateur, notifications et autres sons restent dehors. Nécessite Windows 10 (2004) ou plus récent, et le son du programme doit passer par Windows : l’audio envoyé uniquement à un pilote ASIO n’est pas vu. rekordbox avec un contrôleur en ASIO fonctionne si PC MASTER OUT est réglé sur une sortie Windows.',
 
   'general.theme': 'Apparence',
-  'general.themeSystem': 'Comme Windows',
+  'general.themeSystem': "Comme le système",
   'general.themeDark': 'Sombre',
   'general.themeLight': 'Clair',
 };

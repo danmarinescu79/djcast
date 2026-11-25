@@ -26,10 +26,10 @@ const status = {
       deck(1, 'Midnight Signal (Extended Mix)', 'Nova Tide', '01:12', '-02:26', true, true, 1),
       deck(2, 'Golden Hour', 'The Sundays Collective', '03:01', '-00:21', true, false, 0.4),
     ],
-    on_air: 1, faders: [1, 0.4, null, null], crossfader: 0.5, midi: true, using_fallback: false, error: null,
+    on_air: 1, faders: [1, 0.4, null, null], crossfader: 0.5, midi: true, error: null,
   },
   outputs: [{ name: 'Default', host: 'radio.example.com:8000', bitrate: 192, connected: true, connected_secs: 221, bytes_sent: 5_400_000, error: null }],
-  nowplaying_source: 'auto', nowplaying_error: null, error: null,
+  nowplaying_source: 'rekordbox-live', nowplaying_error: null, error: null, capture_mode: 'loopback',
 };
 const params = new URLSearchParams(location.search);
 const view = params.get('view') || 'mini';
@@ -41,7 +41,7 @@ const config = {
   audio: { device: 'Realtek Digital Output', mode: 'loopback', gain: 1 },
   processing: { preset: 'loud', target_lufs: -14, ceiling_db: -1, max_gain_db: 15, multiband: true },
   encoder: { codec: params.get('codec') || 'mp3', bitrate: 192 }, server, record: { enabled: false, dir: 'recordings' },
-  nowplaying: { source: 'auto', poll_interval_secs: 1, rekordbox_key: '', rekordbox_db: '', midi_input: 'auto', confirm_secs: 4, crossfader_assign: ['thru', 'thru', 'thru', 'thru'], output_dir: 'nowplaying' },
+  nowplaying: { source: 'rekordbox-live', poll_interval_secs: 1, midi_input: 'auto', confirm_secs: 4, crossfader_assign: ['thru', 'thru', 'thru', 'thru'], output_dir: 'nowplaying' },
   active_profile: 'Default', profiles: [{ name: 'Default', server, codec: params.get('codec') || 'mp3', bitrate: 192, live: true }], language: params.get('lang') || 'auto',
 };
 Object.assign(props, { config, live: false, systemLocale: 'ro-RO', onSaved() {}, onClose() {} });

@@ -72,7 +72,9 @@ export default {
   'stats.retryingShort': 'tentando de novo',
   'stats.connectingShort': 'conectando',
   'stats.input': 'Entrada',
-  'stats.loopback': 'Captura loopback',
+  'stats.capture.loopback': "Captura loopback",
+  'stats.capture.input': "Captura de entrada",
+  'stats.capture.process': "Captura de programa",
 
   'tracklist.title': 'Tracklist · esta sessão',
   'tracklist.copy': 'Copiar para o Mixcloud',
@@ -80,7 +82,6 @@ export default {
   'tracklist.empty': 'As faixas aparecem aqui quando você estiver ao vivo.',
 
   'source.manual': 'títulos manuais',
-  'source.history': 'histórico do rekordbox',
   'source.live': 'detecção ao vivo',
 
   'preset.off': 'Desligado',
@@ -118,6 +119,17 @@ export default {
   'audio.input': 'Uma entrada (line-in, USB do mixer, cabo virtual)',
   'audio.device': 'Dispositivo',
   'audio.gain': 'Ganho de entrada ({v}×)',
+  'audio.channels': "Canais",
+  'audio.channelsAuto': "Automático ({pair})",
+  'audio.macNote': "Com um controlador que envia o master por USB (como o DDJ-1000), escolha-o em “Uma entrada”: os canais certos são escolhidos automaticamente. Sem ele, capture a saída em que o rekordbox toca (macOS 14.6 ou mais recente).",
+  'audio.hintSilent': "Sem som nos canais {cur}, mas {sug} tem sinal.",
+  'audio.hintUse': "Usar {sug}",
+  'audio.hintNextLive': "Vale na próxima vez que você entrar ao vivo.",
+  'audio.detect': "Detectar",
+  'audio.detecting': "Ouvindo…",
+  'audio.detectHint': "Toque uma faixa e clique em Detectar: o par com som é escolhido.",
+  'audio.detectFound': "Som encontrado em {pair} ({db} dBFS) — selecionado. Salve para manter.",
+  'audio.detectNone': "Nenhum canal tem som. Toque uma faixa com o fader aberto e tente de novo.",
   'audio.asioNote':
     'Com o rekordbox em ASIO, ative o PC MASTER OUT nas preferências de áudio do rekordbox, envie-o para uma saída livre (por exemplo Realtek Digital Output) e capture essa saída aqui.',
 
@@ -163,10 +175,10 @@ export default {
     'Mais denso e uniforme, como as rádios FM e as grandes rádios online: um kick pesado não abaixa mais os vocais e os hi-hats. Vale quando um preset diferente de Desligado é escolhido.',
   'processing.target': 'Loudness alvo ({v} LUFS)',
 
+  'np.permissionNeeded': "Para mostrar as faixas, permita que o djcast leia a janela do rekordbox e reinicie o djcast.",
+  'np.openAccessibility': "Abrir ajustes de Acessibilidade",
   'np.source': 'Fonte',
-  'np.source.auto': 'Automático — instantâneo, usa o histórico como reserva',
   'np.source.rekordbox-live': 'rekordbox, instantâneo (janela + MIDI do controlador)',
-  'np.source.rekordbox-db': 'Histórico do rekordbox (cerca de 1 minuto de atraso)',
   'np.source.text-file': 'Arquivo de texto — VirtualDJ e outros programas',
   'np.textFile': 'Arquivo da faixa atual',
   'np.textFiles': 'Arquivos de texto',
@@ -244,7 +256,7 @@ export default {
   'tracklist.save': 'Salvar…',
 
   'server.bitrate': 'Bitrate',
-  'format.aacHint': 'O AAC soa melhor que o MP3 com o mesmo bitrate. Usa o codificador incluído no Windows. Alguns jogos e players antigos precisam de MP3.',
+  'format.aacHint': 'O AAC soa melhor que o MP3 com o mesmo bitrate. Usa o codificador incluído no sistema. Alguns jogos e players antigos precisam de MP3.',
   'format.opusHint': 'O Opus dá o melhor som por kbps e envia os títulos dentro do stream. Só Icecast; alguns jogos e players antigos precisam de MP3.',
   'format.opusShoutcast': 'Os servidores Shoutcast não aceitam Opus — escolha MP3 ou AAC, ou um servidor Icecast.',
   'format.opusTitles': 'Os títulos vão dentro do stream: os players mostram, mas a página de status do servidor só no Icecast 2.5 ou mais recente (não no Icecast-KH).',
@@ -278,7 +290,7 @@ export default {
   'audio.processNote': 'Só esse programa é transmitido — navegador, notificações e outros sons ficam de fora. Requer Windows 10 (2004) ou mais recente, e o som do programa precisa passar pelo Windows: áudio que vai só para um driver ASIO não é capturado. rekordbox com um controlador em ASIO funciona quando o PC MASTER OUT está configurado para uma saída do Windows.',
 
   'general.theme': 'Aparência',
-  'general.themeSystem': 'Como o Windows',
+  'general.themeSystem': "Como o sistema",
   'general.themeDark': 'Escuro',
   'general.themeLight': 'Claro',
 };

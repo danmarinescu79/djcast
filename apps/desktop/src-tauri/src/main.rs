@@ -42,6 +42,21 @@ fn app_folders(app: State<'_, AppState>) -> Folders {
 }
 
 /// Open a page of the project's GitHub repository in the default browser.
+/// Open the system page where the user allows djcast to read the rekordbox window.
+#[tauri::command]
+fn open_accessibility_settings() -> CmdResult<()> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    Err("not needed on this system".into())
+}
+
 #[tauri::command]
 fn open_project_page(path: String) -> CmdResult<()> {
     // Only our own repository: the UI never passes arbitrary URLs.
@@ -226,6 +241,27 @@ struct Device {
     name: String,
     input: bool,
     output: bool,
+    /// Input channels (0 if not an input).
+    channels: u16,
+    /// First channel picked by the automatic setting.
+    auto_channel: u16,
+}
+
+#[derive(Serialize)]
+struct ChannelDetection {
+    levels: Vec<djcast_core::audio::PairLevel>,
+    /// Pair with sound to select, if any.
+    best: Option<u16>,
+}
+
+/// Listen to every stereo pair of an input for a few seconds while music plays.
+#[tauri::command]
+async fn detect_channels(device: String) -> CmdResult<ChannelDetection> {
+    blocking(move || {
+        let levels = djcast_core::audio::measure_input_pairs(&device, Duration::from_secs(3)).map_err(err)?;
+        Ok(ChannelDetection { best: djcast_core::audio::best_pair(&levels), levels })
+    })
+    .await
 }
 
 #[tauri::command]
@@ -234,7 +270,13 @@ async fn list_devices() -> CmdResult<Vec<Device>> {
         Ok(djcast_core::audio::list_devices()
             .map_err(err)?
             .into_iter()
-            .map(|d| Device { name: d.name, input: d.is_input, output: d.is_output })
+            .map(|d| Device {
+                auto_channel: djcast_core::audio::auto_first_channel(&d.name, d.input_channels),
+                channels: d.input_channels,
+                name: d.name,
+                input: d.is_input,
+                output: d.is_output,
+            })
             .collect())
     })
     .await
@@ -333,6 +375,8 @@ fn main() {
             set_title,
             status,
             list_devices,
+            detect_channels,
+            open_accessibility_settings,
             list_midi_inputs,
             system_locale,
             open_folder,
