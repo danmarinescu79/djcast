@@ -1,9 +1,13 @@
 # Code signing policy
 
-Windows installers of djcast are to be signed through the SignPath Foundation program:
-free code signing provided by [SignPath.io](https://signpath.io), certificate by
-[SignPath Foundation](https://signpath.org). *(Application in progress; releases up to and
-including 0.2.0 are not signed.)*
+The Windows installers of djcast are **not code-signed yet**. We applied to the
+[SignPath Foundation](https://signpath.org) program for free code signing in November 2026;
+it is meant for projects that are already widely known, so we will apply again once djcast
+has a larger community. This policy describes how releases are made now and how they will be
+signed then.
+
+Until then, every update the app installs is verified against the updater key (minisign),
+so an update can only come from this project's release workflow.
 
 ## What gets signed
 Only the files built from this repository by the
@@ -20,8 +24,9 @@ they were ours.
    repository ruleset.
 3. The release workflow runs in the protected `release` environment, which waits for a
    manual approval before it gets access to any signing secret.
-4. The workflow builds the installers from the tagged commit, has them signed, and publishes
-   them with the release notes from the [changelog](../CHANGELOG.md).
+4. The workflow builds the installers from the tagged commit, signs the update packages with
+   the updater key (and, once available, the installers with the code signing certificate),
+   and publishes them with the release notes from the [changelog](../CHANGELOG.md).
 
 ## Team roles
 | Role | Who |
@@ -34,5 +39,5 @@ Every account with these roles uses multi-factor authentication on GitHub. Contr
 from others are reviewed before they are merged.
 
 ## Privacy
-See [Privacy](../README.md#privacy) in the README: djcast sends nothing to any server that
+See [Privacy](../README.md#privacy) in the README: the app sends nothing to any server that
 you have not set up yourself, apart from the update check, which you can turn off.

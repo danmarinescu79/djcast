@@ -67,6 +67,7 @@ key and checked against the public key in `apps/desktop/src-tauri/tauri.conf.jso
 
 ## Code signing
 
-The installers are not code-signed yet, so Windows SmartScreen warns on first run. Signing
-through the SignPath Foundation program is being applied for; see the
+The installers are not code-signed yet, so Windows SmartScreen warns on first run. The
+SignPath Foundation declined the first application (2026-11-25) until the project is better
+known; apply again once it has more users, stars and outside mentions. See the
 [code signing policy](code-signing-policy.md).

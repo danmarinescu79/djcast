@@ -110,7 +110,7 @@
     <h1>Stream your DJ set.<br><em>The track titles take care of themselves.</em></h1>
     <p class="lead">djcast sends what you play to Icecast and Shoutcast and reads the track that is actually on air from rekordbox — the deck that's playing and where your faders are. Free and open source.</p>
     <div class="cta">
-      <a class="btn primary" id="download" href="https://github.com/danmarinescu79/djcast/releases/latest">
+      <a class="btn primary" id="download" href="https://github.com/danmarinescu79/djcast/releases/latest" data-goatcounter-click="download-windows" data-goatcounter-title="Download for Windows">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 19h16"/></svg>
         <span id="download-label">Download for Windows</span>
       </a>
@@ -209,11 +209,12 @@
     <div class="wrap facts">
       <div class="card">
         <h3>Privacy</h3>
-        <p>No accounts, analytics or telemetry. djcast only connects to the streaming servers you add, to GitHub to check for updates (you can turn it off), and to Discord if you set up a webhook. Your rekordbox library never leaves your computer. <a href="https://github.com/danmarinescu79/djcast#privacy">Details</a></p>
+        <p>The app has no accounts, analytics or telemetry. It only connects to the streaming servers you add, to GitHub to check for updates (you can turn it off), and to Discord if you set up a webhook. Your rekordbox library never leaves your computer. <a href="https://github.com/danmarinescu79/djcast#privacy">Details</a></p>
+        <p>This website counts visits and download clicks with <a href="https://www.goatcounter.com">GoatCounter</a>: no cookies and no personal data.</p>
       </div>
       <div class="card" id="signing">
         <h3>Code signing</h3>
-        <p>Windows releases are to be signed with free code signing provided by <a href="https://signpath.io">SignPath.io</a>, certificate by <a href="https://signpath.org">SignPath Foundation</a> (application in progress). Installers are built only by GitHub Actions. <a href="https://github.com/danmarinescu79/djcast/blob/main/docs/code-signing-policy.md">Code signing policy</a></p>
+        <p>The installers are not code-signed yet, which is why Windows may warn on first run. They are built only by GitHub Actions from the public source, and the app checks the signature of every update it installs. <a href="https://github.com/danmarinescu79/djcast/blob/main/docs/code-signing-policy.md">Code signing policy</a></p>
       </div>
       <div class="card">
         <h3>Open source</h3>
@@ -245,5 +246,7 @@
     })
     .catch(() => {});
 </script>
+<!-- Visit counts without cookies or personal data: https://www.goatcounter.com -->
+<script data-goatcounter="https://djstream.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>

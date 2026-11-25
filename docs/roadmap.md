@@ -72,8 +72,9 @@
 - [x] Passwords in the OS credential store (Windows Credential Manager / macOS Keychain),
       plain-text passwords migrated automatically, removed with their profile
 - [x] Windows installers: `npx tauri build` → .msi (WiX) and setup .exe (NSIS)
-- [ ] Code signing to avoid the SmartScreen warning: applied to the SignPath Foundation
-      program (2026-11-24); [policy](code-signing-policy.md) and privacy statement published
+- [ ] Code signing to avoid the SmartScreen warning: the SignPath Foundation declined the
+      first application (2026-11-25) for lack of public visibility; apply again after the
+      project is promoted ([policy](code-signing-policy.md) and privacy statement are ready)
 - [x] First public release: v0.2.0 on GitHub with installers, updater signature and latest.json
 - [x] Project website on GitHub Pages (`site/`): screenshots, download of the latest
       installer, privacy and code signing notes

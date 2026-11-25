@@ -25,9 +25,10 @@ Website: https://danmarinescu79.github.io/djcast/
 Windows installers are on the [releases page](https://github.com/danmarinescu79/djcast/releases/latest)
 (`djcast_<version>_x64-setup.exe`, or the `.msi`). The app updates itself from there.
 
-Code signing: Windows releases are to be signed with free code signing provided by
-[SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)
-(application in progress; see the [code signing policy](docs/code-signing-policy.md)).
+The installers are not code-signed yet, so Windows SmartScreen may say *Windows protected
+your PC* on first run: choose *More info → Run anyway*. They are built only by GitHub Actions
+from this repository, and the app verifies the signature of every update it installs (see the
+[code signing policy](docs/code-signing-policy.md)).
 
 ## Build
 
@@ -99,6 +100,9 @@ rekordbox files, MIDI and audio are read on your computer and never uploaded. Se
 passwords and the Discord webhook are kept in the system credential store (Windows
 Credential Manager / macOS Keychain). Logs stay in the settings folder and are only shared
 if you attach them to a problem report yourself.
+
+The [website](https://danmarinescu79.github.io/djcast/) counts visits and download clicks with
+[GoatCounter](https://www.goatcounter.com), without cookies or personal data.
 
 ## Disclaimer
 This project is not affiliated with, endorsed by, or connected to AlphaTheta Corporation or Pioneer DJ.
