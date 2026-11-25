@@ -92,3 +92,9 @@
 - [x] Tracklist: copy / save as text, CUE sheet next to recordings; Discord webhook posts (go live, each track, stop with tracklist), editable templates
 - [x] CI (GitHub Actions, Windows) and automatic signed releases on `v*` tags, protected `release` environment
 - [ ] CI and release builds for macOS
+
+## Backlog
+- [ ] Download and traffic history: a daily workflow that saves release download counts
+      (installers, and `latest.json` as a measure of app starts) and repository traffic,
+      which GitHub keeps for only 14 days; decide where the data lives (public `stats`
+      branch or a private repository)
