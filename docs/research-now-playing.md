@@ -56,9 +56,20 @@ rekordbox has **no official API** for the current track (confirmed by Pioneer DJ
 
 ## Decision
 Pluggable sources (the `Source` trait in `crates/nowplaying`):
-1. `rekordbox-db`: implemented first (stable); remains the fallback.
+1. `rekordbox-db`: implemented first (stable); was the fallback. **Removed in 0.4.**
 2. `rekordbox-live`: deck contents via UI Automation + mixer state via MIDI (instant).
 3. `prodjlink`: for CDJ setups (planned).
+
+### Why the play history was removed (2026-11)
+- Nothing else came from the database (no BPM, artwork…): only the title and artist, which
+  the window shows instantly, while the history lags about a minute.
+- It needed the SQLCipher key, which djcast does not ship. Users had to find it themselves
+  (pyrekordbox or a debugger), so in practice almost nobody had the fallback anyway; on a Mac
+  without Windows there was no easy way at all.
+- Not touching rekordbox's encrypted database removes the legal grey area of method 1.
+- macOS: rekordbox 7 exposes the same deck panels through the Accessibility API (checked
+  with 7.2.20: deck label, title, artist, BPM, remaining/elapsed time; ~450 elements in
+  0.26 s), so the window method works on both platforms.
 
 ### Why UI Automation instead of process memory (2026-11)
 - rkbx_link is GPL-3.0, and its memory offsets for current Windows rekordbox versions are

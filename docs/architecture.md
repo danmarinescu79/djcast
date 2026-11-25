@@ -45,10 +45,16 @@ Life). `crates/core/src/dsp.rs` adds, before encoding:
   required gain + moving average, applied to delayed audio, so peaks never exceed the ceiling.
 
 ## Capture
-- `mode = "loopback"`: any output device (Windows/WASAPI). Captures exactly what rekordbox plays, no virtual cable needed.
-- `mode = "input"`: line-in, USB input from a mixer, a virtual cable.
-- macOS: loopback requires BlackHole or ScreenCaptureKit (not implemented yet).
-- Use `djcast meter -d <device> [--input]` to check levels before going live.
+- `mode = "loopback"`: any output device (WASAPI on Windows; Core Audio taps through cpal on
+  macOS 14.6+). Captures exactly what rekordbox plays, no virtual cable needed. On a Mac it
+  works for normal outputs (built-in speakers, PC MASTER OUT); a controller that mixes in
+  hardware (DDJ-1000) gets the decks separately on its outputs, so capture its input instead.
+- `mode = "input"`: line-in, USB input from a mixer, a virtual cable. For inputs with more than
+  two channels, `first_channel` picks the stereo pair (0 = automatic: a known master pair such
+  as the DDJ-1000's 11–12, else 1–2). The capture notes which pairs carry sound, so the UI can
+  point out a silent pair while another has signal.
+- `mode = "process"`: one program only (Windows 10 2004+).
+- Use `djcast meter -d <device> [--input [--channel N]]` to check levels before going live.
 
 ### DJ controllers and ASIO (Windows)
 When rekordbox drives a controller's sound card through **ASIO**, the device is held
