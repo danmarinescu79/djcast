@@ -3,6 +3,8 @@
 ## Unreleased
 - macOS: instant now playing from the rekordbox window (Accessibility API) and the controller's
   faders over MIDI, like on Windows; djcast asks for the Accessibility permission it needs
+- macOS: djcast runs on macOS 13 or newer; capturing an output (loopback) needs 14.6 or newer,
+  and on older versions djcast says so and points to the controller's input
 - macOS: AAC with the encoder built into macOS (AudioToolbox), constant bitrate, same ADTS
   stream as on Windows
 - macOS: when djcast may not read the rekordbox window yet, the console says so and opens the
