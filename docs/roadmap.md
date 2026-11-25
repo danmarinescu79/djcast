@@ -55,7 +55,8 @@ encrypted database or a key the user has to find. Kept here for the record.
 - [x] Process loopback on Windows (10 2004+): capture only rekordbox's audio (and its child
       processes). Works with a controller on ASIO when PC MASTER OUT goes to a Windows output
       (verified with DDJ-1000)
-- [ ] Process capture on macOS (14.2+ Core Audio taps)
+- [ ] Process capture on macOS (Core Audio process taps), like the Windows program capture —
+      optional: the controller's input and loopback cover the usual setups
 - [ ] Research: djcast virtual ASIO driver that forwards to the real device and taps the
       master (like ASIO Link Pro). Big effort; check Steinberg ASIO SDK licensing first.
 
@@ -76,6 +77,7 @@ encrypted database or a key the user has to find. Kept here for the record.
 - [x] Passwords in the OS credential store (Windows Credential Manager / macOS Keychain),
       plain-text passwords migrated automatically, removed with their profile
 - [x] Windows installers: `npx tauri build` → .msi (WiX) and setup .exe (NSIS)
+- [x] Setup report (Settings → About) and a GitHub "Setup report" form for testers
 - [ ] Code signing to avoid the SmartScreen warning: the SignPath Foundation declined the
       first application (2026-11-25) for lack of public visibility; apply again after the
       project is promoted ([policy](code-signing-policy.md) and privacy statement are ready)
@@ -92,13 +94,15 @@ encrypted database or a key the user has to find. Kept here for the record.
       (resampled to 48 kHz; titles as chained Ogg streams; Icecast only); one encoder per format
 - [x] AAC on macOS (AudioToolbox AudioConverter, constant bitrate, ADTS headers added by djcast)
 - [ ] Pro DJ Link (CDJs) — low priority: needs CDJ hardware to test
-- [ ] macOS (builds, code signing)
+- [x] macOS app (v0.4.0): universal .app/.dmg for macOS 13+, signed with a Developer ID and
+      notarized; permissions survive updates; auto-update verified (0.3.1 → 0.4.0)
 - [x] macOS loopback (cpal Core Audio taps, macOS 14.6+) and multichannel inputs: choose the
       stereo pair (DDJ-1000 master on 11–12, picked automatically), Detect button, hint when
       the captured pair is silent while another has sound
 - [x] Tracklist: copy / save as text, CUE sheet next to recordings; Discord webhook posts (go live, each track, stop with tracklist), editable templates
 - [x] CI (GitHub Actions, Windows) and automatic signed releases on `v*` tags, protected `release` environment
-- [ ] CI and release builds for macOS
+- [x] CI on Windows and macOS; the release workflow builds, signs and notarizes the Mac app and
+      publishes it with the Windows installers (latest.json covers both Mac architectures)
 - [x] Now playing from a text file another program keeps up to date (VirtualDJ tracklist and
       similar): last line, leading time ignored, UTF-8 / UTF-16
 - [ ] Now playing from Serato DJ (live session history in `_Serato_/History/Sessions`)
