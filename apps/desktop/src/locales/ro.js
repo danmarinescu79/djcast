@@ -223,6 +223,12 @@ export default {
   'general.updatesNote':
     'Actualizările vin din release-urile proiectului de pe GitHub și sunt verificate cu o semnătură înainte de instalare.',
 
+  'report.button': "Raport de configurație",
+  'report.collecting': "Ascult…",
+  'report.copy': "Copiază",
+  'report.copied': "Copiat",
+  'report.open': "Deschide formularul",
+  'report.hint': "Testezi pe altă consolă sau alt sistem? Pornește o melodie, apoi generează raportul: conține dispozitivele, ce canale de intrare au sunet, MIDI și ce citește djcast din rekordbox — fără parole, adrese de server sau titluri. Îl poți citi înainte să-l trimiți.",
   'about.version': 'Versiunea {v}',
   'about.tagline': 'Streaming audio pentru DJ, cu „se aude acum” automat din rekordbox.',
   'about.license': 'Gratuit și open source, sub licența MIT sau Apache-2.0.',

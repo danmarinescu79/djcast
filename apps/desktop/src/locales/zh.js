@@ -223,6 +223,12 @@ export default {
   'general.updatesNote':
     '更新来自本项目在 GitHub 上发布的版本，安装前会通过签名进行验证。',
 
+  'report.button': "配置报告",
+  'report.collecting': "正在聆听…",
+  'report.copy': "复制",
+  'report.copied': "已复制",
+  'report.open': "打开报告表单",
+  'report.hint': "在其他控制器或系统上测试？请先播放一首曲目，再生成报告：其中列出你的设备、哪些输入声道有声音、MIDI，以及 djcast 从 rekordbox 读取到的内容——不含密码、服务器地址或曲目名称。发送前可以先查看。",
   'about.version': '版本 {v}',
   'about.tagline': '面向 DJ 的音频推流软件，自动从 rekordbox 获取正在播放的曲目。',
   'about.license': '免费开源，采用 MIT 或 Apache-2.0 许可证。',

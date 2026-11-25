@@ -223,6 +223,12 @@ export default {
   'general.updatesNote':
     'Güncellemeler projenin GitHub sürümlerinden gelir ve yüklenmeden önce bir imzayla doğrulanır.',
 
+  'report.button': "Kurulum raporu",
+  'report.collecting': "Dinleniyor…",
+  'report.copy': "Kopyala",
+  'report.copied': "Kopyalandı",
+  'report.open': "Rapor formunu aç",
+  'report.hint': "Başka bir kontrolcü veya sistemde mi deniyorsunuz? Bir parça çalın, sonra raporu oluşturun: cihazlarınızı, hangi giriş kanallarında ses olduğunu, MIDI’yi ve djcast’in rekordbox’tan okuduklarını listeler — şifre, sunucu adresi veya parça adı içermez. Göndermeden önce okuyabilirsiniz.",
   'about.version': 'Sürüm {v}',
   'about.tagline': "DJ'ler için ses yayını; rekordbox'tan otomatik “şimdi çalıyor” bilgisiyle.",
   'about.license': 'Ücretsiz ve açık kaynak; MIT veya Apache-2.0 lisansı altında.',

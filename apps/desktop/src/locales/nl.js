@@ -223,6 +223,12 @@ export default {
   'general.updatesNote':
     'Updates komen uit de GitHub-releases van het project en worden vóór de installatie met een handtekening gecontroleerd.',
 
+  'report.button': "Setuprapport",
+  'report.collecting': "Luisteren…",
+  'report.copy': "Kopiëren",
+  'report.copied': "Gekopieerd",
+  'report.open': "Rapportformulier openen",
+  'report.hint': "Test je met een andere controller of een ander systeem? Speel een track af en maak dan een rapport: het noemt je apparaten, welke ingangskanalen geluid hebben, MIDI en wat djcast uit rekordbox leest — zonder wachtwoorden, serveradressen of tracknamen. Je kunt het lezen voordat je het verstuurt.",
   'about.version': 'Versie {v}',
   'about.tagline': 'Audiostreaming voor dj’s, met automatisch "Nu speelt" vanuit rekordbox.',
   'about.license': 'Gratis en open source, onder de MIT- of Apache-2.0-licentie.',

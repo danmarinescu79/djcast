@@ -10,6 +10,7 @@ use std::time::Duration;
 use tauri::{Emitter, Manager, State, WindowEvent};
 
 mod logging;
+mod report;
 mod tray;
 
 /// Argument the autostart entry passes, so a system start can be told from a manual one.
@@ -65,12 +66,17 @@ fn open_project_page(path: String) -> CmdResult<()> {
         return Err("invalid path".into());
     }
     let url = if path.is_empty() { REPO_URL.to_string() } else { format!("{REPO_URL}/{path}") };
+    open_url(&url)
+}
+
+/// Open a URL we built ourselves in the default browser.
+fn open_url(url: &str) -> CmdResult<()> {
     #[cfg(target_os = "windows")]
-    let r = std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler", &url]).spawn();
+    let r = std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler", url]).spawn();
     #[cfg(target_os = "macos")]
-    let r = std::process::Command::new("open").arg(&url).spawn();
+    let r = std::process::Command::new("open").arg(url).spawn();
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    let r = std::process::Command::new("xdg-open").arg(&url).spawn();
+    let r = std::process::Command::new("xdg-open").arg(url).spawn();
     r.map(|_| ()).map_err(|e| e.to_string())
 }
 
@@ -264,6 +270,19 @@ async fn detect_channels(device: String) -> CmdResult<ChannelDetection> {
     .await
 }
 
+/// Collect the setup report (takes a few seconds: it listens to the input).
+#[tauri::command]
+async fn setup_report(app: State<'_, AppState>) -> CmdResult<String> {
+    let station = app.station.clone();
+    blocking(move || Ok(report::build(&station))).await
+}
+
+/// Open the GitHub "Setup report" form with the report filled in.
+#[tauri::command]
+fn open_setup_report_form(report: String) -> CmdResult<()> {
+    open_url(&report::form_url(REPO_URL, &report))
+}
+
 #[tauri::command]
 async fn list_devices() -> CmdResult<Vec<Device>> {
     blocking(|| {
@@ -311,6 +330,7 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_autostart::init(
@@ -376,6 +396,8 @@ fn main() {
             status,
             list_devices,
             detect_channels,
+            setup_report,
+            open_setup_report_form,
             open_accessibility_settings,
             list_midi_inputs,
             system_locale,

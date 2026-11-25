@@ -223,6 +223,12 @@ export default {
   'general.updatesNote':
     'アップデートはプロジェクトの GitHub リリースから取得され、インストール前に署名で検証されます。',
 
+  'report.button': "セットアップレポート",
+  'report.collecting': "聴いています…",
+  'report.copy': "コピー",
+  'report.copied': "コピーしました",
+  'report.open': "レポートフォームを開く",
+  'report.hint': "別のコントローラーやシステムでテストしていますか？曲を再生してからレポートを作成してください。デバイス、音のある入力チャンネル、MIDI、djcast が rekordbox から読み取った内容をまとめます。パスワード、サーバーアドレス、曲名は含まれません。送信前に内容を確認できます。",
   'about.version': 'バージョン {v}',
   'about.tagline': 'DJ 向けのオーディオ配信アプリです。再生中の曲を rekordbox から自動で取得します。',
   'about.license': 'MIT または Apache-2.0 ライセンスの無料オープンソースソフトウェアです。',

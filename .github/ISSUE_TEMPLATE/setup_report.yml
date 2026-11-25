@@ -1,0 +1,76 @@
+name: Setup report
+description: Tell us how djcast works with your controller, mixer or DJ software
+title: "Setup report: "
+labels: [setup report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing! djcast is checked on a Pioneer DDJ-1000 with rekordbox 7 on Windows and macOS.
+        Reports from other setups show what works and what needs fixing — "it just works" reports help too.
+  - type: input
+    id: controller
+    attributes:
+      label: Controller or mixer
+      placeholder: Pioneer DDJ-FLX6, Denon Prime Go, a DJM-450 mixer …
+    validations:
+      required: true
+  - type: input
+    id: software
+    attributes:
+      label: DJ software and version
+      placeholder: rekordbox 7.2.20, VirtualDJ 2025 …
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: djcast version
+      description: Settings → About
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: capture
+    attributes:
+      label: How djcast captures the sound
+      options:
+        - An input of the controller (Settings → Audio → An input)
+        - Loopback of an output
+        - One program only (Windows)
+        - Other / not sure
+    validations:
+      required: true
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What works
+      options:
+        - label: Sound reaches the stream (with the right channels, if the input has more than two)
+        - label: The titles of the decks appear
+        - label: Moving the channel faders / crossfader switches the title to the deck on air
+        - label: Detect (Settings → Audio → Channels) found the right channels
+  - type: textarea
+    id: notes
+    attributes:
+      label: What didn't work, or anything else
+      description: Which input channels carry your master, what you had to change, what looked wrong. Screenshots are welcome.
+  - type: textarea
+    id: log
+    attributes:
+      label: Log (if something failed)
+      description: |
+        Settings → About → Logs folder → `djcast.log`. The log contains no passwords, but check it
+        for anything you would rather not share (server addresses, track names).
+      render: text

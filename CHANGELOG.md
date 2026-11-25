@@ -7,6 +7,9 @@
   stream as on Windows
 - macOS: when djcast may not read the rekordbox window yet, the console says so and opens the
   Accessibility settings
+- Settings → About → Setup report: lists the devices, which input channels have sound, MIDI and
+  what djcast reads from rekordbox (no passwords, servers or track names), to copy or send
+  through the new "Setup report" form on GitHub
 - Appearance "Like the system" instead of "Like Windows"; on a Mac, program capture (Windows
   only) is hidden
 - Now playing from a text file: follows a file another DJ program keeps up to date (such as

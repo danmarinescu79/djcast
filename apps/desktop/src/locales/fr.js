@@ -223,6 +223,12 @@ export default {
   'general.updatesNote':
     'Les mises à jour proviennent des versions publiées du projet sur GitHub et sont vérifiées par une signature avant leur installation.',
 
+  'report.button': "Rapport de configuration",
+  'report.collecting': "Écoute…",
+  'report.copy': "Copier",
+  'report.copied': "Copié",
+  'report.open': "Ouvrir le formulaire",
+  'report.hint': "Vous testez avec un autre contrôleur ou système ? Lancez un morceau, puis générez le rapport : il liste vos appareils, les canaux d’entrée qui ont du son, le MIDI et ce que djcast lit dans rekordbox — sans mots de passe, adresses de serveur ni titres. Vous pouvez le lire avant de l’envoyer.",
   'about.version': 'Version {v}',
   'about.tagline': 'Streaming audio pour DJ, avec le titre en cours détecté automatiquement dans rekordbox.',
   'about.license': 'Gratuit et open source, sous licence MIT ou Apache-2.0.',

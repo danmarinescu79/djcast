@@ -1,5 +1,7 @@
 <script>
   import { invoke } from '@tauri-apps/api/core';
+  // The webview's own clipboard API is blocked on macOS; the plugin writes natively.
+  import { writeText } from '@tauri-apps/plugin-clipboard-manager';
   import { open } from '@tauri-apps/plugin-dialog';
   import { onMount } from 'svelte';
   import { t, LANGUAGES } from './lib/i18n.svelte.js';
@@ -209,6 +211,24 @@
   }
 
   const openPage = (path) => invoke('open_project_page', { path }).catch(() => {});
+
+  // Setup report for testers: collected by the app (listens to the input for a few seconds).
+  let report = $state({ busy: false, text: '', copied: false });
+  async function collectReport() {
+    report = { busy: true, text: '', copied: false };
+    try {
+      report.text = await invoke('setup_report');
+    } catch (e) {
+      report.text = String(e);
+    } finally {
+      report.busy = false;
+    }
+  }
+  async function copyReport() {
+    await writeText(report.text);
+    report.copied = true;
+    setTimeout(() => (report.copied = false), 2000);
+  }
 
   // Windows can list two devices with the same name (e.g. one per monitor): show each name once.
   const deviceOptions = $derived([
@@ -752,6 +772,19 @@
         <button type="button" class="btn big" onclick={() => openFolder(folders.config)}>{t('about.settingsFolder')}</button>
       </div>
       <span class="hint">{t('about.logsNote')}</span>
+      <div class="report">
+        <div class="about-buttons">
+          <button type="button" class="btn big" onclick={collectReport} disabled={report.busy}>
+            {report.busy ? t('report.collecting') : t('report.button')}
+          </button>
+          {#if report.text}
+            <button type="button" class="btn big" onclick={copyReport}>{report.copied ? t('report.copied') : t('report.copy')}</button>
+            <button type="button" class="btn big" onclick={() => invoke('open_setup_report_form', { report: report.text })}>{t('report.open')}</button>
+          {/if}
+        </div>
+        <span class="hint">{t('report.hint')}</span>
+        {#if report.text}<textarea class="report-text" readonly rows="14" aria-label={t('report.button')}>{report.text}</textarea>{/if}
+      </div>
       <p class="note disclaimer">{t('about.disclaimer')}</p>
       <p class="note copyright">© 2026 Dan Marinescu</p>
     {/if}
@@ -838,6 +871,8 @@
   .notes .primary { align-self: flex-start; }
   .about-version { margin: -8px 0 0; color: var(--muted); }
   .about-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+  .report { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .report-text { width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; resize: vertical; user-select: text; }
   .disclaimer { font-size: 12px; margin-top: 8px; }
   .copyright { font-size: 12px; margin-top: -8px; }
   .folder { display: flex; gap: 8px; }

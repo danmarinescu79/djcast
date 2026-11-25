@@ -225,6 +225,12 @@ export default {
   'general.updatesNote':
     "Updates come from the project's GitHub releases and are verified with a signature before they are installed.",
 
+  'report.button': "Setup report",
+  'report.collecting': "Listening…",
+  'report.copy': "Copy",
+  'report.copied': "Copied",
+  'report.open': "Open the report form",
+  'report.hint': "Testing on another controller or system? Play a track, then collect a report: it lists your devices, which input channels have sound, MIDI and what djcast reads from rekordbox — no passwords, server addresses or track names. You can read it before sending.",
   'about.version': 'Version {v}',
   'about.tagline': 'Audio streaming for DJs, with automatic now playing from rekordbox.',
   'about.license': 'Free and open source, under the MIT or Apache-2.0 license.',

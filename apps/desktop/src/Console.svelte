@@ -1,5 +1,7 @@
 <script>
   import { invoke } from '@tauri-apps/api/core';
+  // The webview's own clipboard API is blocked on macOS; the plugin writes natively.
+  import { writeText } from '@tauri-apps/plugin-clipboard-manager';
   import { save } from '@tauri-apps/plugin-dialog';
   import { clock, bytes, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
@@ -30,7 +32,7 @@
 
   async function copyTracklist() {
     const text = status.tracklist.map((t) => `${t.time} ${t.title}`).join('\n');
-    await navigator.clipboard.writeText(text);
+    await writeText(text);
     copied = true;
     setTimeout(() => (copied = false), 1500);
   }
