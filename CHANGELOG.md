@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 - macOS: instant now playing from the rekordbox window (Accessibility API) and the controller's
   faders over MIDI, like on Windows; djcast asks for the Accessibility permission it needs
 - macOS: djcast runs on macOS 13 or newer; capturing an output (loopback) needs 14.6 or newer,
