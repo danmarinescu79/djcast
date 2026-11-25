@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Merged by Tauri into the macOS app's Info.plist. macOS shows these texts when it asks
+     the user for permission. Reading the rekordbox window (Accessibility) needs no key here. -->
+<plist version="1.0">
+<dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>djcast streams the sound of the audio input you choose, such as your DJ controller's master.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>djcast streams what an output plays, such as the sound of rekordbox.</string>
+</dict>
+</plist>

@@ -20,11 +20,28 @@ key and checked against the public key in `apps/desktop/src-tauri/tauri.conf.jso
 1. Bump the version in `Cargo.toml` (`[workspace.package]`), `apps/desktop/src-tauri/tauri.conf.json`
    and `apps/desktop/package.json`; add a `## <version>` section to `CHANGELOG.md`.
 2. Commit, then tag and push: `git tag -s v<version> -m "djcast <version>"` and `git push origin v<version>`.
-3. GitHub Actions → *Release* → the job waits for approval of the `release` environment:
-   **Review deployments → Approve**.
-4. The workflow checks that the tag matches the app version, builds the signed installers, writes
-   `notes.md` and `latest.json` from the CHANGELOG section (`.github/scripts/release_files.py`) and
-   publishes the release. Installed apps see the update on their next check.
+3. GitHub Actions → *Release* → the Windows and macOS jobs wait for approval of the `release`
+   environment: **Review deployments → Approve** (both can be approved at once).
+4. The workflow checks that the tag matches the app version and builds the installers: Windows
+   (setup .exe + .msi) and macOS (one universal app for Apple Silicon and Intel, signed with the
+   Developer ID, notarized; .dmg + updater archive). A last job writes `notes.md` and `latest.json`
+   from the CHANGELOG section (`.github/scripts/release_files.py`) and publishes the release.
+   Installed apps see the update on their next check.
+
+### Secrets and variables of the `release` environment
+| Name | Kind | Value |
+|---|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | secret | updater signing key (see above) |
+| `APPLE_CERTIFICATE` | secret | the *Developer ID Application* certificate with its private key, exported as `.p12`, base64 (`base64 -i cert.p12 \| pbcopy`) |
+| `APPLE_CERTIFICATE_PASSWORD` | secret | the password chosen when exporting the `.p12` |
+| `APPLE_API_KEY_P8` | secret | contents of the App Store Connect API key file `AuthKey_<id>.p8` (role Developer), for notarization |
+| `APPLE_SIGNING_IDENTITY` | variable | `Developer ID Application: Dan Marinescu (4Y94D27T6C)` |
+| `APPLE_API_KEY` | variable | the API key's Key ID |
+| `APPLE_API_ISSUER` | variable | the API key's Issuer ID |
+
+The Developer ID certificate expires on 2027-12-25: make a new one (developer.apple.com →
+Certificates → Developer ID Application) and replace `APPLE_CERTIFICATE`. Mac permissions
+(Accessibility, microphone) stay granted across certificates of the same team.
 
 ## Repository protections
 - `CODEOWNERS`: changes to `.github/`, `tauri.conf.json` and the capabilities need the owner's review.
@@ -64,6 +81,40 @@ key and checked against the public key in `apps/desktop/src-tauri/tauri.conf.jso
 4. Create the GitHub release `v<version>` and attach the two installers, the `.sig` file and
    `latest.json`. The app's update check uses
    `https://github.com/danmarinescu79/djcast/releases/latest/download/latest.json`.
+
+## macOS build (local)
+
+Needs Xcode, Rust, CMake (`brew install cmake`, for Opus) and Node 22.
+```sh
+cd apps/desktop
+npx tauri build -c '{"bundle":{"createUpdaterArtifacts":false}}'
+```
+`tauri.macos.conf.json` switches the bundles to `djcast.app` and a `.dmg`
+(`target/release/bundle/`), macOS 13 or newer, signed ad hoc. `src-tauri/Info.plist` adds the
+texts macOS shows when it asks for the microphone (audio inputs) and audio capture (loopback).
+`src-tauri/Entitlements.plist` grants `com.apple.security.device.audio-input`: the app is signed
+with the hardened runtime, and without it macOS silently hands the app silence instead of asking.
+An ad-hoc signature changes with every build, so macOS treats each build as a new app: the
+Accessibility switch stops working (it still points at the old build), and Keychain asks again
+for the saved passwords even after "Always Allow". Sign local builds with a stable identity
+instead: the Developer ID certificate when it is in the keychain
+(`APPLE_SIGNING_IDENTITY="Developer ID Application: Dan Marinescu (4Y94D27T6C)"`; add
+`APPLE_API_KEY`, `APPLE_API_ISSUER` and `APPLE_API_KEY_PATH` to notarize too), or else a
+self-signed certificate:
+```sh
+# once: a code signing certificate valid only on this Mac, in the login keychain
+openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 3650 \
+  -subj "/CN=djcast dev" -addext "keyUsage=critical,digitalSignature" \
+  -addext "extendedKeyUsage=critical,codeSigning"
+openssl pkcs12 -export -legacy -inkey key.pem -in cert.pem -name "djcast dev" -out dev.p12 -passout pass:x
+security import dev.p12 -k ~/Library/Keychains/login.keychain-db -P x -T /usr/bin/codesign
+rm key.pem dev.p12
+# every build
+APPLE_SIGNING_IDENTITY="djcast dev" npx tauri build -c '{"bundle":{"createUpdaterArtifacts":false}}'
+```
+After switching from ad-hoc builds, clear the old permissions once with
+`tccutil reset All io.github.danmarinescu79.djcast`. Releasing for Mac still needs a Developer ID certificate and notarization (or users
+must allow the app under Privacy & Security), plus a macOS job in the release workflow.
 
 ## Code signing
 

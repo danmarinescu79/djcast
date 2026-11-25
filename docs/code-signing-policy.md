@@ -9,11 +9,15 @@ signed then.
 Until then, every update the app installs is verified against the updater key (minisign),
 so an update can only come from this project's release workflow.
 
+The **macOS** app is signed with the author's Apple Developer ID (team `4Y94D27T6C`) and
+notarized by Apple, by the same release workflow.
+
 ## What gets signed
 Only the files built from this repository by the
 [release workflow](../.github/workflows/release.yml) on GitHub Actions: the NSIS installer
-(`djcast_<version>_x64-setup.exe`), the MSI package and the `djcast.exe` they contain.
-Nothing built on a personal computer is signed, and no third-party binaries are signed as if
+(`djcast_<version>_x64-setup.exe`), the MSI package and the `djcast.exe` they contain, and
+on macOS the universal `djcast.app`, its `.dmg` and the update archive. Nothing built on a
+personal computer is published, and no third-party binaries are signed as if
 they were ours.
 
 ## How a release is made
