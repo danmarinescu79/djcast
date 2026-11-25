@@ -201,6 +201,10 @@ pub fn start_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Levels
     if cfg.mode == CaptureMode::Process {
         return start_process_capture(cfg, tx, levels);
     }
+    #[cfg(target_os = "macos")]
+    if cfg.mode == CaptureMode::Loopback {
+        check_mac_loopback()?;
+    }
     let host = cpal::default_host();
     let device = find_device(&host, cfg)?;
     let device_name = device.to_string();
@@ -270,6 +274,35 @@ fn start_process_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Le
 #[cfg(not(windows))]
 fn start_process_capture(_: &AudioConfig, _: Sender<Vec<f32>>, _: Arc<Levels>) -> Result<Capture> {
     bail!("capturing a single program is only available on Windows for now")
+}
+
+/// Loopback on a Mac uses Core Audio process taps, which macOS has since 14.6 (for cpal).
+#[cfg(target_os = "macos")]
+const MAC_LOOPBACK_MIN: (u32, u32) = (14, 6);
+
+/// On older macOS a loopback stream fails with an obscure error; say what to do instead.
+#[cfg(target_os = "macos")]
+fn check_mac_loopback() -> Result<()> {
+    let out = std::process::Command::new("sw_vers").arg("-productVersion").output();
+    let version = out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()).unwrap_or_default();
+    match parse_version(&version) {
+        Some(v) if v < MAC_LOOPBACK_MIN => bail!(
+            "capturing what an output plays (loopback) needs macOS {}.{} or newer (this Mac has {version}); \
+             choose your controller's input instead (Settings → Audio → An input)",
+            MAC_LOOPBACK_MIN.0,
+            MAC_LOOPBACK_MIN.1
+        ),
+        _ => Ok(()), // unknown version: try anyway
+    }
+}
+
+/// "14.5.1" → (14, 5); "15" → (15, 0).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn parse_version(v: &str) -> Option<(u32, u32)> {
+    let mut parts = v.trim().split('.');
+    let major = parts.next()?.parse().ok()?;
+    let minor = parts.next().map_or(Some(0), |m| m.parse().ok())?;
+    Some((major, minor))
 }
 
 /// Update the meters and hand a stereo chunk to the encoder.
@@ -507,6 +540,16 @@ mod tests {
         assert_eq!(best_pair(&[pl(1, -95.0), pl(3, f32::NEG_INFINITY), pl(11, -6.8)]), Some(11));
         assert_eq!(best_pair(&[pl(1, -20.0), pl(11, -6.8)]), Some(11));
         assert_eq!(best_pair(&[pl(1, -95.0), pl(11, -96.0)]), None);
+    }
+
+    #[test]
+    fn os_versions_parse() {
+        assert_eq!(parse_version("14.5.1"), Some((14, 5)));
+        assert_eq!(parse_version("26.5"), Some((26, 5)));
+        assert_eq!(parse_version("15"), Some((15, 0)));
+        assert_eq!(parse_version(""), None);
+        assert!(parse_version("14.5").unwrap() < (14, 6));
+        assert!(parse_version("14.6").unwrap() >= (14, 6));
     }
 
     #[test]
