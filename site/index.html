@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>djcast — free DJ streaming app for Windows and Mac, with now playing from rekordbox</title>
-<meta name="description" content="Free, open-source app for Windows and macOS that streams your DJ set to Icecast and Shoutcast, with track titles taken automatically from rekordbox and your Pioneer DDJ controller's faders.">
+<title>djcast — free DJ streaming app for Windows and Mac, with now playing from rekordbox and Serato</title>
+<meta name="description" content="Free, open-source app for Windows and macOS that streams your DJ set to Icecast and Shoutcast, with track titles taken automatically from rekordbox or Serato DJ and your controller's faders.">
 <link rel="canonical" href="https://danmarinescu79.github.io/djcast/">
 <meta name="google-site-verification" content="t1hR1RaAm-snSEtOsHQLwcAyegJgZWmTl7u3jgNvzFc">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="djcast">
 <meta property="og:url" content="https://danmarinescu79.github.io/djcast/">
 <meta property="og:title" content="djcast — live streaming for DJs, on Windows and Mac">
-<meta property="og:description" content="Stream your DJ set to Icecast and Shoutcast, with now-playing titles taken automatically from rekordbox. Free and open source.">
+<meta property="og:description" content="Stream your DJ set to Icecast and Shoutcast, with now-playing titles taken automatically from rekordbox and Serato DJ. Free and open source.">
 <meta property="og:image" content="https://danmarinescu79.github.io/djcast/img/console.png">
 <meta property="og:image:width" content="2000">
 <meta property="og:image:height" content="1040">
@@ -22,7 +22,7 @@
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "djcast",
-  "description": "Live streaming for DJs to Icecast and Shoutcast, with now-playing titles taken automatically from rekordbox and the DJ controller's faders.",
+  "description": "Live streaming for DJs to Icecast and Shoutcast, with now-playing titles taken automatically from rekordbox or Serato DJ and the DJ controller's faders.",
   "url": "https://danmarinescu79.github.io/djcast/",
   "downloadUrl": "https://github.com/danmarinescu79/djcast/releases/latest",
   "applicationCategory": "MultimediaApplication",
@@ -34,7 +34,7 @@
   "screenshot": "https://danmarinescu79.github.io/djcast/img/console.png",
   "author": { "@type": "Person", "name": "Dan Marinescu", "url": "https://github.com/danmarinescu79" },
   "codeRepository": "https://github.com/danmarinescu79/djcast",
-  "keywords": "DJ streaming, rekordbox, now playing, Icecast, Shoutcast, Pioneer DDJ, live stream, internet radio"
+  "keywords": "DJ streaming, rekordbox, Serato DJ, now playing, Icecast, Shoutcast, Pioneer DDJ, live stream, internet radio"
 }
 </script>
 <link rel="icon" href="img/icon.svg" type="image/svg+xml">
@@ -137,7 +137,7 @@
   <div class="hero wrap">
     <span class="onair">On air</span>
     <h1>Stream your DJ set.<br><em>The track titles take care of themselves.</em></h1>
-    <p class="lead">djcast sends what you play to Icecast and Shoutcast and reads the track that is actually on air from rekordbox — the deck that's playing and where your faders are. Free and open source, for Windows and Mac.</p>
+    <p class="lead">djcast sends what you play to Icecast and Shoutcast and reads the track that is actually on air from rekordbox or Serato DJ — the deck it's on and where your faders are. Free and open source, for Windows and Mac.</p>
     <div class="cta">
       <a class="btn primary" id="download" href="https://github.com/danmarinescu79/djcast/releases/latest" data-goatcounter-click="download-windows" data-goatcounter-title="Download for Windows">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 19h16"/></svg>
@@ -160,8 +160,8 @@
       <div class="grid">
         <div class="card">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/><path d="M12 12l4.5-4.5"/></svg></div>
-          <h3>Now playing from rekordbox</h3>
-          <p>Reads the decks in real time and follows your channel faders and crossfader over MIDI, so listeners see the track that is really on air. No setup, no database key.</p>
+          <h3>Now playing from rekordbox and Serato</h3>
+          <p>Reads the decks in real time and follows your channel faders and crossfader over MIDI, so listeners see the track that is really on air. No database key. With Serato DJ 5 or newer, the controller's faders tell which deck is heard.</p>
         </div>
         <div class="card">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 18V9M9 18V5M14 18v-7M19 18V8"/></svg></div>
@@ -199,8 +199,8 @@
         <h2>It knows which deck is on air</h2>
         <p class="sub" style="margin-bottom:0">Two tracks playing during a blend? djcast waits until one deck is clearly louder through the mixer, then switches the title — not too early, not too late.</p>
         <ul class="ticks">
-          <li>Elapsed and remaining time for every deck</li>
-          <li>Channel faders, crossfader and assign switches over MIDI (Pioneer DDJ controllers)</li>
+          <li>Elapsed and remaining time for every deck (rekordbox)</li>
+          <li>Channel faders, crossfader and assign switches over MIDI (Pioneer DDJ built in; other controllers are learned)</li>
           <li>Type a title yourself at any moment when you want to</li>
         </ul>
       </div>
@@ -216,7 +216,7 @@
         <ul class="ticks">
           <li>Test the login before you go live</li>
           <li>Passwords kept in Windows Credential Manager or the macOS Keychain, not in a text file</li>
-          <li>Captures what rekordbox plays, or your controller's master (picked automatically for the DDJ-1000) — no extra drivers</li>
+          <li>Captures what your DJ software plays (rekordbox, Serato DJ…), or your controller's master (picked automatically for the DDJ-1000) — no extra drivers</li>
         </ul>
         <div class="media" style="margin-top:28px; max-width:420px"><img src="img/mini.png" width="1040" height="600" loading="lazy" alt="The mini window: live timer, the track on air and output meters."></div>
       </div>
@@ -234,12 +234,13 @@
             <li>Pioneer DDJ-1000 with rekordbox 7.2 on Windows 11: loopback (ASIO with PC MASTER OUT, or WASAPI) and capture of rekordbox only</li>
             <li>Pioneer DDJ-1000 with rekordbox 7.2 on macOS (Apple Silicon): the controller's master over USB, picked automatically</li>
             <li>Channel faders, crossfader and assign switches over MIDI on both systems</li>
+            <li>Serato DJ Pro 5.1 on Windows 11: the tracks on the decks, the deck on air from the controller's faders over MIDI</li>
             <li>Icecast 2.4</li>
           </ul>
         </div>
         <div class="card">
           <h3>Not tested yet — can you help?</h3>
-          <p>Other Pioneer DDJ and DJM models, other controllers (the faders can be learned), Intel Macs, Shoutcast servers, VirtualDJ through its tracklist file. Settings → About → <em>Setup report</em> collects what's useful in one click.</p>
+          <p>Other Pioneer DDJ and DJM models, other controllers (the faders can be learned), Serato DJ with its own controllers and on Mac, Intel Macs, Shoutcast servers, VirtualDJ through its tracklist file. Settings → About → <em>Setup report</em> collects what's useful in one click.</p>
           <p style="margin-top:18px"><a class="btn" href="https://github.com/danmarinescu79/djcast/issues/new?template=setup_report.yml" data-goatcounter-click="setup-report" data-goatcounter-title="Setup report form">Send a setup report</a></p>
         </div>
       </div>
@@ -253,7 +254,7 @@
       <div class="steps">
         <div class="card"><h3>Install</h3><p><strong>Windows:</strong> run the installer. Windows may warn that the file isn't commonly downloaded while djcast is new — choose <em>More info → Run anyway</em>. <strong>Mac:</strong> open the .dmg, drag djcast to Applications, and allow it under Accessibility when it asks, so it can read the decks.</p></div>
         <div class="card"><h3>Add your server</h3><p>Settings → Server: address, port, mount point and password, and the format you want. <em>Test connection</em> tells you right away if the login works.</p></div>
-        <div class="card"><h3>Go live</h3><p>Play in rekordbox and press <em>Go live</em>. Titles follow your mix; the tracklist and recording build themselves.</p></div>
+        <div class="card"><h3>Go live</h3><p>Play in rekordbox or Serato DJ and press <em>Go live</em>. Titles follow your mix; the tracklist and recording build themselves.</p></div>
       </div>
     </div>
   </section>
@@ -262,7 +263,7 @@
     <div class="wrap facts">
       <div class="card">
         <h3>Privacy</h3>
-        <p>The app has no accounts, analytics or telemetry. It only connects to the streaming servers you add, to GitHub to check for updates (you can turn it off), and to Discord if you set up a webhook. Your rekordbox library never leaves your computer. <a href="https://github.com/danmarinescu79/djcast#privacy">Details</a></p>
+        <p>The app has no accounts, analytics or telemetry. It only connects to the streaming servers you add, to GitHub to check for updates (you can turn it off), and to Discord if you set up a webhook. Your music library never leaves your computer. <a href="https://github.com/danmarinescu79/djcast#privacy">Details</a></p>
         <p>This website counts visits and download clicks with <a href="https://www.goatcounter.com">GoatCounter</a>: no cookies and no personal data.</p>
       </div>
       <div class="card" id="signing">
@@ -280,7 +281,7 @@
 <footer>
   <div class="wrap">
     <p>© Dan Marinescu · <a href="https://github.com/danmarinescu79/djcast">djcast on GitHub</a> · <a href="https://github.com/danmarinescu79/djcast/blob/main/CHANGELOG.md">Changelog</a></p>
-    <p>djcast is not affiliated with AlphaTheta Corporation or Pioneer DJ. "rekordbox" is a trademark of AlphaTheta Corporation.</p>
+    <p>djcast is not affiliated with AlphaTheta Corporation, Pioneer DJ or Serato. "rekordbox" is a trademark of AlphaTheta Corporation; "Serato" is a trademark of Serato Limited.</p>
   </div>
 </footer>
 
