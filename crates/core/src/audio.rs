@@ -193,9 +193,6 @@ pub struct Capture {
     pub device_name: String,
 }
 
-/// Program captured by `mode = "process"` when no name is given.
-pub const DEFAULT_PROCESS: &str = "rekordbox";
-
 /// Open the configured device and start pushing stereo f32 chunks into `tx`.
 pub fn start_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Levels>) -> Result<Capture> {
     if cfg.mode == CaptureMode::Process {
@@ -259,7 +256,8 @@ pub fn start_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Levels
 
 #[cfg(windows)]
 fn start_process_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Levels>) -> Result<Capture> {
-    let wanted = if cfg.device.trim().is_empty() { DEFAULT_PROCESS } else { cfg.device.trim() };
+    // Empty: the first DJ program that is running (process_capture::DJ_PROGRAMS).
+    let wanted = cfg.device.trim();
     let gain = cfg.gain;
     let ch = Channels { count: 2, offset: 0 };
     let pc = crate::process_capture::start(wanted, move |data| deliver(to_stereo(data, ch, gain), &levels, &tx))?;

@@ -107,7 +107,7 @@ encrypted database or a key the user has to find. Kept here for the record.
       similar): last line, leading time ignored, UTF-8 / UTF-16
 - [x] Now playing from Serato DJ 5+ on Windows: open `history_entry` rows in
       `%LOCALAPPDATA%\Serato\Library\master.sqlite` = tracks loaded per deck (written on load;
-      play/stop leave no trace); on air from the MIDI mixer, else the track loaded earliest.
+      play/stop leave no trace); on air from the MIDI mixer only (mouse mixing not supported).
       The Serato window exposes no text through UI Automation
 - [ ] Serato on macOS: check where Serato 5 keeps `master.sqlite`
 - [ ] Now playing from Traktor (its broadcast metadata, received by a local Icecast endpoint)

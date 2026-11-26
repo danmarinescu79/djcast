@@ -25,8 +25,17 @@ export function deckSlots(status) {
       title: d?.title || '',
       artist: d?.artist || '',
       elapsed: d?.elapsed || '--:--',
-      // 'onair' / 'playing' / 'stopped' / 'empty', shown with the deck.* translation keys
-      stateKey: d ? (d.on_air ? 'onair' : d.playing ? 'playing' : 'stopped') : 'empty',
+      // 'onair' / 'playing' / 'stopped' / 'loaded' / 'empty', shown with the deck.* translation
+      // keys; 'loaded' when the source can't tell whether the deck plays (Serato)
+      stateKey: d
+        ? d.on_air
+          ? 'onair'
+          : status.decks?.play_state_known === false
+            ? 'loaded'
+            : d.playing
+              ? 'playing'
+              : 'stopped'
+        : 'empty',
       onAir: !!d?.on_air,
       playing: !!d?.playing,
       hidden: d ? !d.visible : false,
@@ -38,6 +47,7 @@ export function deckSlots(status) {
 
 export function sourceLabel(status) {
   if (status.nowplaying_source === 'none') return t('source.manual');
+  if (status.nowplaying_source === 'serato') return t('source.serato');
   if (status.decks) return t('source.live');
   return status.nowplaying_source;
 }

@@ -112,7 +112,7 @@
   let testing = $state(false);
   let configPath = $state('');
 
-  const tabs = ['general', 'audio', 'server', 'processing', 'nowplaying', 'recording', 'share', 'about'];
+  const tabs = ['general', 'audio', 'server', 'processing', 'nowplaying', 'controller', 'recording', 'share', 'about'];
 
   let midiPorts = $state([]);
 
@@ -330,6 +330,11 @@
   // Faders, crossfader and the switch delay only matter for the sources that follow the decks.
   const usesMidi = $derived(['rekordbox-live', 'serato'].includes(draft.nowplaying.source));
 
+  /** The MIDI input as shown to the user ("auto" and "none" translated). */
+  function midiInputLabel(v) {
+    return v === 'auto' ? t('np.midiAuto') : !v || v === 'none' ? t('np.midiOff') : v;
+  }
+
   async function pickTextFile() {
     const chosen = await open({
       title: t('np.textFile'),
@@ -365,7 +370,7 @@
         {#if draft.audio.mode === 'process'}
           <div class="field">
             <label for="program">{t('audio.program')}</label>
-            <input id="program" bind:value={draft.audio.device} placeholder="rekordbox" spellcheck="false" />
+            <input id="program" bind:value={draft.audio.device} placeholder={t('audio.programAuto')} spellcheck="false" />
             <span class="hint">{t('audio.programHint')}</span>
           </div>
         {:else}
@@ -577,12 +582,31 @@
       {:else if draft.nowplaying.source === 'serato'}
         <p class="note">{t('np.seratoHint')}</p>
       {/if}
-      <div class="grid sep">
-        {#if usesMidi}
-        <div class="field">
-          <label for="confirm">{t('np.confirm', { v: draft.nowplaying.confirm_secs })}</label>
-          <input id="confirm" type="range" min="0" max="15" step="0.5" bind:value={draft.nowplaying.confirm_secs} />
+      {#if usesMidi}
+        <div class="sep-top block">
+          <p class="note">{t('np.controllerLink', { input: midiInputLabel(draft.nowplaying.midi_input) })}</p>
+          <div><button type="button" class="btn" onclick={() => (tab = 'controller')}>{t('np.controllerOpen')}</button></div>
         </div>
+      {/if}
+      <div class="grid sep">
+        <div class="field">
+          <label for="out">{t('np.folder')}</label>
+          <div class="folder">
+            <input id="out" bind:value={draft.nowplaying.output_dir} placeholder={t('np.folderOff')} />
+            <button type="button" class="btn big" onclick={async () => {
+              const p = await pickFolder(draft.nowplaying.output_dir, t('np.folder'));
+              if (p) draft.nowplaying.output_dir = p;
+            }}>{t('common.browse')}</button>
+            <button type="button" class="btn big" disabled={!draft.nowplaying.output_dir} onclick={() => openFolder(draft.nowplaying.output_dir)}>{t('common.open')}</button>
+          </div>
+          <span class="hint">{t('common.relativeHint', { dir: baseDir })}</span>
+        </div>
+      </div>
+    {:else if tab === 'controller'}
+      <h1>{t('tab.controller')}</h1>
+      <p class="note">{t('np.controllerIntro')}</p>
+      {#if !usesMidi}<p class="note">{t('np.controllerUnused')}</p>{/if}
+      <div class="grid">
         <div class="field">
           <label for="midi">{t('np.midi')}</label>
           <select id="midi" bind:value={draft.nowplaying.midi_input}>
@@ -601,21 +625,12 @@
             <option value="custom">{t('np.mappingCustom')}</option>
           </select>
         </div>
-        {/if}
         <div class="field">
-          <label for="out">{t('np.folder')}</label>
-          <div class="folder">
-            <input id="out" bind:value={draft.nowplaying.output_dir} placeholder={t('np.folderOff')} />
-            <button type="button" class="btn big" onclick={async () => {
-              const p = await pickFolder(draft.nowplaying.output_dir, t('np.folder'));
-              if (p) draft.nowplaying.output_dir = p;
-            }}>{t('common.browse')}</button>
-            <button type="button" class="btn big" disabled={!draft.nowplaying.output_dir} onclick={() => openFolder(draft.nowplaying.output_dir)}>{t('common.open')}</button>
-          </div>
-          <span class="hint">{t('common.relativeHint', { dir: baseDir })}</span>
+          <label for="confirm">{t('np.confirm', { v: draft.nowplaying.confirm_secs })}</label>
+          <input id="confirm" type="range" min="0" max="15" step="0.5" bind:value={draft.nowplaying.confirm_secs} />
         </div>
       </div>
-      {#if usesMidi && draft.nowplaying.midi_input !== 'none'}
+      {#if draft.nowplaying.midi_input !== 'none'}
         {#if draft.nowplaying.midi_mapping === 'custom'}
           <div class="sep-top block">
             <p class="note">{t('np.mappingIntro')}</p>

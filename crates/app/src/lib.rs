@@ -129,6 +129,22 @@ impl AppConfig {
         self.stream.encoder.bitrate = p.bitrate;
     }
 
+    /// The stream settings to capture with. "One program" with no name takes the DJ program
+    /// the titles come from, so sound and titles match; other sources leave it empty, which
+    /// captures the first DJ program that runs.
+    pub fn capture_stream(&self) -> Config {
+        let mut stream = self.stream.clone();
+        let audio = &mut stream.audio;
+        if audio.mode == djcast_core::config::CaptureMode::Process && audio.device.trim().is_empty() {
+            audio.device = match self.nowplaying.source {
+                djcast_nowplaying::SourceKind::RekordboxLive => "rekordbox".into(),
+                djcast_nowplaying::SourceKind::Serato => "Serato DJ".into(),
+                _ => String::new(),
+            };
+        }
+        stream
+    }
+
     /// The servers to stream to: every profile marked live, or the active profile if
     /// none is marked. The active profile comes first (it is the one recorded).
     pub fn live_outputs(&self) -> Vec<djcast_core::Output> {

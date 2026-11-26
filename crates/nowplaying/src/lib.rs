@@ -168,6 +168,9 @@ pub struct LiveStatus {
     pub error: Option<String>,
     /// Reading the rekordbox window needs the OS permission (macOS: Accessibility).
     pub permission_needed: bool,
+    /// The source knows whether each deck is playing (rekordbox shows its running time;
+    /// Serato only says what is loaded).
+    pub play_state_known: bool,
 }
 
 #[cfg(test)]

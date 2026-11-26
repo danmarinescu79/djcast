@@ -1,9 +1,10 @@
 # djcast
 
-Audio streaming for DJs, in the spirit of BUTT, with automatic "now playing" detection from rekordbox.
-Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
+Audio streaming for DJs, in the spirit of BUTT, with automatic "now playing" detection from rekordbox
+and Serato DJ. Written in Rust, for Windows and macOS.
 
-> **Status:** early development. Streaming and instant now playing from rekordbox work on Windows; macOS is in progress. See the [roadmap](docs/roadmap.md).
+> **Status:** early development. Streaming and instant now playing from rekordbox work on Windows
+> and macOS; Serato DJ support is new. See the [roadmap](docs/roadmap.md).
 > The name "djcast" is provisional.
 
 ## Features
@@ -104,7 +105,7 @@ djcast has no accounts, analytics or telemetry. It only connects to:
 - GitHub, to check for and download updates (Settings → General; can be turned off);
 - Discord, only if you add a webhook in Settings → Sharing, to post the messages you set up.
 
-What djcast reads from rekordbox, MIDI and audio is used on your computer and never uploaded. Server
+What djcast reads from your DJ software, MIDI and audio is used on your computer and never uploaded. Server
 passwords and the Discord webhook are kept in the system credential store (Windows
 Credential Manager / macOS Keychain). Logs stay in the settings folder and are only shared
 if you attach them to a problem report yourself.
@@ -113,10 +114,11 @@ The [website](https://danmarinescu79.github.io/djcast/) counts visits and downlo
 [GoatCounter](https://www.goatcounter.com), without cookies or personal data.
 
 ## Disclaimer
-This project is not affiliated with, endorsed by, or connected to AlphaTheta Corporation or Pioneer DJ.
-"rekordbox" is a trademark of AlphaTheta Corporation. djcast only reads what rekordbox shows in its
-window (through the operating system's accessibility interface) and does not modify or redistribute
-any part of rekordbox.
+This project is not affiliated with, endorsed by, or connected to AlphaTheta Corporation, Pioneer DJ
+or Serato. "rekordbox" is a trademark of AlphaTheta Corporation; "Serato" is a trademark of Serato
+Limited. djcast only reads what rekordbox shows in its window (through the operating system's
+accessibility interface) and, for Serato DJ, which tracks its library database lists on the decks,
+read-only. It does not modify or redistribute any part of either program.
 
 ## License
 

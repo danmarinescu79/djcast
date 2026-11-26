@@ -131,6 +131,7 @@ impl RekordboxLiveSource {
             midi: self._midi.is_some(),
             error: shared.error.clone(),
             permission_needed: shared.permission_needed,
+            play_state_known: true,
         }
     }
 

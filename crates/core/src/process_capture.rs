@@ -40,7 +40,11 @@ impl Drop for ProcessCapture {
     }
 }
 
-/// Start capturing the program whose executable name contains `wanted` (e.g. "rekordbox").
+/// DJ programs looked for, in this order, when no program name is given.
+pub const DJ_PROGRAMS: &[&str] = &["rekordbox", "Serato DJ", "VirtualDJ", "Traktor", "djay"];
+
+/// Start capturing the program whose executable name contains `wanted` (e.g. "rekordbox"),
+/// or with an empty `wanted` the first running program of [`DJ_PROGRAMS`].
 /// `on_audio` receives interleaved stereo f32 at [`RATE`].
 pub fn start(wanted: &str, on_audio: impl FnMut(&[f32]) + Send + 'static) -> Result<ProcessCapture> {
     let (pid, process_name) = find_process(wanted)?;
@@ -74,28 +78,64 @@ pub fn start(wanted: &str, on_audio: impl FnMut(&[f32]) + Send + 'static) -> Res
     }
 }
 
-/// First running process whose executable name contains `wanted` (case-insensitive).
+/// The running process for `wanted`, or for an empty `wanted` the first running DJ program.
 fn find_process(wanted: &str) -> Result<(u32, String)> {
-    let needle = wanted.trim().to_lowercase();
-    if needle.is_empty() {
-        bail!("no program name given");
+    let running = processes()?;
+    let wanted = wanted.trim();
+    if wanted.is_empty() {
+        return DJ_PROGRAMS.iter().find_map(|p| pick(&running, p)).ok_or_else(|| {
+            anyhow!("no DJ program is running (looked for {}) — start it before going live", DJ_PROGRAMS.join(", "))
+        });
     }
+    pick(&running, wanted).ok_or_else(|| anyhow!("\"{wanted}\" is not running — start it before going live"))
+}
+
+/// The process whose executable name is `wanted` (without ".exe"), else the first one whose
+/// name contains it, case-insensitively: "rekordbox" is rekordbox.exe, not rekordboxAgent.exe.
+fn pick(running: &[(u32, String)], wanted: &str) -> Option<(u32, String)> {
+    let needle = wanted.trim().to_lowercase();
+    let stem = |n: &str| n.to_lowercase().trim_end_matches(".exe").to_string();
+    running
+        .iter()
+        .find(|(_, n)| stem(n) == needle)
+        .or_else(|| running.iter().find(|(_, n)| n.to_lowercase().contains(&needle)))
+        .cloned()
+}
+
+/// Process id and executable name of every running process.
+fn processes() -> Result<Vec<(u32, String)>> {
+    let mut out = Vec::new();
     unsafe {
         let snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0).context("listing processes")?;
         let mut entry = PROCESSENTRY32W { dwSize: size_of::<PROCESSENTRY32W>() as u32, ..Default::default() };
-        let mut found = None;
         let mut ok = Process32FirstW(snap, &mut entry).is_ok();
         while ok {
             let len = entry.szExeFile.iter().position(|&c| c == 0).unwrap_or(entry.szExeFile.len());
-            let name = String::from_utf16_lossy(&entry.szExeFile[..len]);
-            if name.to_lowercase().contains(&needle) {
-                found = Some((entry.th32ProcessID, name));
-                break;
-            }
+            out.push((entry.th32ProcessID, String::from_utf16_lossy(&entry.szExeFile[..len])));
             ok = Process32NextW(snap, &mut entry).is_ok();
         }
         let _ = CloseHandle(snap);
-        found.ok_or_else(|| anyhow!("\"{wanted}\" is not running — start it before going live"))
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn picks_the_program_not_its_helpers() {
+        let running = vec![
+            (1, "rekordboxAgent.exe".to_string()),
+            (2, "rekordbox.exe".to_string()),
+            (3, "Serato DJ Pro.exe".to_string()),
+        ];
+        assert_eq!(pick(&running, "rekordbox"), Some((2, "rekordbox.exe".into())));
+        assert_eq!(pick(&running, "Serato DJ"), Some((3, "Serato DJ Pro.exe".into())));
+        assert_eq!(pick(&running, "serato"), Some((3, "Serato DJ Pro.exe".into())));
+        assert_eq!(pick(&running, "traktor"), None);
+        // The first DJ program in the list wins when several run.
+        assert_eq!(DJ_PROGRAMS.iter().find_map(|p| pick(&running, p)).unwrap().0, 2);
     }
 }
 

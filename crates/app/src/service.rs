@@ -120,7 +120,7 @@ impl Monitor {
     fn start(cfg: &AppConfig) -> Result<Self> {
         let (tx, rx) = djcast_core::crossbeam_channel::bounded::<Vec<f32>>(200);
         let levels = Arc::new(Levels::default());
-        let capture = audio::start_capture(&cfg.stream.audio, tx, levels.clone())?;
+        let capture = audio::start_capture(&cfg.capture_stream().audio, tx, levels.clone())?;
         let stats = Arc::new(DspStats::default());
         let mut dsp = Processor::new(&cfg.stream.processing, capture.sample_rate, stats.clone());
         std::thread::Builder::new().name("monitor".into()).spawn(move || {
@@ -194,7 +194,7 @@ impl Station {
         let cfg = self.config();
         // Release the monitor's capture first; the engine opens its own.
         self.monitor.lock().unwrap().take();
-        let engine = match Engine::start_multi(cfg.stream.clone(), cfg.live_outputs()) {
+        let engine = match Engine::start_multi(cfg.capture_stream(), cfg.live_outputs()) {
             Ok(e) => e,
             Err(e) => {
                 self.restart_monitor();

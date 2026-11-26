@@ -3,34 +3,35 @@
 //! Serato keeps its library in an SQLite database (`master.sqlite`). The moment a track is
 //! loaded on a deck it adds a row to `history_entry` (deck, artist, title, start time) and
 //! closes the row of the track that was on that deck before, so the open rows of the current
-//! session are the tracks loaded on each deck right now. Playing or stopping a deck leaves no
-//! trace there, so which deck is heard comes from:
-//! - the controller's faders and crossfader over MIDI, when they are known (same logic as
-//!   the rekordbox source); or else
-//! - the usual two-deck flow: the next track is loaded on the other deck while the current one
-//!   plays, and the deck that played is reloaded only after the mix. So of the loaded tracks,
-//!   the one loaded **earliest** is the one playing; the title follows when the next track is
-//!   loaded after the mix.
+//! session are the tracks loaded on each deck right now.
+//!
+//! Playing or stopping a deck leaves no trace there, and Serato's window exposes no text, fader
+//! or play state through UI Automation (checked with 5.1: the play buttons report the same
+//! state playing or stopped). So which deck is heard comes only from the controller's channel
+//! faders and crossfader over MIDI, with the same logic as the rekordbox source. Without a
+//! controller (mixing with the mouse) djcast does not guess: guesses from the load order or
+//! the track lengths were wrong too often in tests.
 //!
 //! The database is opened read-only; Serato's account file (`user_tokens.json`) is never read.
 
 use crate::live::mixer::{Assign, MidiMap, MixerState};
 use crate::live::onair::OnAir;
 use crate::{DeckStatus, LiveStatus, Source, Track};
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use rusqlite::{Connection, OpenFlags};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+
+/// Shown when no controller MIDI input is connected.
+const NEEDS_MIDI: &str = "Serato doesn't say which deck is playing: choose your controller's MIDI input \
+                          in Settings → Controller (mixing with the mouse is not supported)";
 
 #[derive(Debug, Clone, PartialEq)]
 struct Loaded {
     deck: u8,
     artist: String,
     title: String,
-    /// When Serato loaded it (Unix seconds); ties are broken by the row id.
-    loaded_at: i64,
-    id: i64,
 }
 
 pub struct SeratoSource {
@@ -79,43 +80,35 @@ impl SeratoSource {
         rows
     }
 
-    /// The deck heard now, from the mixer when it is known, else the earliest loaded track.
+    /// The deck heard now, once the controller's faders or crossfader have been seen.
     fn pick(&mut self, now: Instant) -> Option<u8> {
         let mixer = self.mixer.lock().unwrap();
-        let mixer_known = self._midi.is_some() && (mixer.faders.iter().any(Option::is_some) || mixer.crossfader.is_some());
-        if mixer_known {
-            let levels: Vec<(u8, f32)> = self.loaded.iter().map(|l| (l.deck, mixer.gain(l.deck))).collect();
-            drop(mixer);
-            return self.onair.update(&levels, now);
+        if !mixer.faders.iter().any(Option::is_some) && mixer.crossfader.is_none() {
+            return None; // nothing moved yet: don't pick a deck at random
         }
+        let levels: Vec<(u8, f32)> = self.loaded.iter().map(|l| (l.deck, mixer.gain(l.deck))).collect();
         drop(mixer);
-        earliest(&self.loaded)
+        self.onair.update(&levels, now)
     }
 }
 
 /// Tracks loaded on the decks in the newest history session.
 fn open_entries(conn: &Connection) -> Result<Vec<Loaded>> {
     let mut stmt = conn.prepare_cached(
-        "SELECT id, deck, artist, name, start_time FROM history_entry
+        "SELECT deck, artist, name FROM history_entry
          WHERE session_id = (SELECT MAX(id) FROM history_session) AND end_time = -1
          ORDER BY id",
     )?;
-    let rows = stmt.query_map([], |r| {
-        Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?, r.get::<_, String>(3)?, r.get::<_, i64>(4)?))
-    })?;
+    let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?)))?;
     let mut out: Vec<Loaded> = Vec::new();
     for row in rows {
-        let (id, deck, artist, title, loaded_at) = row?;
+        let (deck, artist, title) = row?;
         let Ok(deck) = deck.trim().parse::<u8>() else { continue };
         // One track per deck: a newer row for the same deck wins.
         out.retain(|l| l.deck != deck);
-        out.push(Loaded { deck, artist: artist.trim().into(), title: title.trim().into(), loaded_at, id });
+        out.push(Loaded { deck, artist: artist.trim().into(), title: title.trim().into() });
     }
     Ok(out)
-}
-
-fn earliest(loaded: &[Loaded]) -> Option<u8> {
-    loaded.iter().min_by_key(|l| (l.loaded_at, l.id)).map(|l| l.deck)
 }
 
 /// `master.sqlite` of Serato DJ 5+.
@@ -135,15 +128,18 @@ impl Source for SeratoSource {
 
     fn poll(&mut self) -> Result<Option<Track>> {
         match self.read_loaded() {
-            Ok(loaded) => {
-                self.loaded = loaded;
-                self.error = None;
-            }
+            Ok(loaded) => self.loaded = loaded,
             Err(e) => {
                 self.error = Some(format!("{e:#}"));
                 return Err(e);
             }
         }
+        // The decks stay visible in the app; only the title needs the controller.
+        if self._midi.is_none() {
+            self.error = Some(NEEDS_MIDI.into());
+            return Err(anyhow!(NEEDS_MIDI));
+        }
+        self.error = None;
         self.on_air = self.pick(Instant::now()).or(self.on_air);
         Ok(self.on_air.and_then(|d| self.loaded.iter().find(|l| l.deck == d)).map(|l| Track {
             artist: l.artist.clone(),
@@ -174,8 +170,8 @@ impl Source for SeratoSource {
                 artist: l.artist.clone(),
                 elapsed: None,
                 remaining: None,
-                // Serato does not say which decks play; the one on air is the best guess.
-                playing: self.on_air == Some(l.deck),
+                // Serato does not say which decks play (see play_state_known).
+                playing: false,
                 visible: true,
                 gain: mixer.gain(l.deck),
                 on_air: self.on_air == Some(l.deck),
@@ -190,6 +186,7 @@ impl Source for SeratoSource {
             midi: self._midi.is_some(),
             error: self.error.clone(),
             permission_needed: false,
+            play_state_known: false,
         })
     }
 }
@@ -231,20 +228,15 @@ mod tests {
         let loaded = open_entries(&c).unwrap();
         assert_eq!(loaded.iter().map(|l| (l.deck, l.title.as_str())).collect::<Vec<_>>(), [(1, "Ajna"), (2, "Boogie Singer")]);
         assert_eq!(loaded[0].artist, "Stan Kolev");
-        // Without the mixer, the track loaded earliest is the one playing.
-        assert_eq!(earliest(&loaded), Some(1));
     }
 
     #[test]
-    fn two_deck_flow_without_mixer() {
-        // Deck 1 plays A; B is cued on deck 2 → A. After the mix, C goes on deck 1 → B.
-        let c = library(&[("1", "", "A", 10, -1)]);
-        assert_eq!(earliest(&open_entries(&c).unwrap()), Some(1));
-        c.execute("INSERT INTO history_entry (session_id, deck, name, start_time) VALUES (1, '2', 'B', 20)", []).unwrap();
-        assert_eq!(earliest(&open_entries(&c).unwrap()), Some(1));
+    fn a_new_load_replaces_the_deck_track() {
+        let c = library(&[("1", "", "A", 10, -1), ("2", "", "B", 20, -1)]);
         c.execute("UPDATE history_entry SET end_time = 30 WHERE name = 'A'", []).unwrap();
         c.execute("INSERT INTO history_entry (session_id, deck, name, start_time) VALUES (1, '1', 'C', 30)", []).unwrap();
-        assert_eq!(earliest(&open_entries(&c).unwrap()), Some(2));
+        let loaded = open_entries(&c).unwrap();
+        assert_eq!(loaded.iter().map(|l| (l.deck, l.title.as_str())).collect::<Vec<_>>(), [(2, "B"), (1, "C")]);
     }
 
     #[test]

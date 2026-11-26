@@ -1,6 +1,6 @@
 [package]
 name = "djcast-nowplaying"
-description = "Now-playing detection for DJ software (rekordbox first)"
+description = "Now-playing detection for DJ software (rekordbox, Serato DJ, text files)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
