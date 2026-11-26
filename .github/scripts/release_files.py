@@ -50,7 +50,8 @@ def main() -> None:
         "djcast to Applications. To show the tracks, allow djcast under System Settings → "
         "Privacy & Security → Accessibility when it asks.\n\n"
         "Installed versions update themselves.\n\n"
-        "Not affiliated with AlphaTheta or Pioneer DJ. rekordbox is a trademark of AlphaTheta Corporation."
+        "Not affiliated with AlphaTheta, Pioneer DJ or Serato. rekordbox is a trademark of AlphaTheta "
+        "Corporation; Serato is a trademark of Serato Limited."
     )
     (out_dir / "notes.md").write_text(f"## What's new\n{changes}{install}\n", encoding="utf-8")
 

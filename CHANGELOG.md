@@ -1,66 +1,56 @@
 # Changelog
 
 ## 0.6.0
-- Now playing "Automatic", the new default: djcast reads rekordbox or Serato DJ, whichever is
-  running (rekordbox if both), and switches by itself when you change programs
-- Capturing one program with no name: when the program the titles come from isn't running,
-  the first DJ program that is gets captured; rekordbox's helper process is never picked
-- Saving the settings no longer leaves the previous rekordbox reader running in the background
-- Listeners: while live, the console shows how many people listen on all servers together and
-  the session's peak, each server its own count, and the mini window the total. djcast reads
-  the servers' public statistics every 20 s (Icecast status-json.xsl, Shoutcast 7.html or
-  stats), no password needed; the Decks view shows them too
-- While the captured audio is silent, the title doesn't move to another deck. Right after
-  start djcast doesn't know the faders until they move, and a playing deck behind a closed
-  fader could take over the title
-- Saving the settings while a track plays no longer adds it to the tracklist a second time
-- Long titles stay on one line (console, mini window, Decks) so the layout no longer jumps:
-  they end in "…" and every few seconds scroll slowly to show the rest (not with reduced
-  motion turned on in the system)
-- Now playing shows the program's name (rekordbox, Serato) instead of "live detection", and
-  the input "rekordbox (program audio)" without ".exe"
+- Now playing works with rekordbox and Serato DJ without changing any setting: the new
+  "Automatic" source (the default) uses whichever program is open, rekordbox if both are,
+  and follows you when you switch
+- See your audience: while you're live, the console shows how many people are listening
+  (all servers together) and the most there were during the set; each server shows its own
+  count, and the mini window and the Decks view show the total. Works with Icecast and
+  Shoutcast, no password needed
+- No more wrong titles right after starting djcast: a deck that plays with its fader down
+  no longer takes over the title while nothing can be heard
+- Audio input "One program only": leave the name empty and djcast records your DJ program by
+  itself, whichever one is open
+- Long titles stay on one line, so the screen no longer jumps around; they end with "…" and
+  scroll now and then to show the rest
+- The label next to the title says rekordbox or Serato instead of "live detection"
+- Fixed: saving the settings during a track listed that track twice in the tracklist
+- Fixed: djcast kept checking rekordbox in the background after every settings change
 
 ## 0.5.0
-- Now playing from Serato DJ 5 and newer: djcast reads which track Serato has loaded on each
-  deck (its library database, read-only). Serato doesn't say which deck is playing, so the
-  title follows the controller's faders over MIDI; mixing with the mouse in Serato is not
-  supported. The decks show "Loaded" instead of playing or stopped, since Serato doesn't tell
-- Settings: the controller (MIDI input, mapping, learning the faders, crossfader sides, switch
-  delay) has its own tab, Controller (MIDI); Now playing links to it
-- Capturing one program with no name given is automatic: the program the titles come from
-  (rekordbox or Serato DJ), otherwise the first DJ program running (rekordbox, Serato DJ,
-  VirtualDJ, Traktor, djay). "rekordbox" now finds rekordbox itself, not its helper process
-- About, the setup report and the README mention Serato DJ next to rekordbox
+- Now playing from Serato DJ 5 or newer. Serato doesn't say which deck is playing, so the
+  title follows your controller's faders (MIDI); mixing with the mouse in Serato isn't
+  supported. The decks show "Loaded", since Serato doesn't say whether they play
+- The controller settings (MIDI input, mapping, learning the faders, crossfader) have their
+  own tab in Settings: Controller (MIDI)
+- Audio input "One program only": leave the name empty to record the DJ program the titles
+  come from (rekordbox or Serato DJ)
 
 ## 0.4.0
-- macOS: instant now playing from the rekordbox window (Accessibility API) and the controller's
-  faders over MIDI, like on Windows; djcast asks for the Accessibility permission it needs
-- macOS: djcast runs on macOS 13 or newer; capturing an output (loopback) needs 14.6 or newer,
-  and on older versions djcast says so and points to the controller's input
-- macOS: AAC with the encoder built into macOS (AudioToolbox), constant bitrate, same ADTS
-  stream as on Windows
-- macOS: when djcast may not read the rekordbox window yet, the console says so and opens the
-  Accessibility settings
-- Settings → About → Setup report: lists the devices, which input channels have sound, MIDI and
-  what djcast reads from rekordbox (no passwords, servers or track names), to copy or send
-  through the new "Setup report" form on GitHub
-- Appearance "Like the system" instead of "Like Windows"; on a Mac, program capture (Windows
-  only) is hidden
-- Now playing from a text file: follows a file another DJ program keeps up to date (such as
-  the VirtualDJ tracklist), so titles work beyond rekordbox. The last line is the current
-  track; a time at its start is ignored. A file left over from an earlier set is not announced
-- The switch delay, controller and crossfader settings only show for the rekordbox sources
-- Inputs with more than two channels (such as a DJ controller's USB input): choose which pair
-  to capture (Settings → Audio → Channels). The DDJ-1000's master (11–12) is picked
-  automatically, or press Detect while a track plays. When the chosen pair stays silent while
-  another one has sound, the console says so and offers to switch. `djcast devices` shows the
-  channel count, `meter --input --channel N` tests a pair
-- The console shows how the input is captured (loopback, input or program) instead of always
-  "Loopback capture"
-- Removed the rekordbox play history source and its database key: the instant source gives
-  the same titles without it. Settings using "Automatic" or "rekordbox history" switch to
-  "rekordbox, instant". The `rekordbox set-key`, `info` and `history` commands are gone; a
-  key file saved earlier (`rekordbox-db.key` in the djcast settings folder) can be deleted
+- djcast for Mac (macOS 13 or newer): instant now playing from rekordbox and your
+  controller's faders, like on Windows. djcast asks for the Accessibility permission it needs
+  to read the rekordbox window, and opens that setting for you when it's missing
+- Mac: AAC streaming, with the encoder built into macOS
+- Mac: recording what the computer plays needs macOS 14.6 or newer; on older versions djcast
+  says so and suggests your controller's audio input instead
+- Now playing from a text file that another DJ program keeps up to date, such as the
+  VirtualDJ tracklist. The last line is the current track; a time at the start of the line
+  is ignored, and a file left over from an earlier set is not announced
+- Controllers with several audio channels over USB: choose which pair to stream (Settings →
+  Audio → Channels). For the DDJ-1000 the master is picked automatically; for others press
+  Detect while a track plays. If the chosen pair stays silent while another one has sound,
+  the console tells you and offers to switch
+- Setup report (Settings → About): a summary of your devices, audio channels, MIDI and what
+  djcast reads from rekordbox, without passwords, servers or track names, to send through
+  the new "Setup report" form on GitHub
+- The console shows how the sound is captured (the whole computer, an input or one program)
+- Appearance "Like the system" instead of "Like Windows"
+- The rekordbox history source and its database key are gone: the instant source gives the
+  same titles without them. Settings that used it switch to the instant source by
+  themselves; a key file saved earlier (rekordbox-db.key in the settings folder) can be
+  deleted. For command-line users: `rekordbox set-key`, `info` and `history` are removed,
+  `devices` shows the channel count and `meter --input --channel N` tests a channel pair
 
 ## 0.3.1
 - Now playing no longer repeats titles: a title is sent only when its text changes, and a
