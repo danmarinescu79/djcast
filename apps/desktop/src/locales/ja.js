@@ -179,6 +179,8 @@ export default {
   'np.openAccessibility': "アクセシビリティ設定を開く",
   'np.source': 'ソース',
   'np.source.rekordbox-live': 'rekordbox、即時（ウィンドウ + コントローラーの MIDI）',
+  'np.source.serato': 'Serato DJ（5 以降）',
+  'np.seratoHint': 'djcast は Serato が各デッキにロードした曲を読み取ります。コントローラーのフェーダー（MIDI）があれば聞こえているデッキの曲名に追従し、ない場合はミックス後に次の曲がロードされたときに切り替わります。',
   'np.source.text-file': 'テキストファイル — VirtualDJ などのソフト',
   'np.textFile': '再生中の曲のファイル',
   'np.textFiles': 'テキストファイル',

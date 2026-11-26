@@ -179,6 +179,8 @@ export default {
   'np.openAccessibility': "Erişilebilirlik ayarlarını aç",
   'np.source': 'Kaynak',
   'np.source.rekordbox-live': 'rekordbox, anında (pencere + kontrolcü MIDI)',
+  'np.source.serato': 'Serato DJ (5 veya daha yeni)',
+  'np.seratoHint': 'djcast, Serato\'nun her deck\'e yüklediği parçayı okur. Kontrolcünün fader\'larıyla (MIDI) başlık duyulan deck\'i izler; onlar olmadan, miksten sonra sıradaki parça yüklendiğinde değişir.',
   'np.source.text-file': 'Metin dosyası — VirtualDJ ve diğer programlar',
   'np.textFile': 'Çalan parça dosyası',
   'np.textFiles': 'Metin dosyaları',

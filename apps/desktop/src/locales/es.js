@@ -179,6 +179,8 @@ export default {
   'np.openAccessibility': "Abrir ajustes de Accesibilidad",
   'np.source': 'Fuente',
   'np.source.rekordbox-live': 'rekordbox, instantáneo (ventana + MIDI del controlador)',
+  'np.source.serato': 'Serato DJ (5 o posterior)',
+  'np.seratoHint': 'djcast lee qué pista tiene Serato cargada en cada deck. Con los faders del controlador (MIDI) el título sigue al deck que suena; sin ellos cambia cuando se carga la siguiente pista después de la mezcla.',
   'np.source.text-file': 'Archivo de texto — VirtualDJ y otros programas',
   'np.textFile': 'Archivo de la pista actual',
   'np.textFiles': 'Archivos de texto',

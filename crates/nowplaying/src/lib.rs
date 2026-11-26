@@ -2,6 +2,7 @@
 //!
 //! Each detection method is a [`Source`] (see `docs/research-now-playing.md`):
 //! - `rekordbox-live` – deck contents from the rekordbox window + mixer state from MIDI (instant)
+//! - `serato`         – tracks loaded on Serato DJ's decks (its library database) + MIDI mixer
 //! - `text-file`      – the last line of a file another program writes (VirtualDJ, …)
 //! - planned: `prodjlink` – CDJs / DJM over the network
 //!
@@ -10,6 +11,7 @@
 
 pub mod live;
 pub mod output;
+pub mod serato;
 pub mod textfile;
 
 use live::mixer::{Assign, MappingPreset, MidiMap};
@@ -65,6 +67,8 @@ pub enum SourceKind {
     /// "rekordbox-db" (the play history, removed in 0.4) are read as this source.
     #[serde(alias = "auto", alias = "rekordbox-db")]
     RekordboxLive,
+    /// Tracks loaded on Serato DJ's decks + mixer state from MIDI.
+    Serato,
     /// The last line of a text file written by another DJ program.
     TextFile,
 }
@@ -74,6 +78,12 @@ pub fn create_source(cfg: &NowPlayingConfig) -> anyhow::Result<Option<Box<dyn So
     Ok(match cfg.source {
         SourceKind::None => None,
         SourceKind::RekordboxLive => Some(Box::new(live_source(cfg)?)),
+        SourceKind::Serato => Some(Box::new(serato::SeratoSource::new(
+            &cfg.midi_input,
+            midi_map(cfg),
+            cfg.crossfader_assign,
+            Duration::from_secs_f64(cfg.confirm_secs.max(0.0)),
+        )?)),
         SourceKind::TextFile => Some(Box::new(textfile::TextFileSource::new(cfg.text_file.trim())?)),
     })
 }
@@ -83,11 +93,15 @@ fn live_source(cfg: &NowPlayingConfig) -> anyhow::Result<live::RekordboxLiveSour
         midi_input: cfg.midi_input.clone(),
         confirm: Duration::from_secs_f64(cfg.confirm_secs.max(0.0)),
         assign: cfg.crossfader_assign,
-        map: match cfg.midi_mapping {
-            MappingPreset::PioneerDdj => MidiMap::pioneer_ddj(),
-            MappingPreset::Custom => cfg.midi_custom.clone(),
-        },
+        map: midi_map(cfg),
     })
+}
+
+fn midi_map(cfg: &NowPlayingConfig) -> MidiMap {
+    match cfg.midi_mapping {
+        MappingPreset::PioneerDdj => MidiMap::pioneer_ddj(),
+        MappingPreset::Custom => cfg.midi_custom.clone(),
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- Now playing from Serato DJ 5 and newer: djcast reads which track Serato has loaded on each
+  deck (its library database, read-only). With the controller's faders over MIDI the title
+  follows the deck you hear; without them, the track loaded earliest is taken as the one
+  playing, so the title changes when the next track is loaded after the mix
+
 ## 0.4.0
 - macOS: instant now playing from the rekordbox window (Accessibility API) and the controller's
   faders over MIDI, like on Windows; djcast asks for the Accessibility permission it needs

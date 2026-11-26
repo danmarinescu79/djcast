@@ -18,6 +18,7 @@ Written in Rust, targeting Windows and macOS (the platforms rekordbox runs on).
   (Icecast, Shoutcast v1/v2), passwords kept in Windows Credential Manager / macOS Keychain
 - Instant now playing from rekordbox: the decks as shown in its window, plus your channel
   faders and crossfader over MIDI to pick the deck that is on air (no database key needed)
+- Now playing from Serato DJ 5+ (the tracks loaded on its decks, plus your faders over MIDI)
 - Now playing from a text file another DJ program keeps up to date (VirtualDJ and others)
 - `nowplaying.txt` / `artist.txt` / `title.txt` for OBS, plus a timestamped tracklist per session
 

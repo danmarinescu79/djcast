@@ -77,7 +77,7 @@ enum RekordboxCmd {
     Watch {
         #[arg(short, long, default_value = "djcast.toml")]
         config: PathBuf,
-        /// Override the configured source: live or file (uses nowplaying.text_file).
+        /// Override the configured source: live, serato or file (uses nowplaying.text_file).
         #[arg(short, long)]
         source: Option<String>,
         /// Print deck and mixer state every second.
@@ -250,7 +250,8 @@ fn rekordbox_cmd(cmd: RekordboxCmd) -> Result<()> {
             np.source = match source.as_deref() {
                 Some("live") => SourceKind::RekordboxLive,
                 Some("file") => SourceKind::TextFile,
-                Some(other) => anyhow::bail!("unknown source '{other}' (use live or file)"),
+                Some("serato") => SourceKind::Serato,
+                Some(other) => anyhow::bail!("unknown source '{other}' (use live, serato or file)"),
                 None if np.source == SourceKind::None => SourceKind::RekordboxLive,
                 None => np.source,
             };

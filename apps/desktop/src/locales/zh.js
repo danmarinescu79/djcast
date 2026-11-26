@@ -179,6 +179,8 @@ export default {
   'np.openAccessibility': "打开辅助功能设置",
   'np.source': '来源',
   'np.source.rekordbox-live': 'rekordbox，即时（窗口 + 控制器 MIDI）',
+  'np.source.serato': 'Serato DJ（5 或更高版本）',
+  'np.seratoHint': 'djcast 读取 Serato 在每个碟机上加载的曲目。有控制器推子（MIDI）时，标题跟随正在播放的碟机；没有时，会在混音后加载下一首曲目时切换。',
   'np.source.text-file': '文本文件 — VirtualDJ 等软件',
   'np.textFile': '正在播放文件',
   'np.textFiles': '文本文件',

@@ -299,7 +299,7 @@ fn find_port(input: &midir::MidiInput, wanted: &str) -> Option<midir::MidiInputP
     input.ports().into_iter().find(|p| input.port_name(p).is_ok_and(|n| n.to_lowercase().contains(&needle)))
 }
 
-fn open_midi(wanted: &str, map: MidiMap, mixer: Arc<Mutex<MixerState>>) -> Option<midir::MidiInputConnection<()>> {
+pub(crate) fn open_midi(wanted: &str, map: MidiMap, mixer: Arc<Mutex<MixerState>>) -> Option<midir::MidiInputConnection<()>> {
     let wanted = wanted.trim();
     if wanted.is_empty() || wanted.eq_ignore_ascii_case("none") {
         return None;

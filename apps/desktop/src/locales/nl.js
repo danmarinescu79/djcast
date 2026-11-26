@@ -179,6 +179,8 @@ export default {
   'np.openAccessibility': "Toegankelijkheidsinstellingen openen",
   'np.source': 'Bron',
   'np.source.rekordbox-live': 'rekordbox, direct (venster + controller-MIDI)',
+  'np.source.serato': 'Serato DJ (5 of nieuwer)',
+  'np.seratoHint': 'djcast leest welk nummer Serato op elk deck heeft geladen. Met de faders van de controller (MIDI) volgt de titel het deck dat je hoort; zonder verandert hij wanneer na de mix het volgende nummer wordt geladen.',
   'np.source.text-file': 'Tekstbestand — VirtualDJ en andere programma’s',
   'np.textFile': 'Now-playing-bestand',
   'np.textFiles': 'Tekstbestanden',

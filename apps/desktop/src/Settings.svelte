@@ -326,9 +326,9 @@
   }
 
   const presets = ['off', 'gentle', 'radio', 'loud', 'custom'];
-  const sources = ['rekordbox-live', 'text-file', 'none'];
-  // Faders, crossfader and the switch delay only matter for the instant rekordbox source.
-  const usesMidi = $derived(draft.nowplaying.source === 'rekordbox-live');
+  const sources = ['rekordbox-live', 'serato', 'text-file', 'none'];
+  // Faders, crossfader and the switch delay only matter for the sources that follow the decks.
+  const usesMidi = $derived(['rekordbox-live', 'serato'].includes(draft.nowplaying.source));
 
   async function pickTextFile() {
     const chosen = await open({
@@ -574,6 +574,8 @@
           </div>
           <span class="hint">{t('np.textFileHint')}</span>
         </div>
+      {:else if draft.nowplaying.source === 'serato'}
+        <p class="note">{t('np.seratoHint')}</p>
       {/if}
       <div class="grid sep">
         {#if usesMidi}

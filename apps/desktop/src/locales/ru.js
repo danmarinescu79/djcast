@@ -179,6 +179,8 @@ export default {
   'np.openAccessibility': "Открыть настройки универсального доступа",
   'np.source': 'Источник',
   'np.source.rekordbox-live': 'rekordbox, мгновенно (окно + MIDI контроллера)',
+  'np.source.serato': 'Serato DJ (версия 5 или новее)',
+  'np.seratoHint': 'djcast читает, какой трек Serato загрузил в каждую деку. С фейдерами контроллера (MIDI) название следует за декой, которую слышно; без них оно меняется, когда после сведения загружается следующий трек.',
   'np.source.text-file': 'Текстовый файл — VirtualDJ и другие программы',
   'np.textFile': 'Файл текущего трека',
   'np.textFiles': 'Текстовые файлы',

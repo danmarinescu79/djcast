@@ -179,6 +179,8 @@ export default {
   'np.openAccessibility': "Deschide setările Accessibility",
   'np.source': 'Sursă',
   'np.source.rekordbox-live': 'rekordbox, instant (fereastră + MIDI de la controller)',
+  'np.source.serato': 'Serato DJ (5 sau mai nou)',
+  'np.seratoHint': 'djcast citește ce piesă are Serato încărcată pe fiecare deck. Cu fader-ele controllerului (MIDI) titlul urmează deck-ul care se aude; fără ele se schimbă când următoarea piesă e încărcată după mix.',
   'np.source.text-file': 'Fișier text — VirtualDJ și alte programe',
   'np.textFile': 'Fișier cu piesa curentă',
   'np.textFiles': 'Fișiere text',
