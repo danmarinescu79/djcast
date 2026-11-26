@@ -48,6 +48,9 @@ export function deckSlots(status) {
 export function sourceLabel(status) {
   if (status.nowplaying_source === 'none') return t('source.manual');
   if (status.nowplaying_source === 'serato') return t('source.serato');
+  if (status.nowplaying_source === 'auto') return t('source.auto');
+  // The program's name, as everyone knows it (not translated).
+  if (status.nowplaying_source === 'rekordbox-live') return 'rekordbox';
   if (status.decks) return t('source.live');
   return status.nowplaying_source;
 }

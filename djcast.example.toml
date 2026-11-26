@@ -50,10 +50,12 @@ enabled = false
 dir = "recordings"
 
 [nowplaying]
+# "auto"           = rekordbox or Serato DJ, whichever is running (rekordbox if both)
 # "none"           = titles only from manual input
 # "rekordbox-live" = instant: decks read from the rekordbox window + mixer via MIDI
+# "serato"         = tracks loaded on Serato DJ 5+ decks + mixer via MIDI (MIDI needed)
 # "text-file"      = last line of a file another DJ program keeps up to date (see text_file)
-source = "rekordbox-live"
+source = "auto"
 poll_interval_secs = 1.0
 # Controller MIDI input for faders/crossfader: "auto" (first "DDJ" port), a port name, or "none"
 midi_input = "auto"

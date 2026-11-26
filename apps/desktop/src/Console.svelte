@@ -5,6 +5,7 @@
   import { save } from '@tauri-apps/plugin-dialog';
   import { clock, bytes, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
+  import Marquee from './lib/Marquee.svelte';
   import { deckSlots, sourceLabel as srcLabel } from './lib/decks.js';
   import { t } from './lib/i18n.svelte.js';
 
@@ -66,6 +67,8 @@
       <div><div class="k">{t('stats.status')}</div><div class="v" class:ok={status.connected}>{status.connected ? t('stats.connected') : status.live ? t('stats.retrying') : t('stats.offline')}</div></div>
       <div><div class="k">{t('stats.recording')}</div><div class="v" class:ok={status.recording}>{status.recording ? t('common.on') : t('common.off')}</div></div>
       <div><div class="k">{t('stats.preset')}</div><div class="v preset">{presetLabel(status.loudness)}</div></div>
+      <div><div class="k">{t('stats.listeners')}</div><div class="v" class:ok={status.listeners > 0}>{status.live && status.listeners != null ? status.listeners : '—'}</div></div>
+      <div><div class="k">{t('stats.peak')}</div><div class="v">{status.live && status.listener_peak != null ? status.listener_peak : '—'}</div></div>
     </div>
 
     {#if status.outputs.length > 0}
@@ -75,7 +78,7 @@
           <div class="srv" title={o.error || o.host}>
             <span class="led" class:up={o.connected} class:down={!o.connected && o.error}></span>
             <span class="srv-name">{o.name}</span>
-            <span class="mono muted small">{o.connected ? bytes(o.bytes_sent) : o.error ? t('stats.retryingShort') : t('stats.connectingShort')}</span>
+            <span class="mono muted small">{o.connected ? (o.listeners != null ? `${t('stats.listening', { n: o.listeners })} · ` : '') + bytes(o.bytes_sent) : o.error ? t('stats.retryingShort') : t('stats.connectingShort')}</span>
           </div>
         {/each}
       </div>
@@ -104,8 +107,8 @@
         {#if status.track?.deck}<span class="badge red">{t('now.deckOnAir', { n: status.track.deck })}</span>{/if}
         <span class="badge blue">{sourceLabel}</span>
       </div>
-      <div class="title">{status.track?.title || t('now.waiting')}</div>
-      <div class="artist">{status.track?.artist || ''}</div>
+      <div class="title"><Marquee text={status.track?.title || t('now.waiting')} /></div>
+      <div class="artist"><Marquee text={status.track?.artist || ''} /></div>
       {#if status.decks?.permission_needed}
         <div class="permission" role="status">
           <span class="warn-text">{t('np.permissionNeeded')}</span>
@@ -222,8 +225,8 @@
   .badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; }
   .red { background: var(--on-air-soft); color: var(--on-air-text); }
   .blue { background: var(--info-soft); color: var(--info); }
-  .title { font-size: 26px; font-weight: 700; line-height: 1.2; user-select: text; }
-  .artist { font-size: 16px; color: var(--text-2); min-height: 22px; user-select: text; }
+  .title { font-size: 26px; font-weight: 700; line-height: 1.25; min-width: 0; user-select: text; }
+  .artist { font-size: 16px; color: var(--text-2); min-height: 22px; min-width: 0; user-select: text; }
   .hint { font-size: 12px; color: var(--muted); }
   .manual input {
     width: 100%; height: 34px; padding: 0 10px; margin-top: 4px;

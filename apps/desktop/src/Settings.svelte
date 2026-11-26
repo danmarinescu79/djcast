@@ -326,9 +326,9 @@
   }
 
   const presets = ['off', 'gentle', 'radio', 'loud', 'custom'];
-  const sources = ['rekordbox-live', 'serato', 'text-file', 'none'];
+  const sources = ['auto', 'rekordbox-live', 'serato', 'text-file', 'none'];
   // Faders, crossfader and the switch delay only matter for the sources that follow the decks.
-  const usesMidi = $derived(['rekordbox-live', 'serato'].includes(draft.nowplaying.source));
+  const usesMidi = $derived(['auto', 'rekordbox-live', 'serato'].includes(draft.nowplaying.source));
 
   /** The MIDI input as shown to the user ("auto" and "none" translated). */
   function midiInputLabel(v) {
@@ -581,6 +581,8 @@
         </div>
       {:else if draft.nowplaying.source === 'serato'}
         <p class="note">{t('np.seratoHint')}</p>
+      {:else if draft.nowplaying.source === 'auto'}
+        <p class="note">{t('np.autoHint')}</p>
       {/if}
       {#if usesMidi}
         <div class="sep-top block">

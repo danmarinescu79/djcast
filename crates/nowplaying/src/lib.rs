@@ -1,6 +1,7 @@
 //! Now-playing detection.
 //!
 //! Each detection method is a [`Source`] (see `docs/research-now-playing.md`):
+//! - `auto`           – `rekordbox-live` or `serato`, whichever program is running
 //! - `rekordbox-live` – deck contents from the rekordbox window + mixer state from MIDI (instant)
 //! - `serato`         – tracks loaded on Serato DJ's decks (its library database) + MIDI mixer
 //! - `text-file`      – the last line of a file another program writes (VirtualDJ, …)
@@ -9,8 +10,10 @@
 //! rekordbox's own database is deliberately not read: it is encrypted, and the window
 //! already shows everything we need.
 
+pub mod auto;
 pub mod live;
 pub mod output;
+pub mod procs;
 pub mod serato;
 pub mod textfile;
 
@@ -45,7 +48,7 @@ pub struct NowPlayingConfig {
 impl Default for NowPlayingConfig {
     fn default() -> Self {
         Self {
-            source: SourceKind::None,
+            source: SourceKind::Auto,
             poll_interval_secs: 1.0,
             midi_input: "auto".into(),
             confirm_secs: 4.0,
@@ -63,9 +66,13 @@ impl Default for NowPlayingConfig {
 pub enum SourceKind {
     /// Titles only come from manual input.
     None,
-    /// Deck contents from the rekordbox window + mixer state from MIDI. "auto" and
-    /// "rekordbox-db" (the play history, removed in 0.4) are read as this source.
-    #[serde(alias = "auto", alias = "rekordbox-db")]
+    /// rekordbox or Serato DJ, whichever is running (rekordbox when both are). Until 0.4
+    /// "auto" meant the rekordbox window with the play history as fallback; that is the same
+    /// as this when rekordbox is used.
+    Auto,
+    /// Deck contents from the rekordbox window + mixer state from MIDI. "rekordbox-db" (the
+    /// play history, removed in 0.4) is read as this source.
+    #[serde(alias = "rekordbox-db")]
     RekordboxLive,
     /// Tracks loaded on Serato DJ's decks + mixer state from MIDI.
     Serato,
@@ -77,6 +84,7 @@ pub enum SourceKind {
 pub fn create_source(cfg: &NowPlayingConfig) -> anyhow::Result<Option<Box<dyn Source>>> {
     Ok(match cfg.source {
         SourceKind::None => None,
+        SourceKind::Auto => Some(Box::new(auto::AutoSource::new(cfg))),
         SourceKind::RekordboxLive => Some(Box::new(live_source(cfg)?)),
         SourceKind::Serato => Some(Box::new(serato::SeratoSource::new(
             &cfg.midi_input,
@@ -133,6 +141,10 @@ pub trait Source: Send {
     fn debug_snapshot(&self) -> Option<String> {
         None
     }
+    /// Whether anything is heard in the captured audio. While nothing is, sources that pick
+    /// the deck on air keep the current one: right after start djcast doesn't know the
+    /// faders until they move, and a playing deck behind a closed fader must not take over.
+    fn set_audible(&mut self, _audible: bool) {}
     /// Deck and mixer state, for sources that know it.
     fn live_status(&self) -> Option<LiveStatus> {
         None
@@ -187,10 +199,17 @@ mod tests {
 
     #[test]
     fn removed_sources_read_as_live() {
-        for old in ["auto", "rekordbox-db", "rekordbox-live"] {
+        for old in ["rekordbox-db", "rekordbox-live"] {
             let cfg: NowPlayingConfig =
                 serde_json::from_str(&format!(r#"{{"source":"{old}","rekordbox_key":"x","rekordbox_db":""}}"#)).unwrap();
             assert_eq!(cfg.source, SourceKind::RekordboxLive, "{old}");
         }
+    }
+
+    #[test]
+    fn auto_is_the_default_and_reads_back() {
+        assert_eq!(NowPlayingConfig::default().source, SourceKind::Auto);
+        let cfg: NowPlayingConfig = serde_json::from_str(r#"{"source":"auto"}"#).unwrap();
+        assert_eq!(cfg.source, SourceKind::Auto);
     }
 }

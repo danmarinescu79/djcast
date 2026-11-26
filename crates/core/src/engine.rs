@@ -40,7 +40,15 @@ pub struct OutputStatus {
     pub bytes_sent: u64,
     pub connected_since: Option<Instant>,
     pub last_error: Option<String>,
+    /// Listeners on the mount, from the server's public statistics (None until known, or when
+    /// the server doesn't publish them).
+    pub listeners: Option<u32>,
+    /// Most listeners seen during this session.
+    pub listener_peak: Option<u32>,
 }
+
+/// How often to ask each server how many listen.
+const LISTENERS_EVERY: Duration = Duration::from_secs(20);
 
 /// Snapshot of the engine state, for CLI/GUI display. Top-level connection fields
 /// summarize all outputs (connected = any connected, bytes = total).
@@ -208,8 +216,15 @@ impl Engine {
                     .name(format!("metadata-{}", out.name))
                     .spawn(move || metadata_loop(&server, in_band, meta_rx, &status, &shared))?
             };
+            let count = {
+                let (server, status, stop) = (out.server.clone(), status.clone(), stop.clone());
+                thread::Builder::new()
+                    .name(format!("listeners-{}", out.name))
+                    .spawn(move || listeners_loop(&server, &status, &stop))?
+            };
             threads.push(net);
             threads.push(meta);
+            threads.push(count);
             statuses.push(status);
             meta_txs.push(meta_tx);
         }
@@ -252,6 +267,11 @@ impl Engine {
         for tx in &self.meta_txs {
             let _ = tx.try_send(MetaMsg::Title(title.clone()));
         }
+    }
+
+    /// The capture's level meter, shared (for code that reads it on its own thread).
+    pub fn levels_handle(&self) -> Arc<Levels> {
+        self.levels.clone()
     }
 
     pub fn levels(&self) -> (f32, f32) {
@@ -503,6 +523,39 @@ fn network_loop(
         }
     }
     status.lock().unwrap().connected = false;
+}
+
+/// Asks the server how many listen, every [`LISTENERS_EVERY`] while connected. A server that
+/// doesn't answer is asked again later; its count stays unknown in the meantime.
+fn listeners_loop(server: &ServerConfig, status: &Mutex<OutputStatus>, stop: &AtomicBool) {
+    let name = status.lock().unwrap().name.clone();
+    let mut warned = false;
+    let mut next = Instant::now() + Duration::from_secs(5);
+    while !stop.load(Ordering::SeqCst) {
+        thread::sleep(Duration::from_millis(250));
+        if Instant::now() < next {
+            continue;
+        }
+        next = Instant::now() + LISTENERS_EVERY;
+        if !status.lock().unwrap().connected {
+            continue;
+        }
+        match icecast::listeners(server) {
+            Ok(n) => {
+                let mut st = status.lock().unwrap();
+                st.listeners = Some(n);
+                st.listener_peak = Some(st.listener_peak.map_or(n, |p| p.max(n)));
+                warned = false;
+            }
+            Err(e) => {
+                status.lock().unwrap().listeners = None;
+                if !warned {
+                    log::info!("[{name}] listener count unavailable: {e:#}");
+                    warned = true;
+                }
+            }
+        }
+    }
 }
 
 /// Sends titles through the server's admin API. With `in_band` (Ogg) the encoder carries

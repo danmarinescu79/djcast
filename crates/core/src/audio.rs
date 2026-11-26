@@ -263,7 +263,7 @@ fn start_process_capture(cfg: &AudioConfig, tx: Sender<Vec<f32>>, levels: Arc<Le
     let pc = crate::process_capture::start(wanted, move |data| deliver(to_stereo(data, ch, gain), &levels, &tx))?;
     Ok(Capture {
         _stream: None,
-        device_name: format!("{} (program audio)", pc.process_name),
+        device_name: format!("{} (program audio)", pc.process_name.trim_end_matches(".exe")),
         _process: Some(pc),
         sample_rate: crate::process_capture::RATE,
     })

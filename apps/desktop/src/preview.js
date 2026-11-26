@@ -28,7 +28,8 @@ const status = {
     ],
     on_air: 1, faders: [1, 0.4, null, null], crossfader: 0.5, midi: true, error: null,
   },
-  outputs: [{ name: 'Default', host: 'radio.example.com:8000', bitrate: 192, connected: true, connected_secs: 221, bytes_sent: 5_400_000, error: null }],
+  outputs: [{ name: 'Default', host: 'radio.example.com:8000', bitrate: 192, connected: true, connected_secs: 221, bytes_sent: 5_400_000, error: null, listeners: 18, listener_peak: 24 }],
+  listeners: 18, listener_peak: 24,
   nowplaying_source: 'rekordbox-live', nowplaying_error: null, error: null, capture_mode: 'loopback',
 };
 const params = new URLSearchParams(location.search);

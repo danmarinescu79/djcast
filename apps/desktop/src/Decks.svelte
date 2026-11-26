@@ -1,6 +1,7 @@
 <script>
   import { lufs, db, meterFraction, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
+  import Marquee from './lib/Marquee.svelte';
   import { deckSlots, sourceLabel } from './lib/decks.js';
   import { t } from './lib/i18n.svelte.js';
 
@@ -42,9 +43,15 @@
   </section>
 
   <aside>
+    {#if status.live}
+      <div class="panel card listeners">
+        <div><span class="label">{t('stats.listeners')}</span><span class="big mono" class:ok={status.listeners > 0}>{status.listeners ?? '—'}</span></div>
+        <div><span class="label">{t('stats.peak')}</span><span class="big mono">{status.listener_peak ?? '—'}</span></div>
+      </div>
+    {/if}
     <div class="panel card">
       <span class="label">{t('decks.sent')}</span>
-      <span class="sent">{status.track?.display || t('now.waiting')}</span>
+      <span class="sent"><Marquee text={status.track?.display || t('now.waiting')} /></span>
       <span class="muted small">{sourceLabel(status)}{status.track?.deck ? ` · ${t('deck.n', { n: status.track.deck })}` : ''}</span>
     </div>
 
@@ -120,7 +127,9 @@
 
   aside { width: 250px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
   .card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .sent { font-size: 16px; font-weight: 700; line-height: 1.3; user-select: text; }
+  .listeners { flex-direction: row; gap: 24px; }
+  .listeners > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .sent { font-size: 16px; font-weight: 700; line-height: 1.3; min-width: 0; user-select: text; }
   .faders { display: flex; justify-content: space-between; height: 110px; }
   .vfader { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .vtrack { width: 14px; flex-grow: 1; background: var(--line); border-radius: 3px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }

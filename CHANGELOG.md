@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+- Now playing "Automatic", the new default: djcast reads rekordbox or Serato DJ, whichever is
+  running (rekordbox if both), and switches by itself when you change programs
+- Capturing one program with no name: when the program the titles come from isn't running,
+  the first DJ program that is gets captured; rekordbox's helper process is never picked
+- Saving the settings no longer leaves the previous rekordbox reader running in the background
+- Listeners: while live, the console shows how many people listen on all servers together and
+  the session's peak, each server its own count, and the mini window the total. djcast reads
+  the servers' public statistics every 20 s (Icecast status-json.xsl, Shoutcast 7.html or
+  stats), no password needed; the Decks view shows them too
+- While the captured audio is silent, the title doesn't move to another deck. Right after
+  start djcast doesn't know the faders until they move, and a playing deck behind a closed
+  fader could take over the title
+- Saving the settings while a track plays no longer adds it to the tracklist a second time
+- Long titles stay on one line (console, mini window, Decks) so the layout no longer jumps:
+  they end in "…" and every few seconds scroll slowly to show the rest (not with reduced
+  motion turned on in the system)
+- Now playing shows the program's name (rekordbox, Serato) instead of "live detection", and
+  the input "rekordbox (program audio)" without ".exe"
+
 ## 0.5.0
 - Now playing from Serato DJ 5 and newer: djcast reads which track Serato has loaded on each
   deck (its library database, read-only). Serato doesn't say which deck is playing, so the

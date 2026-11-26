@@ -34,6 +34,10 @@ pub struct StationStatus {
     pub tracklist: Vec<TracklistEntry>,
     pub decks: Option<LiveStatus>,
     pub outputs: Vec<OutputView>,
+    /// Listeners on all servers together (None while no server reported a count).
+    pub listeners: Option<u32>,
+    /// Most listeners on all servers together during this session.
+    pub listener_peak: Option<u32>,
     pub nowplaying_source: String,
     pub nowplaying_error: Option<String>,
     pub error: Option<String>,
@@ -50,6 +54,8 @@ pub struct OutputView {
     pub connected_secs: u64,
     pub bytes_sent: u64,
     pub error: Option<String>,
+    pub listeners: Option<u32>,
+    pub listener_peak: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -107,6 +113,8 @@ struct Ctx {
     files: Arc<Mutex<Option<NowPlayingFiles>>>,
     np: Arc<Mutex<NowPlayingShared>>,
     recording: Arc<Mutex<Option<std::path::PathBuf>>>,
+    /// Levels of the running capture (the monitor's or the engine's), for the silence rule.
+    levels: Arc<Mutex<Option<Arc<Levels>>>>,
 }
 
 /// Captures and processes the input while offline, for meters only.
@@ -145,7 +153,10 @@ pub struct Station {
     monitor: Mutex<Option<Monitor>>,
     monitor_error: Mutex<Option<String>>,
     np_stop: Mutex<Arc<AtomicBool>>,
-    np_source_name: Mutex<String>,
+    /// The source's name; the automatic source changes it when it follows another program.
+    np_source_name: Arc<Mutex<String>>,
+    /// Most listeners on all servers together during this session.
+    listener_peak: Mutex<Option<u32>>,
 }
 
 impl Station {
@@ -158,11 +169,13 @@ impl Station {
                 files: Arc::new(Mutex::new(None)),
                 np: Arc::new(Mutex::new(NowPlayingShared::default())),
                 recording: Arc::new(Mutex::new(None)),
+                levels: Arc::new(Mutex::new(None)),
             },
             monitor: Mutex::new(None),
             monitor_error: Mutex::new(None),
             np_stop: Mutex::new(Arc::new(AtomicBool::new(false))),
-            np_source_name: Mutex::new("none".into()),
+            np_source_name: Arc::new(Mutex::new("none".into())),
+            listener_peak: Mutex::new(None),
         });
         station.restart_monitor();
         station.restart_nowplaying();
@@ -194,6 +207,7 @@ impl Station {
         let cfg = self.config();
         // Release the monitor's capture first; the engine opens its own.
         self.monitor.lock().unwrap().take();
+        *self.ctx.levels.lock().unwrap() = None;
         let engine = match Engine::start_multi(cfg.capture_stream(), cfg.live_outputs()) {
             Ok(e) => e,
             Err(e) => {
@@ -222,6 +236,7 @@ impl Station {
         *self.ctx.recording.lock().unwrap() = engine.status().recording;
         *self.ctx.files.lock().unwrap() = files;
         *self.ctx.session_start.lock().unwrap() = Some(std::time::Instant::now());
+        *self.ctx.levels.lock().unwrap() = Some(engine.levels_handle());
         *self.ctx.engine.lock().unwrap() = Some(engine);
         write_cue(&self.ctx);
         if cfg.share.on_live && cfg.share.discord_enabled() {
@@ -287,6 +302,17 @@ impl Station {
         drop(engine);
         let np = self.ctx.np.lock().unwrap();
         let finite = |v: f32| v.is_finite().then_some(v);
+        let counts: Vec<u32> = st.outputs.iter().filter_map(|o| o.listeners).collect();
+        let listeners = (!counts.is_empty()).then(|| counts.iter().sum::<u32>());
+        let listener_peak = {
+            let mut peak = self.listener_peak.lock().unwrap();
+            if !live {
+                *peak = None; // a new session starts from zero
+            } else if let Some(n) = listeners {
+                *peak = Some(peak.map_or(n, |p| p.max(n)));
+            }
+            *peak
+        };
         StationStatus {
             live,
             connected: st.connected,
@@ -328,8 +354,12 @@ impl Station {
                     connected_secs: o.connected_since.map(|t| t.elapsed().as_secs()).unwrap_or(0),
                     bytes_sent: o.bytes_sent,
                     error: o.last_error.clone(),
+                    listeners: o.listeners,
+                    listener_peak: o.listener_peak,
                 })
                 .collect(),
+            listeners,
+            listener_peak,
             nowplaying_source: self.np_source_name.lock().unwrap().clone(),
             nowplaying_error: np.error.clone(),
             error: st.last_error.clone().or_else(|| self.monitor_error.lock().unwrap().clone()),
@@ -342,10 +372,12 @@ impl Station {
         slot.take();
         match Monitor::start(&cfg) {
             Ok(m) => {
+                *self.ctx.levels.lock().unwrap() = Some(m.levels.clone());
                 *slot = Some(m);
                 *self.monitor_error.lock().unwrap() = None;
             }
             Err(e) => {
+                *self.ctx.levels.lock().unwrap() = None;
                 log::warn!("input monitor: {e:#}");
                 *self.monitor_error.lock().unwrap() = Some(format!("{e:#}"));
             }
@@ -372,11 +404,18 @@ impl Station {
         *self.np_source_name.lock().unwrap() = source.name().into();
         let interval = Duration::from_secs_f64(cfg.poll_interval_secs.max(0.5));
         let ctx = self.ctx.clone();
+        let name = self.np_source_name.clone();
         let _ = std::thread::Builder::new().name("nowplaying".into()).spawn(move || {
-            let mut last: Option<Track> = None;
+            // A restarted poller (settings saved) must not announce the current track again.
+            let mut last: Option<Track> = ctx.np.lock().unwrap().track.clone();
+            let mut heard_at: Option<std::time::Instant> = None;
             while !stop.load(Ordering::SeqCst) {
+                source.set_audible(audible(&ctx, &mut heard_at));
                 let result = source.poll();
                 let status = source.live_status();
+                if !stop.load(Ordering::SeqCst) {
+                    *name.lock().unwrap() = source.name().into();
+                }
                 {
                     let mut s = ctx.np.lock().unwrap();
                     s.status = status;
@@ -395,6 +434,23 @@ impl Station {
         });
     }
 
+}
+
+/// Below this peak (about -60 dBFS) the captured audio counts as silent.
+const SILENT_PEAK: f32 = 0.001;
+/// Short gaps in a track don't count as silence.
+const SILENCE_HOLD: Duration = Duration::from_secs(3);
+
+/// Whether the captured audio had sound in the last few seconds. Without a capture (it
+/// failed or there is none) nothing is known, so detection is not held back.
+fn audible(ctx: &Ctx, heard_at: &mut Option<std::time::Instant>) -> bool {
+    let Some(levels) = ctx.levels.lock().unwrap().clone() else { return true };
+    let (l, r) = levels.get();
+    let now = std::time::Instant::now();
+    if l.max(r) > SILENT_PEAK {
+        *heard_at = Some(now);
+    }
+    heard_at.is_some_and(|t| now.duration_since(t) < SILENCE_HOLD)
 }
 
 fn on_track(ctx: &Ctx, t: &Track) {

@@ -58,6 +58,8 @@ struct Shared {
     error: Option<String>,
     /// The last read failed because the OS permission to read other apps' windows is missing.
     permission_needed: bool,
+    /// Set when the source is dropped: the reading thread ends.
+    stopped: bool,
 }
 
 /// Reading the rekordbox window needs a permission the user has not given yet (macOS
@@ -88,6 +90,7 @@ pub struct RekordboxLiveSource {
     mixer: Arc<Mutex<MixerState>>,
     _midi: Option<midir::MidiInputConnection<()>>,
     onair: OnAir,
+    audible: bool,
 }
 
 impl RekordboxLiveSource {
@@ -96,7 +99,13 @@ impl RekordboxLiveSource {
         spawn_scanner(shared.clone())?;
         let mixer = Arc::new(Mutex::new(MixerState::new(cfg.assign)));
         let midi = open_midi(&cfg.midi_input, cfg.map.clone(), mixer.clone());
-        Ok(Self { shared, mixer, _midi: midi, onair: OnAir::new(cfg.confirm) })
+        Ok(Self { shared, mixer, _midi: midi, onair: OnAir::new(cfg.confirm), audible: true })
+    }
+}
+
+impl Drop for RekordboxLiveSource {
+    fn drop(&mut self) {
+        self.shared.lock().unwrap().stopped = true;
     }
 }
 
@@ -184,6 +193,10 @@ impl Source for RekordboxLiveSource {
         Some(self.status())
     }
 
+    fn set_audible(&mut self, audible: bool) {
+        self.audible = audible;
+    }
+
     fn poll(&mut self) -> Result<Option<Track>> {
         let now = Instant::now();
         let shared = self.shared.lock().unwrap();
@@ -198,7 +211,7 @@ impl Source for RekordboxLiveSource {
             .map(|d| (d.view.deck, if d.playing(now) { mixer.gain(d.view.deck) } else { 0.0 }))
             .collect();
         drop(mixer);
-        let deck = self.onair.update(&levels, now);
+        let deck = if self.audible { self.onair.update(&levels, now) } else { self.onair.current() };
         Ok(deck.and_then(|d| shared.decks.get(&d)).map(|d| Track {
             artist: d.view.artist.clone(),
             title: d.view.title.clone(),
@@ -246,6 +259,9 @@ fn spawn_scanner(shared: Arc<Mutex<Shared>>) -> Result<()> {
             }
         };
         loop {
+            if shared.lock().unwrap().stopped {
+                return;
+            }
             let started = Instant::now();
             let result = scanner.scan();
             let now = Instant::now();

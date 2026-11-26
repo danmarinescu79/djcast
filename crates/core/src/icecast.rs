@@ -324,6 +324,76 @@ fn update_metadata_shoutcast(cfg: &ServerConfig, song: &str) -> Result<()> {
     Ok(())
 }
 
+/// Listeners on this output's mount right now, from the server's public statistics (no
+/// password needed): Icecast `status-json.xsl`, Shoutcast v2 `stats?json=1`, Shoutcast v1
+/// `7.html`.
+pub fn listeners(cfg: &ServerConfig) -> Result<u32> {
+    match cfg.protocol {
+        Protocol::Icecast => {
+            let body = get(cfg, "/status-json.xsl", USER_AGENT)?;
+            icecast_listeners(&body, &normalize_mount(&cfg.mount))
+        }
+        Protocol::Shoutcast2 => {
+            let body = get(cfg, &format!("/stats?sid={}&json=1", cfg.stream_id.max(1)), USER_AGENT)?;
+            shoutcast2_listeners(&body)
+        }
+        // Like admin.cgi, 7.html only answers browser-like user agents.
+        Protocol::Shoutcast1 => {
+            let body = get(cfg, "/7.html", &format!("Mozilla/5.0 (compatible; {USER_AGENT})"))?;
+            shoutcast1_listeners(&body)
+        }
+    }
+}
+
+/// GET a page of the server and return its body (at most 1 MB).
+fn get(cfg: &ServerConfig, path: &str, user_agent: &str) -> Result<String> {
+    let mut stream: Box<dyn ReadWrite> =
+        if cfg.protocol == Protocol::Icecast { Box::new(open(cfg)?) } else { Box::new(open_tcp(&cfg.host, cfg.port)?) };
+    let req = format!(
+        "GET {path} HTTP/1.0\r\nHost: {host}:{port}\r\nUser-Agent: {user_agent}\r\nConnection: close\r\n\r\n",
+        host = cfg.host,
+        port = cfg.port,
+    );
+    stream.write_all(req.as_bytes())?;
+    let (code, reason) = read_status(&mut stream)?;
+    if code != 200 {
+        bail!("{path}: {code} {reason}");
+    }
+    let mut body = Vec::new();
+    stream.take(1 << 20).read_to_end(&mut body)?;
+    Ok(String::from_utf8_lossy(&body).into_owned())
+}
+
+trait ReadWrite: Read + Write {}
+impl<T: Read + Write> ReadWrite for T {}
+
+/// Icecast lists every source; a single one is an object, several an array.
+fn icecast_listeners(body: &str, mount: &str) -> Result<u32> {
+    let json: serde_json::Value = serde_json::from_str(body).context("reading the server's status page")?;
+    let sources = match &json["icestats"]["source"] {
+        serde_json::Value::Array(a) => a.clone(),
+        serde_json::Value::Null => Vec::new(),
+        one => vec![one.clone()],
+    };
+    sources
+        .iter()
+        .find(|s| s["listenurl"].as_str().is_some_and(|u| u.ends_with(mount)))
+        .and_then(|s| s["listeners"].as_u64())
+        .map(|n| n as u32)
+        .with_context(|| format!("{mount} is not in the server's status page"))
+}
+
+fn shoutcast2_listeners(body: &str) -> Result<u32> {
+    let json: serde_json::Value = serde_json::from_str(body).context("reading the server's statistics")?;
+    json["currentlisteners"].as_u64().map(|n| n as u32).context("no listener count in the server's statistics")
+}
+
+/// `<body>CurrentListeners,Status,Peak,Max,Unique,Bitrate,Title</body>`
+fn shoutcast1_listeners(body: &str) -> Result<u32> {
+    let inner = body.split("<body>").nth(1).and_then(|b| b.split("</body>").next()).unwrap_or(body);
+    inner.trim().split(',').next().and_then(|n| n.trim().parse().ok()).context("no listener count in 7.html")
+}
+
 fn open_tcp(host: &str, port: u16) -> Result<TcpStream> {
     let addrs: Vec<_> = (host, port)
         .to_socket_addrs()
@@ -401,6 +471,23 @@ mod tests {
     use std::io::{BufRead, BufReader};
     use std::net::TcpListener;
     use std::thread;
+
+    #[test]
+    fn listener_counts_from_status_pages() {
+        // Icecast 2.4.0-kh15 with no source, one source, and two sources.
+        let none = r#"{"icestats":{"server_id":"Icecast 2.4.0-kh15","host":"x"}}"#;
+        assert!(icecast_listeners(none, "/live").is_err());
+        let one = r#"{"icestats":{"source":{"listenurl":"http://x:8828/live","listeners":12,"listener_peak":30}}}"#;
+        assert_eq!(icecast_listeners(one, "/live").unwrap(), 12);
+        let two = r#"{"icestats":{"source":[{"listenurl":"http://x:8000/other","listeners":3},
+                                            {"listenurl":"http://x:8000/live","listeners":7}]}}"#;
+        assert_eq!(icecast_listeners(two, "/live").unwrap(), 7);
+        assert_eq!(shoutcast2_listeners(r#"{"currentlisteners":5,"peaklisteners":9}"#).unwrap(), 5);
+        assert_eq!(
+            shoutcast1_listeners("<html><body>4,1,10,100,4,128,Artist - Title</body></html>").unwrap(),
+            4
+        );
+    }
 
     fn server_cfg(port: u16) -> ServerConfig {
         ServerConfig { host: "127.0.0.1".into(), port, ..Default::default() }

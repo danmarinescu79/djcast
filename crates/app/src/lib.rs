@@ -130,17 +130,22 @@ impl AppConfig {
     }
 
     /// The stream settings to capture with. "One program" with no name takes the DJ program
-    /// the titles come from, so sound and titles match; other sources leave it empty, which
-    /// captures the first DJ program that runs.
+    /// the titles come from when it runs, so sound and titles match; otherwise it stays empty,
+    /// which captures the first DJ program that runs (rekordbox before Serato DJ, as the
+    /// automatic now-playing source does).
     pub fn capture_stream(&self) -> Config {
+        use djcast_nowplaying::{SourceKind, procs};
         let mut stream = self.stream.clone();
         let audio = &mut stream.audio;
         if audio.mode == djcast_core::config::CaptureMode::Process && audio.device.trim().is_empty() {
-            audio.device = match self.nowplaying.source {
-                djcast_nowplaying::SourceKind::RekordboxLive => "rekordbox".into(),
-                djcast_nowplaying::SourceKind::Serato => "Serato DJ".into(),
-                _ => String::new(),
+            let program = match self.nowplaying.source {
+                SourceKind::RekordboxLive => Some("rekordbox"),
+                SourceKind::Serato => Some("Serato DJ"),
+                _ => None,
             };
+            if let Some(p) = program.filter(|p| procs::program_running(&procs::running(), p)) {
+                audio.device = p.into();
+            }
         }
         stream
     }

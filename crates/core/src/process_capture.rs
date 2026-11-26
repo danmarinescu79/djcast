@@ -83,7 +83,7 @@ fn find_process(wanted: &str) -> Result<(u32, String)> {
     let running = processes()?;
     let wanted = wanted.trim();
     if wanted.is_empty() {
-        return DJ_PROGRAMS.iter().find_map(|p| pick(&running, p)).ok_or_else(|| {
+        return DJ_PROGRAMS.iter().find_map(|p| pick_program(&running, p)).ok_or_else(|| {
             anyhow!("no DJ program is running (looked for {}) — start it before going live", DJ_PROGRAMS.join(", "))
         });
     }
@@ -99,6 +99,20 @@ fn pick(running: &[(u32, String)], wanted: &str) -> Option<(u32, String)> {
         .iter()
         .find(|(_, n)| stem(n) == needle)
         .or_else(|| running.iter().find(|(_, n)| n.to_lowercase().contains(&needle)))
+        .cloned()
+}
+
+/// A known DJ program: its executable is named `program`, or `program` followed by a word
+/// ("Serato DJ" is "Serato DJ Pro.exe"); helpers such as rekordboxAgent.exe don't count.
+fn pick_program(running: &[(u32, String)], program: &str) -> Option<(u32, String)> {
+    let needle = program.to_lowercase();
+    running
+        .iter()
+        .find(|(_, n)| {
+            let stem = n.to_lowercase();
+            let stem = stem.trim_end_matches(".exe");
+            stem == needle || stem.starts_with(&format!("{needle} "))
+        })
         .cloned()
 }
 
@@ -135,7 +149,10 @@ mod tests {
         assert_eq!(pick(&running, "serato"), Some((3, "Serato DJ Pro.exe".into())));
         assert_eq!(pick(&running, "traktor"), None);
         // The first DJ program in the list wins when several run.
-        assert_eq!(DJ_PROGRAMS.iter().find_map(|p| pick(&running, p)).unwrap().0, 2);
+        assert_eq!(DJ_PROGRAMS.iter().find_map(|p| pick_program(&running, p)).unwrap().0, 2);
+        // With only rekordbox's helper running, the automatic choice goes on to Serato.
+        let helper_only = vec![(1, "rekordboxAgent.exe".to_string()), (3, "Serato DJ Pro.exe".to_string())];
+        assert_eq!(DJ_PROGRAMS.iter().find_map(|p| pick_program(&helper_only, p)).unwrap().0, 3);
     }
 }
 

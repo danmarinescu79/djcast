@@ -43,6 +43,7 @@ pub struct SeratoSource {
     onair: OnAir,
     on_air: Option<u8>,
     error: Option<String>,
+    audible: bool,
 }
 
 impl SeratoSource {
@@ -59,6 +60,7 @@ impl SeratoSource {
             onair: OnAir::new(confirm),
             on_air: None,
             error: None,
+            audible: true,
         })
     }
 
@@ -140,13 +142,19 @@ impl Source for SeratoSource {
             return Err(anyhow!(NEEDS_MIDI));
         }
         self.error = None;
-        self.on_air = self.pick(Instant::now()).or(self.on_air);
+        if self.audible {
+            self.on_air = self.pick(Instant::now()).or(self.on_air);
+        }
         Ok(self.on_air.and_then(|d| self.loaded.iter().find(|l| l.deck == d)).map(|l| Track {
             artist: l.artist.clone(),
             title: l.title.clone(),
             album: None,
             deck: Some(l.deck),
         }))
+    }
+
+    fn set_audible(&mut self, audible: bool) {
+        self.audible = audible;
     }
 
     fn debug_snapshot(&self) -> Option<String> {

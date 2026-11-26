@@ -1,6 +1,7 @@
 <script>
   import { clock, meterFraction, lufs, db, presetLabel } from './lib/format.js';
   import BandMeters from './lib/BandMeters.svelte';
+  import Marquee from './lib/Marquee.svelte';
   import { t } from './lib/i18n.svelte.js';
 
   let { status, busy, onToggleLive, onExpand } = $props();
@@ -12,6 +13,7 @@
       <span class="dot"></span>
       <span>{status.live ? (status.connected ? t('live.liveTime', { time: clock(status.connected_secs) }) : t('live.connecting')) : t('live.goLive')}</span>
     </button>
+    {#if status.live && status.listeners != null}<span class="small">{t('stats.listening', { n: status.listeners })}</span>{/if}
     <span class="muted small">{presetLabel(status.loudness)}</span>
     <span class="grow"></span>
     <button type="button" class="icon" aria-label={t('mini.expand')} title={t('mini.expand')} onclick={onExpand}>
@@ -21,8 +23,8 @@
 
   <div class="now">
     <span class="deck">{status.track?.deck ? t('mini.deckOnAir', { n: status.track.deck }) : t('now.title')}</span>
-    <span class="title">{status.track?.title || t('now.waiting')}</span>
-    <span class="artist">{status.track?.artist || ''}</span>
+    <span class="title"><Marquee text={status.track?.title || t('now.waiting')} /></span>
+    <span class="artist"><Marquee text={status.track?.artist || ''} /></span>
   </div>
 
   <div class="grow"></div>
@@ -55,8 +57,8 @@
   .icon { width: 34px; height: 34px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--text-2); display: flex; align-items: center; justify-content: center; }
   .now { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .deck { font-size: 11px; color: var(--on-air-text); font-weight: 600; letter-spacing: 1px; }
-  .title { font-size: 18px; font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
-  .artist { font-size: 13px; color: var(--text-2); min-height: 18px; }
+  .title { font-size: 18px; font-weight: 700; line-height: 1.25; min-width: 0; user-select: text; }
+  .artist { font-size: 13px; color: var(--text-2); min-height: 18px; min-width: 0; }
   .grow { flex-grow: 1; }
   /* Rows: L, R, numbers. Band bars span the L and R rows; their labels sit on the numbers row. */
   .bottom {
