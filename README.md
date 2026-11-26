@@ -95,6 +95,7 @@ To add a language:
 - [Releasing](docs/releasing.md)
 - [Code signing policy](docs/code-signing-policy.md)
 - [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) · [Code of conduct](CODE_OF_CONDUCT.md)
 
 ## Privacy
 djcast has no accounts, analytics or telemetry. It only connects to:
@@ -102,7 +103,7 @@ djcast has no accounts, analytics or telemetry. It only connects to:
 - GitHub, to check for and download updates (Settings → General; can be turned off);
 - Discord, only if you add a webhook in Settings → Sharing, to post the messages you set up.
 
-rekordbox files, MIDI and audio are read on your computer and never uploaded. Server
+What djcast reads from rekordbox, MIDI and audio is used on your computer and never uploaded. Server
 passwords and the Discord webhook are kept in the system credential store (Windows
 Credential Manager / macOS Keychain). Logs stay in the settings folder and are only shared
 if you attach them to a problem report yourself.
@@ -112,8 +113,9 @@ The [website](https://danmarinescu79.github.io/djcast/) counts visits and downlo
 
 ## Disclaimer
 This project is not affiliated with, endorsed by, or connected to AlphaTheta Corporation or Pioneer DJ.
-"rekordbox" is a trademark of AlphaTheta Corporation. djcast only reads local rekordbox files read-only
-and does not modify or redistribute any part of rekordbox.
+"rekordbox" is a trademark of AlphaTheta Corporation. djcast only reads what rekordbox shows in its
+window (through the operating system's accessibility interface) and does not modify or redistribute
+any part of rekordbox.
 
 ## License
 
@@ -131,5 +133,7 @@ Opus uses [libopus](https://opus-codec.org/) (BSD-3-Clause). AAC uses the encode
 operating system (Media Foundation on Windows, AudioToolbox on macOS); djcast ships no AAC code.
 
 ### Contribution
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report problems and send changes.
+
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this work,
 as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
