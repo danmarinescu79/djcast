@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 - Now playing "Automatic", the new default: djcast reads rekordbox or Serato DJ, whichever is
   running (rekordbox if both), and switches by itself when you change programs
 - Capturing one program with no name: when the program the titles come from isn't running,
