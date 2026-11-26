@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 - Now playing from Serato DJ 5 and newer: djcast reads which track Serato has loaded on each
   deck (its library database, read-only). Serato doesn't say which deck is playing, so the
   title follows the controller's faders over MIDI; mixing with the mouse in Serato is not
